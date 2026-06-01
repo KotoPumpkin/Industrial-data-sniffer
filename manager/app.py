@@ -44,7 +44,6 @@ def parse_csv_result(csv_text: str):
     if len(lines) < 2:
         return results
 
-    # 找到数据行（跳过注释行）
     header = None
     for line in lines:
         if line.startswith("#"):
@@ -53,12 +52,18 @@ def parse_csv_result(csv_text: str):
             header = line.split(",")
             continue
         values = line.split(",")
-        if len(values) >= len(header):
-            row = {}
-            for i, col in enumerate(header):
-                if i < len(values):
-                    row[col.strip()] = values[i].strip()
-            results.append(row)
+        if len(values) < len(header):
+            continue
+        row = {}
+        for i, col in enumerate(header):
+            if i < len(values):
+                row[col.strip()] = values[i].strip()
+        # 跳过列头行（值的集合与列名集合高度重叠的行）
+        col_set = set(c.strip() for c in header)
+        val_set = set(v.strip() for v in values)
+        if len(col_set & val_set) > len(col_set) * 0.5:
+            continue
+        results.append(row)
     return results
 
 
@@ -97,11 +102,42 @@ def devices_latest():
     from(bucket: "factory")
       |> range(start: -5m)
       |> filter(fn: (r) => r._measurement == "industrial_metrics")
+      |> filter(fn: (r) => r._field == "temperature")
       |> last()
-      |> pivot(rowKey: ["machine_id"], columnKey: ["_field"], valueColumn: "_value")
+      |> group(columns: ["machine_id"])
     '''
-    results = query_influxdb(flux)
-    return jsonify(results)
+    base_rows = query_influxdb(flux)
+
+    # 提取有效设备 ID（machine_id 包含 "CNC" 等设备前缀，排除非设备数据）
+    valid_ids = []
+    for r in base_rows:
+        mid = r.get("machine_id", "")
+        if mid and "-" in mid and not mid.startswith("line"):
+            valid_ids.append(mid)
+
+    # 去重
+    seen = set()
+    unique_ids = []
+    for mid in valid_ids:
+        if mid not in seen:
+            seen.add(mid)
+            unique_ids.append(mid)
+
+    # 对每个设备查询完整 pivot 数据
+    devices = []
+    for mid in unique_ids:
+        flux2 = f'''
+        from(bucket: "factory")
+          |> range(start: -5m)
+          |> filter(fn: (r) => r._measurement == "industrial_metrics")
+          |> filter(fn: (r) => r.machine_id == "{mid}")
+          |> last()
+          |> pivot(rowKey: ["machine_id"], columnKey: ["_field"], valueColumn: "_value")
+        '''
+        rows = query_influxdb(flux2)
+        if rows:
+            devices.append(rows[0])
+    return jsonify(devices)
 
 
 @app.route("/api/metrics/history")

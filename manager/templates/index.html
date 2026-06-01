@@ -70,6 +70,14 @@ body {
 .topbar-indicator { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 500; color: var(--text-secondary); }
 .topbar-indicator .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
 .topbar-clock { font-size: 12px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.topbar-refresh { display: flex; align-items: center; gap: 4px; }
+.topbar-refresh label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 500; }
+.refresh-select {
+    font-family: var(--font); font-size: 11px; padding: 2px 6px;
+    border: 1px solid var(--border); border-radius: 3px;
+    background: var(--bg-input); color: var(--text-secondary); outline: none; cursor: pointer;
+}
+.refresh-select:focus { border-color: var(--blue); }
 
 /* SIDEBAR */
 .sidebar {
@@ -273,6 +281,14 @@ body {
         <div class="topbar-indicator">
             <div class="dot" id="statusDot"></div>
             <span id="navStatusText">Connecting</span>
+        </div>
+        <div class="topbar-refresh">
+            <label>Refresh</label>
+            <select class="refresh-select" id="refreshInterval" title="Refresh interval">
+                <option value="5" selected>5s</option>
+                <option value="15">15s</option>
+                <option value="60">1min</option>
+            </select>
         </div>
         <div class="topbar-clock" id="clock">--:--:--</div>
     </div>
@@ -546,6 +562,7 @@ async function loadTrend() {
             },
             options: {
                 responsive: true, maintainAspectRatio: false,
+                animation: false,
                 plugins: {
                     legend: { display: false },
                     tooltip: {
@@ -690,13 +707,44 @@ async function openReport(deviceId) {
 function closeModal() { $('#modal').classList.remove('active'); }
 $('#modal').addEventListener('click', e => { if (e.target === $('#modal')) closeModal(); });
 
-// ---- TABS ----
+// ---- AUTO REFRESH ----
+let _refreshTimer = null;
+let _activeTab = 'trend';
+
+function getActiveTabData() {
+    switch (_activeTab) {
+        case 'trend': if ($('#trendDevice').value) loadTrend(); break;
+        case 'alert': loadAlerts(); break;
+        case 'anomaly': loadAnomaly(); break;
+        case 'correlation': loadCorrelation(); break;
+    }
+}
+
+function refreshAll() {
+    loadServices();
+    loadDevices();
+    getActiveTabData();
+}
+
+function startAutoRefresh() {
+    if (_refreshTimer) clearInterval(_refreshTimer);
+    const seconds = parseInt($('#refreshInterval').value) || 5;
+    _refreshTimer = setInterval(refreshAll, seconds * 1000);
+}
+
+$('#refreshInterval').addEventListener('change', () => {
+    startAutoRefresh();
+    refreshAll();
+});
+
 $$('.tab-btn').forEach(tab => {
     tab.addEventListener('click', () => {
         $$('.tab-btn').forEach(t => t.classList.remove('active'));
         $$('.tab-content').forEach(t => t.classList.remove('active'));
         tab.classList.add('active');
         $(`#tab-${tab.dataset.tab}`).classList.add('active');
+        _activeTab = tab.dataset.tab;
+        getActiveTabData();
     });
 });
 
@@ -705,11 +753,11 @@ async function init() {
     await loadServices();
     await loadDevices();
     await loadAlerts();
+    _activeTab = 'trend';
     if ($('#trendDevice').value) loadTrend();
+    startAutoRefresh();
 }
 init();
-setInterval(loadDevices, 15000);
-setInterval(loadServices, 30000);
 </script>
 </body>
 </html>
