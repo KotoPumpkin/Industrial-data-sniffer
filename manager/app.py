@@ -739,6 +739,58 @@ def device_stats(device_id):
     return jsonify({"device": device_id, "stats": []})
 
 
+@app.route("/api/points/<field_name>/all-devices-history")
+def point_all_devices_history(field_name):
+    """查询某字段在所有设备上的历史数据（用于实时点位对比图）"""
+    device = request.args.get("device", "")
+    minutes = int(request.args.get("minutes", 30))
+
+    device_filter = f'|> filter(fn: (r) => r.machine_id == "{device}")' if device else ""
+
+    flux = f'''
+    from(bucket: "factory")
+      |> range(start: -{minutes}m)
+      |> filter(fn: (r) => r._measurement == "industrial_metrics")
+      |> filter(fn: (r) => r._field == "{field_name}")
+      {device_filter}
+      |> aggregateWindow(every: 10s, fn: mean, createEmpty: false)
+      |> limit(n: 300)
+    '''
+    results = query_influxdb(flux)
+
+    # 按 device 分组
+    grouped = {}
+    device_ids = set()
+    for r in results:
+        mid = r.get("machine_id", "unknown")
+        t = r.get("_time", "")
+        try:
+            v = float(r.get("_value", 0))
+        except (ValueError, TypeError):
+            continue
+        device_ids.add(mid)
+        grouped.setdefault(mid, {})[t] = v
+
+    # 合并所有时间点
+    all_times = set()
+    for dev_data in grouped.values():
+        all_times.update(dev_data.keys())
+    sorted_times = sorted(all_times)
+
+    series = []
+    for t in sorted_times:
+        entry = {"time": t}
+        for did in device_ids:
+            entry[did] = grouped.get(did, {}).get(t, None)
+        series.append(entry)
+
+    return jsonify({
+        "field": field_name,
+        "device_ids": sorted(device_ids),
+        "series": series,
+    })
+
+
 @app.route("/api/data-governance/overview")
 def data_governance_overview():
     """数据治理总览"""

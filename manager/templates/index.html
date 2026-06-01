@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IDM - 工业数据采集管理平台</title>
+<title>工业数据采集管理平台</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
@@ -364,6 +364,7 @@ body {
             <div style="padding:0.5rem 0.8rem; border-bottom:1px solid var(--border); display:flex; gap:0.6rem; align-items:flex-end; flex-wrap:wrap;">
                 <div class="fg"><label>车间</label><select id="filterWorkshop" onchange="applyDeviceFilter()"><option value="">全部车间</option></select></div>
                 <div class="fg"><label>设备</label><select id="filterDevice" onchange="applyDeviceFilter()"><option value="">全部设备</option></select></div>
+                <div class="fg"><label>点位</label><select id="filterPoint" onchange="onPointFilterChange()"><option value="">全部点位</option></select></div>
             </div>
             <div class="table-wrap tall">
                 <table class="data-table" id="devicesTable">
@@ -371,6 +372,16 @@ body {
                     <tbody><tr><td colspan="5"><div class="loading">加载中...</div></td></tr></tbody>
                 </table>
             </div>
+        </div>
+    </div>
+
+    <!-- 点位实时趋势面板 -->
+    <div class="panel" id="pointRealtimePanel" style="display:none;">
+        <div class="panel-header">
+            <div class="panel-title" id="pointRealtimeTitle">📈 点位实时趋势</div>
+        </div>
+        <div class="panel-body p0">
+            <div class="chart-box" style="height:20rem;"><div id="pointRealtimeChart" style="width:100%;height:100%"></div></div>
         </div>
     </div>
 
@@ -635,9 +646,50 @@ function updateDeviceFilter(fromPopulate) {
     if (savedCorr) $('#corrDevice').value = savedCorr;
 }
 
+// 点位筛选状态
+let _selectedPointField = null;  // 当前选中的点位英文字段名（如 temperature）
+let _selectedPointLabel = null;  // 当前选中的点位中文名（如 主轴温度）
+
+function updatePointFilter() {
+    const dev = $('#filterDevice').value;
+    const saved = $('#filterPoint').value;
+    const sel = $('#filterPoint');
+
+    if (!dev) {
+        // 全部设备：合并所有类型点位（去重）
+        const allPoints = new Map();
+        Object.values(DEVICE_POINTS).forEach(pts => {
+            pts.forEach(p => {
+                const field = CN_TO_FIELD[p];
+                if (field && !allPoints.has(field)) allPoints.set(field, p);
+            });
+        });
+        sel.innerHTML = '<option value="">全部点位</option>';
+        allPoints.forEach((label, field) => {
+            sel.innerHTML += `<option value="${field}">${label}</option>`;
+        });
+    } else {
+        // 找到该设备的类型
+        const device = allDevicesData.find(d => d.machine_id === dev);
+        const dtype = device ? device.device_type : null;
+        const pts = DEVICE_POINTS[dtype] || [];
+        sel.innerHTML = '<option value="">全部点位</option>';
+        pts.forEach(p => {
+            const field = CN_TO_FIELD[p];
+            if (field) {
+                sel.innerHTML += `<option value="${field}">${p}</option>`;
+            }
+        });
+    }
+    // 尝试恢复之前的选择
+    if (saved) sel.value = saved;
+}
+
 function applyDeviceFilter() {
     updateDeviceFilter();
+    updatePointFilter();
     renderDeviceTable();
+    refreshPointRealtime();
 }
 
 function renderDeviceTable() {
@@ -651,6 +703,7 @@ function renderDeviceTable() {
     const scrollTop = tableWrap ? tableWrap.scrollTop : 0;
     const tbody = $('#devicesTable tbody');
     if (!list.length) { tbody.innerHTML = '<tr><td colspan="5"><div class="no-data">暂无设备数据</div></td></tr>'; return; }
+    const selField = _selectedPointField;
     tbody.innerHTML = list.map(d => {
         const wsInfo = WORKSHOP_MAP[d.workshop];
         const wsName = wsInfo ? wsInfo.name : (d.workshop || '-');
@@ -658,7 +711,9 @@ function renderDeviceTable() {
         const pointItems = points.map(p => {
             const field = CN_TO_FIELD[p];
             const val = field && d[field] !== undefined ? fmt(parseFloat(d[field])) : '--';
-            return `<span class="cp-tag">${p}: ${val}</span>`;
+            const isHighlight = selField && field === selField;
+            const style = isHighlight ? 'background:rgba(251,146,60,0.25);border:1px solid var(--orange);color:var(--orange);font-weight:600;' : '';
+            return `<span class="cp-tag" style="${style}">${p}: ${val}</span>`;
         }).join('');
         return `<tr>
             <td class="link" onclick="openReport('${d.machine_id || ''}')">${d.machine_id || '-'}</td>
@@ -1137,6 +1192,75 @@ async function openReport(deviceId) {
 function closeModal() { $('#modal').classList.remove('active'); }
 $('#modal').addEventListener('click', e => { if (e.target === $('#modal')) closeModal(); });
 
+// ===== 点位筛选 & 实时图表 =====
+let pointRealtimeChart = null;
+
+function onPointFilterChange() {
+    const val = $('#filterPoint').value;
+    _selectedPointField = val || null;
+    _selectedPointLabel = val ? $('#filterPoint').selectedOptions[0].text : null;
+    // 如果还需要更新点位下拉（例如设备没变但车间变了），已在 applyDeviceFilter 中处理
+    renderDeviceTable();
+    refreshPointRealtime();
+}
+
+async function refreshPointRealtime() {
+    const field = _selectedPointField;
+    if (!field) {
+        $('#pointRealtimePanel').style.display = 'none';
+        return;
+    }
+    $('#pointRealtimePanel').style.display = '';
+    const label = _selectedPointLabel || field;
+    $('#pointRealtimeTitle').textContent = `📈 ${label} — 实时趋势`;
+
+    const dev = $('#filterDevice').value;
+    const params = new URLSearchParams();
+    if (dev) params.set('device', dev);
+    params.set('minutes', '30');
+
+    try {
+        const r = await fetch(`/api/points/${field}/all-devices-history?${params}`);
+        const d = await r.json();
+        const deviceIds = d.device_ids || [];
+        const series = d.series || [];
+        if (!deviceIds.length || !series.length) {
+            // clear chart
+            if (pointRealtimeChart) { pointRealtimeChart.dispose(); pointRealtimeChart = null; }
+            return;
+        }
+
+        // Render with ECharts
+        const dom = document.getElementById('pointRealtimeChart');
+        if (!pointRealtimeChart) {
+            pointRealtimeChart = echarts.init(dom, null, { renderer: 'canvas' });
+        }
+        const times = series.map(s => s.time.substring(11, 19));
+        const chartSeries = deviceIds.map((did, idx) => ({
+            name: did,
+            type: 'line',
+            data: series.map(s => s[did] ?? null),
+            smooth: true,
+            lineStyle: { color: TREND_COLORS[idx % TREND_COLORS.length], width: 2 },
+            symbol: 'none',
+        }));
+        pointRealtimeChart.setOption({
+            grid: { top: 20, right: 20, bottom: 30, left: 50 },
+            tooltip: { trigger: 'axis' },
+            legend: {
+                bottom: 0,
+                textStyle: { color: '#8b919a', fontSize: 10 },
+                data: deviceIds,
+            },
+            xAxis: { type: 'category', data: times, axisLabel: { color: '#555b66', fontSize: 10 } },
+            yAxis: { type: 'value', axisLabel: { color: '#555b66', fontSize: 10 }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } } },
+            series: chartSeries,
+        }, true);
+    } catch(e) {
+        console.error('point realtime chart error:', e);
+    }
+}
+
 // ===== 自动刷新 =====
 let _timer = null;
 let _activeTab = 'trend';
@@ -1155,6 +1279,7 @@ function refreshAll() {
     loadDevices();
     loadAlerts();
     getActiveTabData();
+    if (_selectedPointField) refreshPointRealtime();
 }
 
 function startAutoRefresh() {
