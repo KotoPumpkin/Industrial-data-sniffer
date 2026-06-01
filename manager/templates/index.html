@@ -3,173 +3,178 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IDM - Industrial Data Mining</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<title>IDM - 工业数据采集管理平台</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
 <style>
 :root {
-    --bg-canvas: #0b0e13;
-    --bg-panel: #141619;
-    --bg-panel-header: #1a1d21;
-    --bg-sidebar: #111318;
-    --bg-input: #1a1d21;
-    --bg-hover: #1e2228;
-    --border: #2a2e35;
-    --border-light: #333840;
-    --text-primary: #d6d9de;
-    --text-secondary: #8b8f96;
-    --text-muted: #5a5e66;
-    --text-link: #6e9bff;
-    --blue: #3274d9;
-    --blue-light: #6e9bff;
-    --green: #73bf69;
-    --green-dark: #2a5427;
-    --orange: #ff9830;
-    --orange-dark: #543a12;
-    --red: #f2495c;
-    --red-dark: #4a1a22;
-    --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --bg-canvas: #080b10;
+    --bg-panel: #0f1218;
+    --bg-panel-header: #161a22;
+    --bg-sidebar: #0c0f14;
+    --bg-input: #161a22;
+    --bg-hover: #1c2029;
+    --border: #232830;
+    --border-light: #2d333b;
+    --text-primary: #e0e3e8;
+    --text-secondary: #8b919a;
+    --text-muted: #555b66;
+    --text-link: #6ea8fe;
+    --blue: #3b82f6;
+    --blue-dim: #1e3a5f;
+    --green: #34d399;
+    --green-dark: #0d3320;
+    --orange: #fb923c;
+    --orange-dark: #3d2410;
+    --red: #f87171;
+    --red-dark: #3b1515;
+    --cyan: #22d3ee;
+    --font: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { font-size: 14px; }
 body {
-    font-family: var(--font);
-    background: var(--bg-canvas);
-    color: var(--text-primary);
-    min-height: 100vh;
-    display: grid;
-    grid-template-columns: 52px 1fr;
-    grid-template-rows: 52px 1fr;
+    font-family: var(--font); background: var(--bg-canvas); color: var(--text-primary);
+    min-height: 100vh; display: grid;
+    grid-template-columns: 11.5rem 1fr; grid-template-rows: 3.2rem 1fr;
     -webkit-font-smoothing: antialiased;
 }
 
-/* TOP BAR */
+/* TOPBAR */
 .topbar {
-    grid-column: 1 / -1;
-    background: var(--bg-panel-header);
+    grid-column: 1 / -1; background: var(--bg-panel-header);
     border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 16px;
-    z-index: 50;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 1.2rem; z-index: 50;
 }
-.topbar-left { display: flex; align-items: center; gap: 12px; }
+.topbar-left { display: flex; align-items: center; gap: 0.6rem; }
 .topbar-logo {
-    width: 28px; height: 28px;
-    background: var(--orange);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 700; font-size: 13px; color: #000;
+    width: 1.8rem; height: 1.8rem; background: linear-gradient(135deg, #fb923c, #f87171);
+    border-radius: 0.4rem; display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.9rem; color: #fff;
 }
-.topbar-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
-.topbar-breadcrumb { font-size: 12px; color: var(--text-muted); }
-.topbar-breadcrumb span { color: var(--text-secondary); }
-.topbar-right { display: flex; align-items: center; gap: 16px; }
-.topbar-indicator { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 500; color: var(--text-secondary); }
-.topbar-indicator .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
-.topbar-clock { font-size: 12px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
-.topbar-refresh { display: flex; align-items: center; gap: 4px; }
-.topbar-refresh label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 500; }
+.topbar-title { font-size: 0.95rem; font-weight: 600; }
+.topbar-right { display: flex; align-items: center; gap: 1rem; }
+.topbar-indicator { display: flex; align-items: center; gap: 0.35rem; font-size: 0.75rem; color: var(--text-secondary); }
+.topbar-indicator .dot { width: 0.45rem; height: 0.45rem; border-radius: 50%; background: var(--green); }
+.topbar-clock { font-size: 0.8rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 .refresh-select {
-    font-family: var(--font); font-size: 11px; padding: 2px 6px;
-    border: 1px solid var(--border); border-radius: 3px;
+    font-family: var(--font); font-size: 0.75rem; padding: 0.15rem 0.4rem;
+    border: 1px solid var(--border); border-radius: 0.2rem;
     background: var(--bg-input); color: var(--text-secondary); outline: none; cursor: pointer;
 }
-.refresh-select:focus { border-color: var(--blue); }
 
 /* SIDEBAR */
 .sidebar {
-    background: var(--bg-sidebar);
-    border-right: 1px solid var(--border);
-    display: flex; flex-direction: column; align-items: center;
-    padding: 8px 0; gap: 2px;
+    background: var(--bg-sidebar); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; padding: 0.5rem 0; overflow-y: auto;
 }
-.sidebar-item {
-    width: 40px; height: 40px;
-    display: flex; align-items: center; justify-content: center;
-    border-radius: 4px; cursor: pointer;
-    color: var(--text-muted); transition: all 0.12s; position: relative;
+.sb-section { padding: 0.3rem 0.6rem; }
+.sb-label { font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; padding: 0.4rem 0.6rem; }
+.sb-item {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.45rem 0.7rem; border-radius: 0.35rem; cursor: pointer;
+    color: var(--text-muted); transition: all 0.15s; font-size: 0.8rem;
 }
-.sidebar-item:hover { background: var(--bg-hover); color: var(--text-secondary); }
-.sidebar-item.active { background: var(--bg-hover); color: var(--text-primary); }
-.sidebar-item.active::before {
-    content: ''; position: absolute; left: -8px; top: 8px; bottom: 8px;
-    width: 3px; background: var(--blue); border-radius: 0 2px 2px 0;
+.sb-item:hover { background: var(--bg-hover); color: var(--text-secondary); }
+.sb-item.active { background: var(--bg-hover); color: var(--text-primary); }
+.sb-item.active::before {
+    content: ''; position: absolute; left: 0; width: 3px; height: 1.2rem;
+    background: var(--blue); border-radius: 0 2px 2px 0;
 }
-.sidebar-item svg { width: 20px; height: 20px; }
-.sidebar-spacer { flex: 1; }
+.sb-item { position: relative; }
+.sb-item svg { width: 1.1rem; height: 1.1rem; flex-shrink: 0; }
+.sb-sep { height: 1px; background: var(--border); margin: 0.4rem 0.8rem; }
+.sb-spacer { flex: 1; }
 
 /* MAIN */
-.main { overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+.main { overflow-y: auto; overflow-x: hidden; padding: 1rem; display: flex; flex-direction: column; gap: 1rem; }
 
-/* LAYOUT */
-.row { display: grid; gap: 16px; }
+/* PAGE VIEWS */
+.page-view { display: none; }
+.page-view.active { display: flex; flex-direction: column; gap: 1rem; }
+
+/* ROW */
+.row { display: grid; gap: 1rem; }
 .row-2 { grid-template-columns: 1fr 1fr; }
-.row-2-1 { grid-template-columns: 2fr 1fr; }
+.row-3-2 { grid-template-columns: 3fr 2fr; }
+.row-map { grid-template-columns: 1.6fr 1fr; }
 
 /* PANEL */
 .panel {
-    background: var(--bg-panel);
-    border: 1px solid var(--border);
-    border-radius: 4px; overflow: hidden;
-    display: flex; flex-direction: column;
+    background: var(--bg-panel); border: 1px solid var(--border);
+    border-radius: 0.4rem; overflow: hidden; display: flex; flex-direction: column;
 }
 .panel-header {
-    background: var(--bg-panel-header);
-    padding: 8px 12px;
+    background: var(--bg-panel-header); padding: 0.5rem 0.8rem;
     display: flex; align-items: center; justify-content: space-between;
-    border-bottom: 1px solid var(--border); min-height: 36px;
+    border-bottom: 1px solid var(--border); min-height: 2.2rem;
 }
-.panel-title { font-size: 12px; font-weight: 500; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; }
-.panel-body { padding: 16px; flex: 1; position: relative; }
+.panel-title { font-size: 0.8rem; font-weight: 500; color: var(--text-secondary); }
+.panel-body { padding: 0.8rem; flex: 1; position: relative; }
 .panel-body.p0 { padding: 0; }
 
 /* STAT CARDS */
-.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.8rem; }
 .stat-card {
     background: var(--bg-panel); border: 1px solid var(--border);
-    border-radius: 4px; padding: 16px; display: flex; flex-direction: column; gap: 4px;
+    border-radius: 0.4rem; padding: 0.8rem 1rem;
 }
-.stat-card .sc-label { font-size: 11px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
-.stat-card .sc-value { font-size: 28px; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; }
-.sc-value.blue { color: var(--blue-light); }
+.stat-card .sc-label { font-size: 0.7rem; font-weight: 500; color: var(--text-muted); letter-spacing: 0.04em; }
+.stat-card .sc-value { font-size: 1.6rem; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; margin-top: 0.2rem; }
+.sc-value.blue { color: var(--text-link); }
 .sc-value.green { color: var(--green); }
 .sc-value.red { color: var(--red); }
 .sc-value.orange { color: var(--orange); }
 
 /* SERVICE LIST */
-.service-list { display: flex; flex-direction: column; }
-.service-row {
+.svc-list { max-height: 16rem; overflow-y: auto; }
+.svc-row {
     display: grid; grid-template-columns: 1fr auto auto; align-items: center;
-    gap: 12px; padding: 8px 12px; border-bottom: 1px solid var(--border); font-size: 12px;
+    gap: 0.6rem; padding: 0.5rem 0.8rem; border-bottom: 1px solid var(--border); font-size: 0.8rem;
 }
-.service-row:last-child { border-bottom: none; }
-.service-name { color: var(--text-primary); font-weight: 500; }
-.service-port { color: var(--text-muted); font-variant-numeric: tabular-nums; font-size: 11px; }
-.service-badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 3px; text-transform: uppercase; }
-.service-badge.online { background: var(--green-dark); color: var(--green); }
-.service-badge.offline { background: var(--red-dark); color: var(--red); }
+.svc-row:last-child { border-bottom: none; }
+.svc-name { color: var(--text-primary); font-weight: 500; }
+.svc-name.link { color: var(--text-link); cursor: pointer; }
+.svc-name.link:hover { text-decoration: underline; }
+.svc-port { color: var(--text-muted); font-variant-numeric: tabular-nums; font-size: 0.75rem; }
+.svc-badge { font-size: 0.65rem; font-weight: 600; padding: 0.1rem 0.5rem; border-radius: 0.2rem; text-transform: uppercase; }
+.svc-badge.online { background: var(--green-dark); color: var(--green); }
+.svc-badge.degraded { background: var(--orange-dark); color: var(--orange); }
 
 /* TABLE */
-.table-wrap { overflow-x: auto; }
-.data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.table-wrap { max-height: 18rem; overflow-y: auto; }
+.table-wrap.tall { max-height: 26rem; }
+.data-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
 .data-table th {
-    padding: 8px 12px; text-align: left; font-weight: 600; font-size: 11px;
+    padding: 0.5rem 0.7rem; text-align: left; font-weight: 600; font-size: 0.7rem;
     color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em;
     border-bottom: 1px solid var(--border); background: var(--bg-panel-header); white-space: nowrap;
+    position: sticky; top: 0; z-index: 2;
 }
-.data-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); color: var(--text-secondary); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.data-table td { padding: 0.45rem 0.7rem; border-bottom: 1px solid var(--border); color: var(--text-secondary); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .data-table tr:hover td { background: var(--bg-hover); }
-.data-table td.highlight { color: var(--text-primary); font-weight: 500; }
-.data-table td.device-link { color: var(--text-link); cursor: pointer; }
-.data-table td.device-link:hover { text-decoration: underline; }
+.data-table td.hl { color: var(--text-primary); font-weight: 500; }
+.data-table td.link { color: var(--text-link); cursor: pointer; }
+.data-table td.link:hover { text-decoration: underline; }
+
+/* FILTER BAR */
+.filter-bar { display: flex; gap: 0.6rem; align-items: flex-end; flex-wrap: wrap; }
+.fg { display: flex; flex-direction: column; gap: 0.2rem; }
+.fg label { font-size: 0.65rem; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.fg select, .fg input {
+    font-family: var(--font); font-size: 0.8rem; padding: 0.3rem 0.5rem;
+    border: 1px solid var(--border); border-radius: 0.3rem;
+    background: var(--bg-input); color: var(--text-primary); outline: none; min-width: 7rem;
+}
+.fg select:focus, .fg input:focus { border-color: var(--blue); }
 
 /* TABS */
-.tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--bg-panel-header); padding: 0 12px; }
+.tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--bg-panel-header); padding: 0 0.8rem; }
 .tab-btn {
-    padding: 8px 16px; font-size: 12px; font-weight: 500; color: var(--text-muted);
+    padding: 0.5rem 0.9rem; font-size: 0.8rem; font-weight: 500; color: var(--text-muted);
     background: none; border: none; border-bottom: 2px solid transparent;
     cursor: pointer; transition: all 0.12s; font-family: var(--font);
 }
@@ -178,285 +183,331 @@ body {
 .tab-content { display: none; }
 .tab-content.active { display: block; }
 
-/* CONTROLS */
-.controls { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: flex-end; }
-.ctrl-group { display: flex; flex-direction: column; gap: 4px; }
-.ctrl-group label { font-size: 10px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
-.ctrl-group select, .ctrl-group input {
-    font-family: var(--font); font-size: 12px; padding: 4px 8px;
-    border: 1px solid var(--border); border-radius: 4px;
-    background: var(--bg-input); color: var(--text-primary); outline: none; min-width: 120px;
-}
-.ctrl-group select:focus, .ctrl-group input:focus { border-color: var(--blue); }
-.btn {
-    font-family: var(--font); font-size: 12px; font-weight: 500;
-    padding: 5px 16px; border-radius: 4px; border: 1px solid var(--border);
-    background: var(--bg-panel-header); color: var(--text-primary); cursor: pointer; transition: all 0.12s;
-}
-.btn:hover { background: var(--bg-hover); border-color: var(--border-light); }
-.btn-primary { background: var(--blue); color: #fff; border-color: var(--blue); }
-.btn-primary:hover { background: #2860b8; }
-
 /* CHART */
-.chart-container { position: relative; width: 100%; height: 280px; }
-.chart-container canvas { width: 100% !important; height: 100% !important; }
+.chart-box { position: relative; width: 100%; height: 18rem; }
+.chart-box canvas { width: 100% !important; height: 100% !important; }
+#chinaMap { width: 100%; height: 45rem; }
 
 /* STATS BAR */
-.stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
-.stats-bar .sb-item { background: var(--bg-panel-header); border: 1px solid var(--border); border-radius: 4px; padding: 10px 12px; }
-.stats-bar .sb-val { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text-primary); }
-.stats-bar .sb-lbl { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 2px; }
+.stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.6rem; margin-bottom: 0.8rem; }
+.sb-item-box { background: var(--bg-panel-header); border: 1px solid var(--border); border-radius: 0.3rem; padding: 0.5rem 0.7rem; }
+.sb-item-box .sb-val { font-size: 1.1rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.sb-item-box .sb-lbl { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 0.1rem; }
 
 /* ALERTS */
-.alert-item { display: grid; grid-template-columns: 80px 1fr auto; align-items: center; gap: 12px; padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 12px; }
+.alert-item { display: grid; grid-template-columns: 4.5rem 1fr auto; align-items: center; gap: 0.6rem; padding: 0.55rem 0.8rem; border-bottom: 1px solid var(--border); font-size: 0.8rem; }
 .alert-item:last-child { border-bottom: none; }
-.alert-item .a-badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 3px; text-transform: uppercase; text-align: center; }
-.alert-item .a-badge.critical { background: var(--red-dark); color: var(--red); }
-.alert-item .a-badge.warning { background: var(--orange-dark); color: var(--orange); }
-.alert-item .a-msg { color: var(--text-secondary); }
-.alert-item .a-time { font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.a-badge { font-size: 0.65rem; font-weight: 600; padding: 0.1rem 0.5rem; border-radius: 0.2rem; text-align: center; }
+.a-badge.critical { background: var(--red-dark); color: var(--red); }
+.a-badge.warning { background: var(--orange-dark); color: var(--orange); }
+.a-msg { color: var(--text-secondary); }
+.a-time { font-size: 0.7rem; color: var(--text-muted); }
 
 /* CORRELATION */
-.corr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 16px 0; }
-.corr-main { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px; background: var(--bg-panel-header); border: 1px solid var(--border); border-radius: 4px; }
-.corr-value { font-size: 48px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.corr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; padding: 0.8rem 0; }
+.corr-main { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem; background: var(--bg-panel-header); border: 1px solid var(--border); border-radius: 0.4rem; }
+.corr-value { font-size: 2.5rem; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
 .corr-value.positive { color: var(--green); }
 .corr-value.negative { color: var(--red); }
-.corr-label { font-size: 11px; color: var(--text-muted); margin-top: 8px; text-transform: uppercase; letter-spacing: 0.04em; }
-.corr-details { display: flex; flex-direction: column; gap: 8px; }
-.corr-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+.corr-label { font-size: 0.7rem; color: var(--text-muted); margin-top: 0.4rem; }
+.corr-details { display: flex; flex-direction: column; gap: 0.4rem; }
+.corr-row { display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid var(--border); font-size: 0.8rem; }
 .corr-row .cr-lbl { color: var(--text-muted); }
 .corr-row .cr-val { color: var(--text-primary); font-weight: 500; }
+
+/* DATA GOVERNANCE */
+.gov-score-ring { display: flex; align-items: center; gap: 1.5rem; }
+.gov-ring { width: 6rem; height: 6rem; }
+.gov-dims { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; flex: 1; }
+.gov-dim-item { background: var(--bg-panel-header); border: 1px solid var(--border); border-radius: 0.3rem; padding: 0.5rem 0.7rem; }
+.gov-dim-item .gd-lbl { font-size: 0.65rem; color: var(--text-muted); }
+.gov-dim-item .gd-val { font-size: 1rem; font-weight: 600; margin-top: 0.1rem; }
+.gov-dim-item .gd-bar { height: 0.2rem; background: var(--border); border-radius: 1rem; margin-top: 0.3rem; overflow: hidden; }
+.gov-dim-item .gd-bar-fill { height: 100%; border-radius: 1rem; transition: width 0.8s; }
+
+.gov-flow { display: flex; flex-direction: column; gap: 0.3rem; }
+.gov-flow-item { display: grid; grid-template-columns: 5rem 1fr auto auto; align-items: center; gap: 0.6rem; padding: 0.5rem 0.7rem; background: var(--bg-panel-header); border: 1px solid var(--border); border-radius: 0.3rem; font-size: 0.8rem; }
+.gov-flow-item .gf-stage { font-weight: 600; color: var(--cyan); }
+.gov-flow-item .gf-desc { color: var(--text-secondary); }
+.gov-flow-item .gf-count { color: var(--text-muted); font-size: 0.75rem; }
+.gov-flow-item .gf-proto { font-size: 0.65rem; color: var(--text-muted); background: var(--bg-input); padding: 0.1rem 0.4rem; border-radius: 0.15rem; }
+
+.gov-rule-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.gov-rule-table th { padding: 0.4rem 0.6rem; text-align: left; font-size: 0.7rem; color: var(--text-muted); border-bottom: 1px solid var(--border); background: var(--bg-panel-header); }
+.gov-rule-table td { padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border); color: var(--text-secondary); }
 
 /* MODAL */
 .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; align-items: center; justify-content: center; }
 .modal-overlay.active { display: flex; }
-.modal-content { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 4px; max-width: 800px; width: 92%; max-height: 85vh; overflow-y: auto; }
-.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--bg-panel-header); gap: 12px; }
-.modal-header h3 { font-size: 14px; font-weight: 600; color: var(--text-primary); }
-.modal-close { background: none; border: 1px solid var(--border); border-radius: 4px; font-family: var(--font); font-size: 11px; font-weight: 500; padding: 4px 12px; cursor: pointer; color: var(--text-secondary); }
+.modal-content { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 0.4rem; max-width: 50rem; width: 92%; max-height: 80vh; overflow-y: auto; }
+.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 0.7rem 1rem; border-bottom: 1px solid var(--border); background: var(--bg-panel-header); gap: 0.6rem; }
+.modal-header h3 { font-size: 0.95rem; font-weight: 600; }
+.modal-close { background: none; border: 1px solid var(--border); border-radius: 0.3rem; font-family: var(--font); font-size: 0.75rem; padding: 0.2rem 0.6rem; cursor: pointer; color: var(--text-secondary); }
 .modal-close:hover { border-color: var(--red); color: var(--red); }
-.modal-body { padding: 16px; }
-.report-health { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 3px; text-transform: uppercase; }
+.modal-body { padding: 1rem; }
+.report-health { font-size: 0.7rem; font-weight: 600; padding: 0.15rem 0.6rem; border-radius: 0.2rem; }
 .report-health.normal { background: var(--green-dark); color: var(--green); }
 .report-health.warning { background: var(--orange-dark); color: var(--orange); }
 .report-health.critical { background: var(--red-dark); color: var(--red); }
-.report-metrics { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-top: 12px; }
-.rm-card { background: var(--bg-panel-header); border: 1px solid var(--border); border-radius: 4px; padding: 12px; }
-.rm-card .rm-name { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
-.rm-card .rm-row { display: flex; justify-content: space-between; font-size: 12px; padding: 3px 0; }
+.report-metrics { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: 0.6rem; margin-top: 0.6rem; }
+.rm-card { background: var(--bg-panel-header); border: 1px solid var(--border); border-radius: 0.3rem; padding: 0.7rem; }
+.rm-card .rm-name { font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.4rem; padding-bottom: 0.3rem; border-bottom: 1px solid var(--border); }
+.rm-card .rm-row { display: flex; justify-content: space-between; font-size: 0.8rem; padding: 0.15rem 0; }
 .rm-card .rm-row .rm-lbl { color: var(--text-muted); }
-.rm-card .rm-row .rm-v { color: var(--text-primary); font-weight: 500; font-variant-numeric: tabular-nums; }
+.rm-card .rm-row .rm-v { color: var(--text-primary); font-weight: 500; }
 
-/* UTILS */
-.loading { display: flex; align-items: center; justify-content: center; padding: 40px; font-size: 12px; color: var(--text-muted); }
-.no-data { text-align: center; padding: 40px; font-size: 12px; color: var(--text-muted); }
-.badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 3px; text-transform: uppercase; }
+.badge { font-size: 0.65rem; font-weight: 600; padding: 0.1rem 0.5rem; border-radius: 0.2rem; }
 .badge.high { background: var(--red-dark); color: var(--red); }
 .badge.medium { background: var(--orange-dark); color: var(--orange); }
-.badge.low { background: rgba(115,191,105,0.15); color: var(--green); }
+.badge.low { background: rgba(52,211,153,0.15); color: var(--green); }
 
-@media (max-width: 1024px) {
+.loading { display: flex; align-items: center; justify-content: center; padding: 2rem; font-size: 0.8rem; color: var(--text-muted); }
+.no-data { text-align: center; padding: 2rem; font-size: 0.8rem; color: var(--text-muted); }
+
+/* Collection points tags */
+.cp-tags { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+.cp-tag { font-size: 0.65rem; padding: 0.1rem 0.4rem; border-radius: 0.15rem; background: var(--blue-dim); color: var(--text-link); }
+
+@media (max-width: 90rem) {
+    .row-map { grid-template-columns: 1fr; }
+    #chinaMap { height: 40rem; }
+}
+@media (max-width: 64rem) {
     body { grid-template-columns: 1fr; }
     .sidebar { display: none; }
-    .stat-grid, .stats-bar { grid-template-columns: repeat(2, 1fr); }
-}
-@media (max-width: 768px) {
-    .row-2, .row-2-1, .corr-grid { grid-template-columns: 1fr; }
-    .stat-grid, .stats-bar { grid-template-columns: 1fr 1fr; }
-    .topbar-breadcrumb { display: none; }
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
 }
 </style>
 </head>
 <body>
 
-<!-- TOP BAR -->
+<!-- TOPBAR -->
 <div class="topbar">
     <div class="topbar-left">
         <div class="topbar-logo">I</div>
-        <div class="topbar-title">Industrial Data Mining</div>
-        <div class="topbar-breadcrumb">/ <span>Dashboard</span></div>
+        <div class="topbar-title">工业数据采集管理平台</div>
     </div>
     <div class="topbar-right">
-        <div class="topbar-indicator">
-            <div class="dot" id="statusDot"></div>
-            <span id="navStatusText">Connecting</span>
-        </div>
-        <div class="topbar-refresh">
-            <label>Refresh</label>
-            <select class="refresh-select" id="refreshInterval" title="Refresh interval">
-                <option value="5" selected>5s</option>
-                <option value="15">15s</option>
-                <option value="60">1min</option>
-            </select>
-        </div>
+        <div class="topbar-indicator"><div class="dot" id="statusDot"></div><span id="statusText">连接中</span></div>
+        <select class="refresh-select" id="refreshInterval" title="刷新间隔">
+            <option value="5" selected>5秒</option>
+            <option value="15">15秒</option>
+            <option value="60">1分钟</option>
+        </select>
         <div class="topbar-clock" id="clock">--:--:--</div>
     </div>
 </div>
 
 <!-- SIDEBAR -->
 <nav class="sidebar">
-    <div class="sidebar-item active" title="Dashboard">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    <div class="sb-section">
+        <div class="sb-label">监控</div>
+        <div class="sb-item active" data-page="dashboard" onclick="switchPage('dashboard')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            仪表盘
+        </div>
     </div>
-    <div class="sidebar-item" title="Grafana" onclick="window.open('http://localhost:3000','_blank')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+    <div class="sb-sep"></div>
+    <div class="sb-section">
+        <div class="sb-label">分析</div>
+        <div class="sb-item" data-page="governance" onclick="switchPage('governance')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+            数据治理
+        </div>
     </div>
-    <div class="sidebar-item" title="InfluxDB" onclick="window.open('http://localhost:8086','_blank')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M9 9h6v6H9z"/><line x1="9" y1="4" x2="9" y2="9"/><line x1="15" y1="4" x2="15" y2="9"/><line x1="9" y1="15" x2="9" y2="20"/><line x1="15" y1="15" x2="15" y2="20"/></svg>
+    <div class="sb-sep"></div>
+    <div class="sb-section">
+        <div class="sb-label">外部服务</div>
+        <div class="sb-item" onclick="window.open('http://localhost:3000','_blank')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            Grafana
+        </div>
+        <div class="sb-item" onclick="window.open('http://localhost:8086','_blank')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M9 9h6v6H9z"/></svg>
+            InfluxDB
+        </div>
     </div>
+    <div class="sb-spacer"></div>
 </nav>
 
 <!-- MAIN -->
 <main class="main">
 
-    <!-- STATS -->
+<!-- ========== 仪表盘 ========== -->
+<div class="page-view active" id="page-dashboard">
+    <!-- 统计卡片 -->
     <div class="stat-grid">
-        <div class="stat-card"><div class="sc-label">Online Devices</div><div class="sc-value blue" id="heroDevices">--</div></div>
-        <div class="stat-card"><div class="sc-label">Active Alerts</div><div class="sc-value orange" id="heroAlerts">--</div></div>
-        <div class="stat-card"><div class="sc-label">Anomalies</div><div class="sc-value red" id="heroAnomalies">--</div></div>
-        <div class="stat-card"><div class="sc-label">Services</div><div class="sc-value green" id="heroServices">--</div></div>
+        <div class="stat-card"><div class="sc-label">在线设备</div><div class="sc-value blue" id="heroDevices">--</div></div>
+        <div class="stat-card"><div class="sc-label">活跃告警</div><div class="sc-value orange" id="heroAlerts">--</div></div>
+        <div class="stat-card"><div class="sc-label">异常检测</div><div class="sc-value red" id="heroAnomalies">--</div></div>
+        <div class="stat-card"><div class="sc-label">车间数</div><div class="sc-value green" id="heroWorkshops">--</div></div>
     </div>
 
-    <!-- DEVICES + SERVICES -->
-    <div class="row row-2-1" id="devicesSection">
+    <!-- 地图 + 服务 -->
+    <div class="row row-map">
         <div class="panel">
-            <div class="panel-header"><div class="panel-title">Devices - Realtime</div></div>
-            <div class="panel-body p0">
-                <div class="table-wrap">
-                    <table class="data-table" id="devicesTable">
-                        <thead><tr><th>Device ID</th><th>Type</th><th>Workshop</th><th>Line</th><th>Metrics</th></tr></thead>
-                        <tbody><tr><td colspan="5"><div class="loading">Loading...</div></td></tr></tbody>
-                    </table>
-                </div>
-            </div>
+            <div class="panel-header"><div class="panel-title">🗺 全国车间分布</div></div>
+            <div class="panel-body p0"><div id="chinaMap"></div></div>
         </div>
         <div class="panel">
-            <div class="panel-header"><div class="panel-title">Services</div></div>
-            <div class="panel-body p0">
-                <div class="service-list" id="servicesList"><div class="loading">Loading...</div></div>
-            </div>
+            <div class="panel-header"><div class="panel-title">系统服务</div></div>
+            <div class="panel-body p0"><div class="svc-list" id="servicesList"><div class="loading">加载中...</div></div></div>
         </div>
     </div>
 
-    <!-- ANALYTICS -->
-    <div class="panel" id="analyticsSection">
+    <!-- 设备列表 -->
+    <div class="panel">
+        <div class="panel-header">
+            <div class="panel-title">设备实时数据</div>
+        </div>
+        <div class="panel-body p0">
+            <div style="padding:0.5rem 0.8rem; border-bottom:1px solid var(--border); display:flex; gap:0.6rem; align-items:flex-end; flex-wrap:wrap;">
+                <div class="fg"><label>车间</label><select id="filterWorkshop" onchange="applyDeviceFilter()"><option value="">全部车间</option></select></div>
+                <div class="fg"><label>设备</label><select id="filterDevice" onchange="applyDeviceFilter()"><option value="">全部设备</option></select></div>
+            </div>
+            <div class="table-wrap tall">
+                <table class="data-table" id="devicesTable">
+                    <thead><tr><th>设备ID</th><th>类型</th><th>车间</th><th>产线</th><th>采集点位数据</th></tr></thead>
+                    <tbody><tr><td colspan="5"><div class="loading">加载中...</div></td></tr></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 分析面板 -->
+    <div class="panel">
         <div class="tabs">
-            <button class="tab-btn active" data-tab="trend">Trend</button>
-            <button class="tab-btn" data-tab="alert">Alerts</button>
-            <button class="tab-btn" data-tab="anomaly">Anomaly</button>
-            <button class="tab-btn" data-tab="correlation">Correlation</button>
+            <button class="tab-btn active" data-tab="trend">趋势分析</button>
+            <button class="tab-btn" data-tab="alert">实时告警</button>
+            <button class="tab-btn" data-tab="anomaly">异常检测</button>
+            <button class="tab-btn" data-tab="correlation">关联分析</button>
         </div>
-
         <div class="tab-content active" id="tab-trend">
             <div class="panel-body">
-                <div class="controls">
-                    <div class="ctrl-group"><label>Device</label><select id="trendDevice" title="Device"></select></div>
-                    <div class="ctrl-group"><label>Metric</label>
-                        <select id="trendMetric" title="Metric">
-                            <option value="temperature">temperature</option>
-                            <option value="vibration">vibration</option>
-                            <option value="rpm">rpm</option>
-                            <option value="feed_rate">feed_rate</option>
-                            <option value="humidity">humidity</option>
-                            <option value="pressure">pressure</option>
-                            <option value="voltage">voltage</option>
-                            <option value="current">current</option>
-                            <option value="power">power</option>
-                            <option value="count">count</option>
-                            <option value="defect_count">defect_count</option>
-                            <option value="flow_rate">flow_rate</option>
+                <div class="filter-bar" style="margin-bottom:0.8rem;">
+                    <div class="fg"><label>设备</label><select id="trendDevice"></select></div>
+                    <div class="fg"><label>点位</label>
+                        <select id="trendPoint">
+                            <option value="">全部点位</option>
                         </select>
                     </div>
-                    <div class="ctrl-group"><label>Range</label>
-                        <select id="trendRange" title="Range">
-                            <option value="30">30 min</option>
-                            <option value="60">1 hour</option>
-                            <option value="360">6 hours</option>
-                            <option value="1440" selected>24 hours</option>
+                    <div class="fg"><label>指标</label>
+                        <select id="trendMetric">
+                            <option value="temperature">温度</option><option value="vibration">振动</option>
+                            <option value="rpm">转速</option><option value="feed_rate">进给速率</option>
+                            <option value="humidity">湿度</option><option value="pressure">气压</option>
+                            <option value="voltage">电压</option><option value="current">电流</option>
+                            <option value="power">功率</option><option value="count">产量</option>
+                            <option value="defect_count">不良品</option><option value="flow_rate">流量</option>
                         </select>
                     </div>
-                    <button class="btn btn-primary" onclick="loadTrend()">Query</button>
+                    <div class="fg"><label>范围</label>
+                        <select id="trendRange">
+                            <option value="30" selected>30分钟</option><option value="60">1小时</option>
+                            <option value="360">6小时</option><option value="1440">24小时</option>
+                        </select>
+                    </div>
+                    <div class="fg" style="justify-content:flex-end;">
+                        <label>&nbsp;</label>
+                        <button id="trendGenerateBtn" onclick="generateTrend()" style="font-family:var(--font);font-size:0.8rem;padding:0.3rem 1rem;border:1px solid var(--blue);border-radius:0.3rem;background:var(--blue-dim);color:var(--text-link);cursor:pointer;font-weight:500;white-space:nowrap;">生成图表</button>
+                    </div>
                 </div>
                 <div class="stats-bar" id="trendStats"></div>
-                <div class="chart-container"><canvas id="trendChart"></canvas></div>
+                <div class="chart-box"><canvas id="trendChart"></canvas></div>
             </div>
         </div>
-
         <div class="tab-content" id="tab-alert">
             <div class="panel-body">
-                <div class="controls">
-                    <div class="ctrl-group"><label>Range</label>
-                        <select id="alertRange" title="Range">
-                            <option value="60" selected>1 hour</option>
-                            <option value="360">6 hours</option>
-                            <option value="1440">24 hours</option>
-                        </select>
-                    </div>
-                    <button class="btn btn-primary" onclick="loadAlerts()">Query</button>
-                </div>
-                <div id="alertsList"><div class="loading">Loading...</div></div>
+                <div id="alertsList"><div class="loading">加载中...</div></div>
             </div>
         </div>
-
         <div class="tab-content" id="tab-anomaly">
             <div class="panel-body">
-                <div class="controls">
-                    <div class="ctrl-group"><label>Metric</label>
-                        <select id="anomalyMetric" title="Metric">
-                            <option value="temperature">temperature</option>
-                            <option value="vibration">vibration</option>
-                            <option value="rpm">rpm</option>
-                            <option value="power">power</option>
-                            <option value="humidity">humidity</option>
-                            <option value="pressure">pressure</option>
+                <div class="filter-bar" style="margin-bottom:0.8rem;">
+                    <div class="fg"><label>指标</label>
+                        <select id="anomalyMetric">
+                            <option value="temperature">温度</option><option value="vibration">振动</option>
+                            <option value="rpm">转速</option><option value="power">功率</option>
+                            <option value="humidity">湿度</option><option value="pressure">气压</option>
                         </select>
                     </div>
-                    <div class="ctrl-group"><label>Range</label>
-                        <select id="anomalyRange" title="Range">
-                            <option value="60" selected>1 hour</option>
-                            <option value="360">6 hours</option>
-                            <option value="1440">24 hours</option>
+                    <div class="fg"><label>范围</label>
+                        <select id="anomalyRange">
+                            <option value="60" selected>1小时</option><option value="360">6小时</option><option value="1440">24小时</option>
                         </select>
                     </div>
-                    <button class="btn btn-primary" onclick="loadAnomaly()">Detect</button>
                 </div>
-                <div id="anomalyResult"><div class="no-data">Select metric and range, then click Detect</div></div>
+                <div id="anomalyResult"><div class="no-data">选择指标和时间范围后自动检测</div></div>
             </div>
         </div>
-
         <div class="tab-content" id="tab-correlation">
             <div class="panel-body">
-                <div class="controls">
-                    <div class="ctrl-group"><label>Device</label><select id="corrDevice" title="Device"></select></div>
-                    <div class="ctrl-group"><label>Metric A</label>
+                <div class="filter-bar" style="margin-bottom:0.8rem;">
+                    <div class="fg"><label>设备</label><select id="corrDevice"></select></div>
+                    <div class="fg"><label>指标A</label>
                         <select id="corrMetricA">
-                            <option value="temperature">temperature</option>
-                            <option value="vibration">vibration</option>
-                            <option value="rpm">rpm</option>
-                            <option value="pressure">pressure</option>
-                            <option value="humidity">humidity</option>
-                            <option value="power">power</option>
-                            <option value="current">current</option>
+                            <option value="temperature">温度</option><option value="vibration">振动</option>
+                            <option value="rpm">转速</option><option value="pressure">气压</option>
+                            <option value="humidity">湿度</option><option value="power">功率</option>
+                            <option value="current">电流</option>
                         </select>
                     </div>
-                    <div class="ctrl-group"><label>Metric B</label>
+                    <div class="fg"><label>指标B</label>
                         <select id="corrMetricB">
-                            <option value="temperature">temperature</option>
-                            <option value="vibration" selected>vibration</option>
-                            <option value="rpm">rpm</option>
-                            <option value="pressure">pressure</option>
-                            <option value="humidity">humidity</option>
-                            <option value="power">power</option>
-                            <option value="current">current</option>
+                            <option value="temperature">温度</option><option value="vibration" selected>振动</option>
+                            <option value="rpm">转速</option><option value="pressure">气压</option>
+                            <option value="humidity">湿度</option><option value="power">功率</option>
+                            <option value="current">电流</option>
                         </select>
                     </div>
-                    <button class="btn btn-primary" onclick="loadCorrelation()">Analyze</button>
                 </div>
-                <div id="corrResult"><div class="no-data">Select device and metrics, then click Analyze</div></div>
+                <div id="corrResult"><div class="no-data">选择设备和指标后自动分析</div></div>
             </div>
         </div>
     </div>
+</div>
+
+<!-- ========== 数据治理 ========== -->
+<div class="page-view" id="page-governance">
+    <div class="stat-grid">
+        <div class="stat-card"><div class="sc-label">数据质量评分</div><div class="sc-value blue" id="govScore">--</div></div>
+        <div class="stat-card"><div class="sc-label">数据完整性</div><div class="sc-value green" id="govComplete">--</div></div>
+        <div class="stat-card"><div class="sc-label">数据一致性</div><div class="sc-value orange" id="govConsist">--</div></div>
+        <div class="stat-card"><div class="sc-label">数据时效性</div><div class="sc-value green" id="govTimely">--</div></div>
+    </div>
+
+    <div class="row row-2">
+        <!-- 数据血缘 -->
+        <div class="panel">
+            <div class="panel-header"><div class="panel-title">🔗 数据血缘 — 流转路径</div></div>
+            <div class="panel-body"><div class="gov-flow" id="govFlow"><div class="loading">加载中...</div></div></div>
+        </div>
+        <!-- 标准化规则 -->
+        <div class="panel">
+            <div class="panel-header"><div class="panel-title">📐 数据标准化规则</div></div>
+            <div class="panel-body p0">
+                <div class="table-wrap"><table class="data-table" id="govRules">
+                    <thead><tr><th>规则名称</th><th>字段</th><th>最小值</th><th>最大值</th><th>单位</th></tr></thead>
+                    <tbody></tbody>
+                </table></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 各车间数据质量 -->
+    <div class="panel">
+        <div class="panel-header"><div class="panel-title">🏭 各车间数据质量概览</div></div>
+        <div class="panel-body p0">
+            <div class="table-wrap">
+                <table class="data-table" id="govWorkshopTable">
+                    <thead><tr><th>车间</th><th>省份</th><th>24h数据量</th><th>异常率</th><th>质量评分</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
 </main>
 
 <!-- MODAL -->
@@ -469,148 +520,493 @@ const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 function fmt(v, d=1) { return v != null ? Number(v).toFixed(d) : '--'; }
 
-// Clock
-(function tickClock() {
-    const now = new Date();
-    $('#clock').textContent = now.toLocaleTimeString('zh-CN', { hour12: false });
-    requestAnimationFrame(tickClock);
+// 时钟
+(function tick() {
+    $('#clock').textContent = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+    requestAnimationFrame(tick);
 })();
 
-// ---- SERVICES ----
+// 车间映射
+const WORKSHOP_MAP = {
+    'workshop-1': { name: '深圳数控车间', province: '广东省', city: '深圳', lat: 22.5431, lng: 114.0579 },
+    'workshop-2': { name: '苏州精密车间', province: '江苏省', city: '苏州', lat: 31.2990, lng: 120.5853 },
+    'workshop-3': { name: '青岛模具车间', province: '山东省', city: '青岛', lat: 36.0671, lng: 120.3826 },
+    'workshop-4': { name: '杭州电子车间', province: '浙江省', city: '杭州', lat: 30.2741, lng: 120.1551 },
+    'workshop-5': { name: '成都重装车间', province: '四川省', city: '成都', lat: 30.5728, lng: 104.0668 },
+};
+
+// 设备类型采集点位
+const DEVICE_POINTS = {
+    cnc: ['主轴温度','振动幅度','主轴转速','功率消耗','进给速率','电压','电流'],
+    sensor: ['环境温度','相对湿度','气压','流量'],
+    plc: ['产量计数','不良品数','良品率','设备综合效率','节拍时间'],
+};
+
+// 字段名 <-> 中文名称映射
+const FIELD_CN_MAP = {
+    temperature: '主轴温度', vibration: '振动幅度', rpm: '主轴转速',
+    power: '功率消耗', feed_rate: '进给速率', voltage: '电压', current: '电流',
+    flow_rate: '流量', pressure: '气压', humidity: '环境温度',
+    count: '产量计数', defect_count: '不良品数',
+};
+// 反向映射：中文名 -> 英文字段名（用于从数据中取值）
+const CN_TO_FIELD = Object.fromEntries(
+    Object.entries(FIELD_CN_MAP).map(([k, v]) => [v, k])
+);
+
+// ===== 页面切换 =====
+function switchPage(page) {
+    $$('.sb-item').forEach(i => i.classList.remove('active'));
+    const item = $(`.sb-item[data-page="${page}"]`);
+    if (item) item.classList.add('active');
+    $$('.page-view').forEach(p => p.classList.remove('active'));
+    $(`#page-${page}`).classList.add('active');
+    if (page === 'governance') loadGovernance();
+    if (page === 'dashboard' && !chinaMapReady) initChinaMap();
+}
+
+// ===== 服务状态 =====
+let allDevicesData = [];
 async function loadServices() {
     try {
         const r = await fetch('/api/system/status');
-        const services = await r.json(); // returns array directly
-        const online = services.filter(s => s.status === 'online').length;
-        $('#heroServices').textContent = `${online}/${services.length}`;
-        $('#navStatusText').textContent = online === services.length ? 'All systems nominal' : 'Degraded';
-        $('#statusDot').style.background = online === services.length ? 'var(--green)' : 'var(--orange)';
-        $('#servicesList').innerHTML = services.map(s => {
-            const clickable = s.url ? `style="cursor:pointer" onclick="window.open('${s.url}','_blank')"` : '';
-            const nameHtml = s.url ? `<span class="service-name" style="color:var(--text-link)">${s.name}</span>` : `<span class="service-name">${s.name}</span>`;
-            return `<div class="service-row" ${clickable}>
-                ${nameHtml}
-                <span class="service-port">${s.port || ''}</span>
-                <span class="service-badge ${s.status}">${s.status}</span>
+        const svcs = await r.json();
+        const online = svcs.filter(s => s.status === 'online').length;
+        $('#statusText').textContent = online === svcs.length ? '全部正常' : '部分异常';
+        $('#statusDot').style.background = online === svcs.length ? 'var(--green)' : 'var(--orange)';
+        $('#servicesList').innerHTML = svcs.map(s => {
+            const cls = s.url ? 'svc-name link' : 'svc-name';
+            const click = s.url ? `onclick="window.open('${s.url}','_blank')"` : '';
+            return `<div class="svc-row" ${click}>
+                <span class="${cls}">${s.name}</span>
+                <span class="svc-port">${s.port || ''}</span>
+                <span class="svc-badge ${s.status}">${s.status === 'online' ? '在线' : '异常'}</span>
             </div>`;
         }).join('');
-    } catch(e) {
-        $('#servicesList').innerHTML = '<div class="no-data">Cannot connect to backend</div>';
-    }
+    } catch(e) { $('#servicesList').innerHTML = '<div class="no-data">无法连接后端</div>'; }
 }
 
-// ---- DEVICES ----
+// ===== 设备数据 =====
 async function loadDevices() {
     try {
         const r = await fetch('/api/devices/latest');
-        const devices = await r.json(); // returns array directly
-        $('#heroDevices').textContent = devices.length;
+        allDevicesData = await r.json();
+        $('#heroDevices').textContent = allDevicesData.length;
+        $('#heroWorkshops').textContent = new Set(allDevicesData.map(d => d.machine_id?.match(/workshop-\d/)?.[0] || d.workshop)).size || 5;
+        populateFilters();
+        renderDeviceTable();
+    } catch(e) { console.error(e); }
+}
 
-        const opts = devices.map(d => `<option value="${d.machine_id}">${d.machine_id}</option>`).join('');
-        $('#trendDevice').innerHTML = opts;
-        $('#corrDevice').innerHTML = opts;
+function populateFilters() {
+    // Save current selections
+    const savedWs = $('#filterWorkshop').value;
+    const savedDev = $('#filterDevice').value;
+    const savedTrend = $('#trendDevice').value;
+    const savedCorr = $('#corrDevice').value;
 
-        const tbody = $('#devicesTable tbody');
-        if (!devices.length) {
-            tbody.innerHTML = '<tr><td colspan="5"><div class="no-data">No device data</div></td></tr>';
-            return;
-        }
-        tbody.innerHTML = devices.map(dev => {
-            const tags = dev.tags || {};
-            const fields = dev.fields || {};
-            // Backend returns pivoted data: each device row has field values as columns
-            // Actually backend returns raw InfluxDB pivot rows, let's extract all non-meta fields
-            const skip = new Set(['','result','table','_start','_stop','_measurement','machine_id','workshop','line','device_type','collected_by']);
-            const metrics = Object.entries(dev).filter(([k,v]) => !skip.has(k) && !k.startsWith('_') && v && !isNaN(parseFloat(v))).map(([k,v]) => `${k}: ${fmt(parseFloat(v))}`).join(', ');
-            return `<tr>
-                <td class="device-link" onclick="openReport('${dev.machine_id || ''}')">${dev.machine_id || '-'}</td>
-                <td>${tags.device_type || dev.device_type || '-'}</td>
-                <td>${tags.workshop || dev.workshop || '-'}</td>
-                <td>${tags.line || dev.line || '-'}</td>
-                <td style="white-space:normal;max-width:300px">${metrics}</td>
-            </tr>`;
+    const workshops = [...new Set(allDevicesData.map(d => d.workshop).filter(Boolean))];
+    const ws = $('#filterWorkshop');
+    ws.innerHTML = '<option value="">全部车间</option>' + workshops.map(w => {
+        const info = WORKSHOP_MAP[w];
+        return `<option value="${w}">${info ? info.name : w}</option>`;
+    }).join('');
+    if (savedWs) ws.value = savedWs;
+    updateDeviceFilter(true);
+    if (savedDev) $('#filterDevice').value = savedDev;
+    if (savedTrend) $('#trendDevice').value = savedTrend;
+    if (savedCorr) $('#corrDevice').value = savedCorr;
+}
+
+function updateDeviceFilter(fromPopulate) {
+    const ws = $('#filterWorkshop').value;
+    const savedDev = $('#filterDevice').value;
+    const filtered = ws ? allDevicesData.filter(d => d.workshop === ws) : allDevicesData;
+    const ds = $('#filterDevice');
+    ds.innerHTML = '<option value="">全部设备</option>' + filtered.map(d => `<option value="${d.machine_id}">${d.machine_id}</option>`).join('');
+    if (!fromPopulate && savedDev) ds.value = savedDev;
+    // Sync trend/corr device lists (preserve selection)
+    const savedTrend = $('#trendDevice').value;
+    const savedCorr = $('#corrDevice').value;
+    const opts = allDevicesData.map(d => `<option value="${d.machine_id}">${d.machine_id}</option>`).join('');
+    $('#trendDevice').innerHTML = opts;
+    $('#corrDevice').innerHTML = opts;
+    if (savedTrend) $('#trendDevice').value = savedTrend;
+    if (savedCorr) $('#corrDevice').value = savedCorr;
+}
+
+function applyDeviceFilter() {
+    updateDeviceFilter();
+    renderDeviceTable();
+}
+
+function renderDeviceTable() {
+    const ws = $('#filterWorkshop').value;
+    const dev = $('#filterDevice').value;
+    let list = allDevicesData;
+    if (ws) list = list.filter(d => d.workshop === ws);
+    if (dev) list = list.filter(d => d.machine_id === dev);
+    // Save scroll position
+    const tableWrap = $('#devicesTable').closest('.table-wrap');
+    const scrollTop = tableWrap ? tableWrap.scrollTop : 0;
+    const tbody = $('#devicesTable tbody');
+    if (!list.length) { tbody.innerHTML = '<tr><td colspan="5"><div class="no-data">暂无设备数据</div></td></tr>'; return; }
+    tbody.innerHTML = list.map(d => {
+        const wsInfo = WORKSHOP_MAP[d.workshop];
+        const wsName = wsInfo ? wsInfo.name : (d.workshop || '-');
+        const points = DEVICE_POINTS[d.device_type] || [];
+        const pointItems = points.map(p => {
+            const field = CN_TO_FIELD[p];
+            const val = field && d[field] !== undefined ? fmt(parseFloat(d[field])) : '--';
+            return `<span class="cp-tag">${p}: ${val}</span>`;
         }).join('');
+        return `<tr>
+            <td class="link" onclick="openReport('${d.machine_id || ''}')">${d.machine_id || '-'}</td>
+            <td>${d.device_type || '-'}</td>
+            <td>${wsName}</td>
+            <td>${d.line || '-'}</td>
+            <td style="white-space:normal;max-width:24rem"><div class="cp-tags">${pointItems}</div></td>
+        </tr>`;
+    }).join('');
+    // Restore scroll position
+    if (tableWrap) tableWrap.scrollTop = scrollTop;
+}
+
+// ===== 中国地图 =====
+let chinaMapReady = false;
+let mapChart = null;
+
+async function initChinaMap() {
+    if (chinaMapReady) return;
+    try {
+        const resp = await fetch('https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json');
+        const geoJson = await resp.json();
+        if (geoJson.features) {
+            geoJson.features = geoJson.features.filter(f => f.properties.name !== '南海诸岛' && f.properties.name !== '十段线');
+        }
+        echarts.registerMap('china', geoJson);
+        mapChart = echarts.init(document.getElementById('chinaMap'), null, { renderer: 'canvas' });
+
+        const scatterData = Object.entries(WORKSHOP_MAP).map(([wid, info]) => ({
+            name: info.name, value: [info.lng, info.lat, info.city]
+        }));
+
+        const option = {
+            backgroundColor: 'transparent',
+            tooltip: {
+                trigger: 'item',
+                backgroundColor: 'rgba(15,18,24,0.95)',
+                borderColor: '#232830',
+                textStyle: { color: '#e0e3e8', fontSize: 12 },
+                formatter: function(p) {
+                    if (p.seriesType === 'effectScatter') {
+                        return `<b>${p.name}</b><br/>城市：${p.value[2]}`;
+                    }
+                    return `<b>${p.name}</b>`;
+                }
+            },
+            geo: {
+                map: 'china',
+                roam: false,
+                zoom: 1.3,
+                center: [104.5, 36],
+                label: { show: false },
+                itemStyle: {
+                    areaColor: '#141820',
+                    borderColor: '#2a3040',
+                    borderWidth: 1,
+                },
+                emphasis: {
+                    itemStyle: { areaColor: '#1e2a3a', borderColor: '#3b82f6', borderWidth: 1.5 },
+                    label: { show: true, color: '#e0e3e8', fontSize: 10 }
+                },
+                regions: [
+                    { name: '广东省', itemStyle: { areaColor: '#1a3352' } },
+                    { name: '江苏省', itemStyle: { areaColor: '#1a3352' } },
+                    { name: '山东省', itemStyle: { areaColor: '#1a3352' } },
+                    { name: '浙江省', itemStyle: { areaColor: '#1a3352' } },
+                    { name: '四川省', itemStyle: { areaColor: '#1a3352' } },
+                ]
+            },
+            series: [{
+                type: 'effectScatter',
+                coordinateSystem: 'geo',
+                rippleEffect: { brushType: 'stroke', scale: 4, period: 4 },
+                showEffectOn: 'render',
+                symbolSize: 12,
+                data: scatterData,
+                itemStyle: { color: '#fb923c', shadowBlur: 10, shadowColor: 'rgba(251,146,60,0.5)' },
+                label: {
+                    show: true, formatter: '{b}', position: 'right',
+                    color: '#fb923c', fontSize: 10, fontWeight: 500,
+                    textBorderColor: '#080b10', textBorderWidth: 2
+                },
+                zlevel: 10
+            }]
+        };
+        mapChart.setOption(option);
+        chinaMapReady = true;
+        window.addEventListener('resize', () => { if (mapChart) mapChart.resize(); });
+    } catch(e) { console.error('地图加载失败:', e); }
+}
+
+// ===== 趋势分析（手动生成 + 渲染后自动刷新）=====
+let trendChart = null;
+let _trendRefreshTimer = null;  // 渲染后的自动刷新定时器
+let _trendLastParams = null;    // 上次生成所用的参数
+
+// 颜色板，用于多线图
+const TREND_COLORS = ['#3b82f6', '#f87171', '#34d399', '#fb923c', '#a78bfa', '#22d3ee', '#fbbf24', '#f472b6', '#818cf8', '#2dd4bf'];
+
+// 设备变化 → 加载点位列表
+async function updateTrendPoints(deviceId) {
+    if (!deviceId) {
+        $('#trendPoint').innerHTML = '<option value="">全部点位</option>';
+        return;
+    }
+    try {
+        const r = await fetch(`/api/devices/${deviceId}/points`);
+        const points = await r.json();
+        // 去重：按 metric 分组，用于点位下拉
+        let html = '<option value="">全部点位</option>';
+        points.forEach(p => {
+            html += `<option value="${p.point_id}">${p.label} (${p.metric})</option>`;
+        });
+        $('#trendPoint').innerHTML = html;
     } catch(e) {
-        $('#devicesTable tbody').innerHTML = '<tr><td colspan="5"><div class="no-data">Load failed</div></td></tr>';
+        $('#trendPoint').innerHTML = '<option value="">全部点位</option>';
     }
 }
 
-// ---- TREND ----
-let trendChart = null;
-async function loadTrend() {
+// 绑定设备变化事件
+$('#trendDevice').addEventListener('change', () => {
+    updateTrendPoints($('#trendDevice').value);
+});
+
+// 生成按钮 — 核心逻辑
+async function generateTrend() {
     const device = $('#trendDevice').value;
+    const pointId = $('#trendPoint').value;
     const metric = $('#trendMetric').value;
     const minutes = $('#trendRange').value;
     if (!device) return;
+
+    // 保存参数用于后续自动刷新
+    _trendLastParams = { device, pointId, metric, minutes };
+
+    const btn = $('#trendGenerateBtn');
+    btn.textContent = '加载中...';
+    btn.disabled = true;
+
     try {
-        const r = await fetch(`/api/metrics/history?metric=${metric}&device=${device}&minutes=${minutes}`);
-        const rows = await r.json(); // returns array of {_time, _value, ...}
-        // Parse into {time, value}
-        const points = rows.map(r => ({ time: r._time, value: parseFloat(r._value) })).filter(p => !isNaN(p.value));
-
-        if (trendChart) trendChart.destroy();
-        trendChart = new Chart($('#trendChart').getContext('2d'), {
-            type: 'line',
-            data: {
-                labels: points.map(p => new Date(p.time)),
-                datasets: [{
-                    label: metric, data: points.map(p => p.value),
-                    borderColor: '#3274d9', backgroundColor: 'rgba(50,116,217,0.1)',
-                    borderWidth: 1.5, pointRadius: 0, pointHoverRadius: 4,
-                    pointHoverBackgroundColor: '#ff9830', fill: true, tension: 0.2,
-                }]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                animation: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: '#161920', titleColor: '#d6d9de', bodyColor: '#d6d9de',
-                        borderColor: '#2a2e35', borderWidth: 1,
-                        titleFont: { family: 'Inter', size: 11 }, bodyFont: { family: 'Inter', size: 12, weight: '600' },
-                        padding: 10, cornerRadius: 4,
-                    }
-                },
-                scales: {
-                    x: { type: 'time', grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#5a5e66', font: { family: 'Inter', size: 10 }, maxRotation: 0 } },
-                    y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#5a5e66', font: { family: 'Inter', size: 10 } } }
-                }
+        if (pointId) {
+            // 单个点位 — 单条折线
+            const r = await fetch(`/api/points/${pointId}/history?metric=${metric}&minutes=${minutes}`);
+            const rows = await r.json();
+            const dataPoints = rows.map(r => ({ time: new Date(r._time), value: parseFloat(r._value) })).filter(p => !isNaN(p.value));
+            renderTrendSingle(dataPoints, pointId);
+        } else {
+            // 全部点位 — 多条折线
+            const r = await fetch(`/api/devices/${device}/points/history?metric=${metric}&minutes=${minutes}`);
+            const d = await r.json();
+            const pointIds = d.point_ids || [];
+            const series = d.series || [];
+            if (pointIds.length === 0) {
+                $('#trendStats').innerHTML = '';
+                $('#trendChart').getContext('2d').clearRect(0, 0, $('#trendChart').width, $('#trendChart').height);
+                if (trendChart) { trendChart.destroy(); trendChart = null; }
+                btn.textContent = '生成图表';
+                btn.disabled = false;
+                return;
             }
-        });
-
-        const vals = points.map(p => p.value);
-        if (vals.length) {
-            const avg = vals.reduce((a,b) => a+b, 0) / vals.length;
-            $('#trendStats').innerHTML = `
-                <div class="sb-item"><div class="sb-val">${fmt(avg)}</div><div class="sb-lbl">Avg</div></div>
-                <div class="sb-item"><div class="sb-val">${fmt(Math.max(...vals))}</div><div class="sb-lbl">Max</div></div>
-                <div class="sb-item"><div class="sb-val">${fmt(Math.min(...vals))}</div><div class="sb-lbl">Min</div></div>
-                <div class="sb-item"><div class="sb-val">${vals.length}</div><div class="sb-lbl">Points</div></div>
-            `;
+            renderTrendMulti(series, pointIds, metric);
         }
-    } catch(e) { console.error('Trend error:', e); }
+    } catch(e) {
+        console.error(e);
+    }
+    btn.textContent = '生成图表';
+    btn.disabled = false;
 }
 
-// ---- ALERTS ----
+function renderTrendSingle(dataPoints, label) {
+    if (trendChart) trendChart.destroy();
+    trendChart = new Chart($('#trendChart').getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: dataPoints.map(p => p.time),
+            datasets: [{
+                label: label,
+                data: dataPoints.map(p => p.value),
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59,130,246,0.08)',
+                borderWidth: 1.5,
+                pointRadius: 0,
+                pointHoverRadius: 4,
+                pointHoverBackgroundColor: '#fb923c',
+                fill: true,
+                tension: 0.2,
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false, animation: false,
+            plugins: {
+                legend: { display: true, labels: { color: '#8b919a', font: { size: 11 } } },
+                tooltip: {
+                    backgroundColor: '#161920', titleColor: '#e0e3e8', bodyColor: '#e0e3e8',
+                    borderColor: '#232830', borderWidth: 1, cornerRadius: 4, padding: 8,
+                }
+            },
+            scales: {
+                x: { type: 'time', grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#555b66', font: { size: 10 }, maxRotation: 0 } },
+                y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#555b66', font: { size: 10 } } }
+            }
+        }
+    });
+    const vals = dataPoints.map(p => p.value);
+    if (vals.length) {
+        const avg = vals.reduce((a,b) => a+b, 0) / vals.length;
+        $('#trendStats').innerHTML = `
+            <div class="sb-item-box"><div class="sb-val">${fmt(avg)}</div><div class="sb-lbl">均值</div></div>
+            <div class="sb-item-box"><div class="sb-val">${fmt(Math.max(...vals))}</div><div class="sb-lbl">最大值</div></div>
+            <div class="sb-item-box"><div class="sb-val">${fmt(Math.min(...vals))}</div><div class="sb-lbl">最小值</div></div>
+            <div class="sb-item-box"><div class="sb-val">${vals.length}</div><div class="sb-lbl">数据点</div></div>`;
+    }
+}
+
+function renderTrendMulti(series, pointIds, metric) {
+    if (trendChart) trendChart.destroy();
+    // 收集所有时间点
+    const allTimesSet = new Set();
+    series.forEach(s => { allTimesSet.add(s.time); });
+    const allTimes = [...allTimesSet].sort();
+    const timeLabels = allTimes.map(t => new Date(t));
+
+    const datasets = pointIds.map((pid, idx) => {
+        const timeMap = {};
+        series.forEach(s => {
+            if (typeof s[pid] === 'number') timeMap[s.time] = s[pid];
+        });
+        const data = allTimes.map(t => timeMap[t] ?? null);
+        return {
+            label: pid,
+            data: data,
+            borderColor: TREND_COLORS[idx % TREND_COLORS.length],
+            backgroundColor: 'transparent',
+            borderWidth: 1.5,
+            pointRadius: 0,
+            pointHoverRadius: 3,
+            fill: false,
+            tension: 0.2,
+            spanGaps: false,
+        };
+    });
+
+    trendChart = new Chart($('#trendChart').getContext('2d'), {
+        type: 'line',
+        data: { labels: timeLabels, datasets },
+        options: {
+            responsive: true, maintainAspectRatio: false, animation: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'bottom',
+                    labels: { color: '#8b919a', font: { size: 10 }, boxWidth: 12, padding: 8 }
+                },
+                tooltip: {
+                    backgroundColor: '#161920', titleColor: '#e0e3e8', bodyColor: '#e0e3e8',
+                    borderColor: '#232830', borderWidth: 1, cornerRadius: 4, padding: 8,
+                }
+            },
+            scales: {
+                x: { type: 'time', grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#555b66', font: { size: 10 }, maxRotation: 0 } },
+                y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#555b66', font: { size: 10 } } }
+            }
+        }
+    });
+
+    // 汇总所有点位的数据统计
+    const allVals = [];
+    datasets.forEach(ds => {
+        ds.data.forEach(v => { if (v != null) allVals.push(v); });
+    });
+    if (allVals.length) {
+        const avg = allVals.reduce((a,b) => a+b, 0) / allVals.length;
+        $('#trendStats').innerHTML = `
+            <div class="sb-item-box"><div class="sb-val">${fmt(avg)}</div><div class="sb-lbl">总均值</div></div>
+            <div class="sb-item-box"><div class="sb-val">${fmt(Math.max(...allVals))}</div><div class="sb-lbl">总最大值</div></div>
+            <div class="sb-item-box"><div class="sb-val">${fmt(Math.min(...allVals))}</div><div class="sb-lbl">总最小值</div></div>
+            <div class="sb-item-box"><div class="sb-val">${pointIds.length}</div><div class="sb-lbl">点位数量</div></div>`;
+    }
+}
+
+// 渲染后启动自动刷新（使用相同参数）
+function startTrendRefresh() {
+    if (_trendRefreshTimer) clearInterval(_trendRefreshTimer);
+    const sec = parseInt($('#refreshInterval').value) || 5;
+    _trendRefreshTimer = setInterval(async () => {
+        if (!_trendLastParams) return;
+        const { device, pointId, metric, minutes } = _trendLastParams;
+        try {
+            if (pointId) {
+                const r = await fetch(`/api/points/${pointId}/history?metric=${metric}&minutes=${minutes}`);
+                const rows = await r.json();
+                const dataPoints = rows.map(r => ({ time: new Date(r._time), value: parseFloat(r._value) })).filter(p => !isNaN(p.value));
+                updateTrendSingle(dataPoints);
+            } else {
+                const r = await fetch(`/api/devices/${device}/points/history?metric=${metric}&minutes=${minutes}`);
+                const d = await r.json();
+                if (d.series && d.point_ids) updateTrendMulti(d.series, d.point_ids);
+            }
+        } catch(e) {}
+    }, sec * 1000);
+}
+
+function updateTrendSingle(dataPoints) {
+    if (!trendChart) return;
+    trendChart.data.labels = dataPoints.map(p => p.time);
+    trendChart.data.datasets[0].data = dataPoints.map(p => p.value);
+    trendChart.update('none');
+}
+
+function updateTrendMulti(series, pointIds) {
+    if (!trendChart) return;
+    const allTimesSet = new Set();
+    series.forEach(s => allTimesSet.add(s.time));
+    const allTimes = [...allTimesSet].sort();
+    trendChart.data.labels = allTimes.map(t => new Date(t));
+    pointIds.forEach((pid, idx) => {
+        if (idx >= trendChart.data.datasets.length) return;
+        const timeMap = {};
+        series.forEach(s => { if (typeof s[pid] === 'number') timeMap[s.time] = s[pid]; });
+        trendChart.data.datasets[idx].data = allTimes.map(t => timeMap[t] ?? null);
+    });
+    trendChart.update('none');
+}
+
+// 原有的 loadTrend 变空壳，由 generateTrend 替代
+async function loadTrend() {
+    // 产生 "生成" 按钮触发，这里不做自动操作
+    // 但保留兼容旧调用
+}
+
+// ===== 告警 =====
 async function loadAlerts() {
     try {
         const r = await fetch('/api/analytics/alerts');
         const d = await r.json();
         const alerts = d.alerts || [];
-        $('#heroAlerts').textContent = d.total || alerts.length;
-        if (!alerts.length) { $('#alertsList').innerHTML = '<div class="no-data">No alerts</div>'; return; }
+        $('#heroAlerts').textContent = d.total || 0;
+        if (!alerts.length) { $('#alertsList').innerHTML = '<div class="no-data">暂无告警</div>'; return; }
         $('#alertsList').innerHTML = alerts.map(a => `
             <div class="alert-item">
-                <span class="a-badge ${a.level === 'critical' ? 'critical' : 'warning'}">${a.level.toUpperCase()}</span>
-                <span class="a-msg">${a.message || a.msg || ''}</span>
+                <span class="a-badge ${a.level === 'critical' ? 'critical' : 'warning'}">${a.level === 'critical' ? '危险' : '警告'}</span>
+                <span class="a-msg">${a.message || ''}</span>
                 <span class="a-time">${a.time ? new Date(a.time).toLocaleTimeString('zh-CN',{hour12:false}) : ''}</span>
-            </div>
-        `).join('');
-    } catch(e) { $('#alertsList').innerHTML = '<div class="no-data">Load failed</div>'; }
+            </div>`).join('');
+    } catch(e) { $('#alertsList').innerHTML = '<div class="no-data">加载失败</div>'; }
 }
 
-// ---- ANOMALY ----
+// ===== 异常检测 =====
 async function loadAnomaly() {
     const metric = $('#anomalyMetric').value;
     const minutes = $('#anomalyRange').value;
@@ -618,26 +1014,27 @@ async function loadAnomaly() {
         const r = await fetch(`/api/analytics/anomaly?metric=${metric}&minutes=${minutes}`);
         const d = await r.json();
         const anomalies = d.anomalies || [];
-        $('#heroAnomalies').textContent = d.anomaly_count || anomalies.length;
-        if (!anomalies.length) { $('#anomalyResult').innerHTML = '<div class="no-data">No anomalies detected</div>'; return; }
+        $('#heroAnomalies').textContent = d.anomaly_count || 0;
+        if (!anomalies.length) { $('#anomalyResult').innerHTML = '<div class="no-data">未检测到异常</div>'; return; }
         let html = `<div class="table-wrap"><table class="data-table">
-            <thead><tr><th>Device</th><th>Value</th><th>Z-Score</th><th>Severity</th><th>Time</th></tr></thead><tbody>`;
+            <thead><tr><th>设备</th><th>数值</th><th>Z-Score</th><th>严重程度</th><th>时间</th></tr></thead><tbody>`;
         anomalies.forEach(a => {
             const sev = (a.severity || 'low').toLowerCase();
+            const sevText = sev === 'high' ? '高' : sev === 'medium' ? '中' : '低';
             html += `<tr>
-                <td class="highlight">${a.machine_id || ''}</td>
-                <td class="highlight">${fmt(a.value)}</td>
+                <td class="hl">${a.machine_id || ''}</td>
+                <td class="hl">${fmt(a.value)}</td>
                 <td>${a.z_score || ''}</td>
-                <td><span class="badge ${sev}">${sev}</span></td>
+                <td><span class="badge ${sev}">${sevText}</span></td>
                 <td>${a.time ? new Date(a.time).toLocaleTimeString('zh-CN',{hour12:false}) : ''}</td>
             </tr>`;
         });
         html += '</tbody></table></div>';
         $('#anomalyResult').innerHTML = html;
-    } catch(e) { $('#anomalyResult').innerHTML = '<div class="no-data">Detection failed</div>'; }
+    } catch(e) { $('#anomalyResult').innerHTML = '<div class="no-data">检测失败</div>'; }
 }
 
-// ---- CORRELATION ----
+// ===== 关联分析 =====
 async function loadCorrelation() {
     const device = $('#corrDevice').value;
     const ma = $('#corrMetricA').value;
@@ -647,10 +1044,10 @@ async function loadCorrelation() {
         const r = await fetch(`/api/analytics/correlation?metric_a=${ma}&metric_b=${mb}&device=${device}&minutes=60`);
         const d = await r.json();
         const corr = d.correlation;
-        if (corr == null || corr === 0) { $('#corrResult').innerHTML = '<div class="no-data">Insufficient data</div>'; return; }
+        if (corr == null || corr === 0) { $('#corrResult').innerHTML = '<div class="no-data">数据不足</div>'; return; }
         const pct = (corr * 100).toFixed(1);
         const dir = corr >= 0 ? 'positive' : 'negative';
-        const strength = Math.abs(corr) > 0.7 ? 'Strong' : Math.abs(corr) > 0.4 ? 'Moderate' : 'Weak';
+        const strength = Math.abs(corr) > 0.7 ? '强' : Math.abs(corr) > 0.4 ? '中等' : '弱';
         $('#corrResult').innerHTML = `
             <div class="corr-grid">
                 <div class="corr-main">
@@ -658,57 +1055,87 @@ async function loadCorrelation() {
                     <div class="corr-label">r = ${corr.toFixed(4)}</div>
                 </div>
                 <div class="corr-details">
-                    <div class="corr-row"><span class="cr-lbl">Device</span><span class="cr-val">${device}</span></div>
-                    <div class="corr-row"><span class="cr-lbl">Metric A</span><span class="cr-val">${ma}</span></div>
-                    <div class="corr-row"><span class="cr-lbl">Metric B</span><span class="cr-val">${mb}</span></div>
-                    <div class="corr-row"><span class="cr-lbl">Direction</span><span class="cr-val">${corr >= 0 ? 'Positive' : 'Negative'}</span></div>
-                    <div class="corr-row"><span class="cr-lbl">Strength</span><span class="cr-val">${strength}</span></div>
-                    <div class="corr-row"><span class="cr-lbl">Interpretation</span><span class="cr-val">${d.interpretation || ''}</span></div>
+                    <div class="corr-row"><span class="cr-lbl">设备</span><span class="cr-val">${device}</span></div>
+                    <div class="corr-row"><span class="cr-lbl">指标A</span><span class="cr-val">${ma}</span></div>
+                    <div class="corr-row"><span class="cr-lbl">指标B</span><span class="cr-val">${mb}</span></div>
+                    <div class="corr-row"><span class="cr-lbl">方向</span><span class="cr-val">${corr >= 0 ? '正相关' : '负相关'}</span></div>
+                    <div class="corr-row"><span class="cr-lbl">强度</span><span class="cr-val">${strength}</span></div>
+                    <div class="corr-row"><span class="cr-lbl">解读</span><span class="cr-val">${d.interpretation || ''}</span></div>
                 </div>
-            </div>
-        `;
-    } catch(e) { $('#corrResult').innerHTML = '<div class="no-data">Analysis failed</div>'; }
+            </div>`;
+    } catch(e) { $('#corrResult').innerHTML = '<div class="no-data">分析失败</div>'; }
 }
 
-// ---- REPORT MODAL ----
+// ===== 数据治理 =====
+let govLoaded = false;
+async function loadGovernance() {
+    if (govLoaded) return;
+    try {
+        const r = await fetch('/api/data-governance/overview');
+        const d = await r.json();
+        $('#govScore').textContent = d.quality_score;
+        $('#govComplete').textContent = d.dimensions.completeness + '%';
+        $('#govConsist').textContent = d.dimensions.consistency + '%';
+        $('#govTimely').textContent = d.dimensions.timeliness + '%';
+        $('#govFlow').innerHTML = d.data_flow.map(f => `
+            <div class="gov-flow-item">
+                <span class="gf-stage">${f.stage}</span>
+                <span class="gf-desc">${f.desc}</span>
+                <span class="gf-count">${f.count} 个</span>
+                <span class="gf-proto">${f.protocol}</span>
+            </div>`).join('');
+        $('#govRules tbody').innerHTML = d.standard_rules.map(r => `
+            <tr><td>${r.name}</td><td>${r.field}</td><td>${r.min}</td><td>${r.max}</td><td>${r.unit}</td></tr>`).join('');
+        $('#govWorkshopTable tbody').innerHTML = d.workshops.map(w => `
+            <tr>
+                <td class="hl">${w.name}</td>
+                <td>${w.province}</td>
+                <td>${(w.data_points_24h / 1000).toFixed(1)}k</td>
+                <td>${w.anomaly_rate}%</td>
+                <td><span style="color:${w.quality_score > 90 ? 'var(--green)' : 'var(--orange)'}; font-weight:600">${w.quality_score}</span></td>
+            </tr>`).join('');
+        govLoaded = true;
+    } catch(e) { console.error(e); }
+}
+
+// ===== 设备报告弹窗 =====
 async function openReport(deviceId) {
     const modal = $('#modal');
     const inner = $('#modalInner');
-    inner.innerHTML = '<div class="loading">Loading report...</div>';
+    inner.innerHTML = '<div class="loading">加载报告中...</div>';
     modal.classList.add('active');
     try {
         const r = await fetch(`/api/analytics/device_report/${deviceId}`);
-        const report = await r.json(); // returns report directly
+        const report = await r.json();
         const health = report.health_status || 'normal';
+        const healthText = health === 'normal' ? '正常' : health === 'warning' ? '警告' : '危险';
         const metricsHtml = Object.entries(report.metrics || {}).map(([name, m]) => `
             <div class="rm-card">
                 <div class="rm-name">${name}</div>
-                <div class="rm-row"><span class="rm-lbl">Latest</span><span class="rm-v">${fmt(m.latest)}</span></div>
-                <div class="rm-row"><span class="rm-lbl">Mean</span><span class="rm-v">${fmt(m.mean)}</span></div>
-                <div class="rm-row"><span class="rm-lbl">Min</span><span class="rm-v">${fmt(m.min)}</span></div>
-                <div class="rm-row"><span class="rm-lbl">Max</span><span class="rm-v">${fmt(m.max)}</span></div>
-                <div class="rm-row"><span class="rm-lbl">Std Dev</span><span class="rm-v">${fmt(m.std)}</span></div>
-            </div>
-        `).join('');
+                <div class="rm-row"><span class="rm-lbl">最新值</span><span class="rm-v">${fmt(m.latest)}</span></div>
+                <div class="rm-row"><span class="rm-lbl">均值</span><span class="rm-v">${fmt(m.mean)}</span></div>
+                <div class="rm-row"><span class="rm-lbl">最小值</span><span class="rm-v">${fmt(m.min)}</span></div>
+                <div class="rm-row"><span class="rm-lbl">最大值</span><span class="rm-v">${fmt(m.max)}</span></div>
+                <div class="rm-row"><span class="rm-lbl">标准差</span><span class="rm-v">${fmt(m.std)}</span></div>
+            </div>`).join('');
         inner.innerHTML = `
             <div class="modal-header">
-                <h3>${deviceId} - Device Report</h3>
-                <span class="report-health ${health}">${health.toUpperCase()}</span>
-                <button class="modal-close" onclick="closeModal()">Close</button>
+                <h3>${deviceId} — 设备报告</h3>
+                <span class="report-health ${health}">${healthText}</span>
+                <button class="modal-close" onclick="closeModal()">关闭</button>
             </div>
             <div class="modal-body">
-                <div style="margin-bottom:8px;font-size:12px;color:var(--text-muted)">Health Score: ${report.health_score}/100 | Period: ${report.period_minutes}min</div>
-                <div class="report-metrics">${metricsHtml || '<div class="no-data">No metric data</div>'}</div>
-            </div>
-        `;
-    } catch(e) { inner.innerHTML = '<div class="no-data">Report load failed</div>'; }
+                <div style="margin-bottom:0.5rem;font-size:0.8rem;color:var(--text-muted)">健康评分: ${report.health_score}/100 | 分析周期: ${report.period_minutes}分钟</div>
+                <div class="report-metrics">${metricsHtml || '<div class="no-data">暂无指标数据</div>'}</div>
+            </div>`;
+    } catch(e) { inner.innerHTML = '<div class="no-data">报告加载失败</div>'; }
 }
 
 function closeModal() { $('#modal').classList.remove('active'); }
 $('#modal').addEventListener('click', e => { if (e.target === $('#modal')) closeModal(); });
 
-// ---- AUTO REFRESH ----
-let _refreshTimer = null;
+// ===== 自动刷新 =====
+let _timer = null;
 let _activeTab = 'trend';
 
 function getActiveTabData() {
@@ -723,19 +1150,17 @@ function getActiveTabData() {
 function refreshAll() {
     loadServices();
     loadDevices();
+    loadAlerts();
     getActiveTabData();
 }
 
 function startAutoRefresh() {
-    if (_refreshTimer) clearInterval(_refreshTimer);
-    const seconds = parseInt($('#refreshInterval').value) || 5;
-    _refreshTimer = setInterval(refreshAll, seconds * 1000);
+    if (_timer) clearInterval(_timer);
+    const sec = parseInt($('#refreshInterval').value) || 5;
+    _timer = setInterval(refreshAll, sec * 1000);
 }
 
-$('#refreshInterval').addEventListener('change', () => {
-    startAutoRefresh();
-    refreshAll();
-});
+$('#refreshInterval').addEventListener('change', () => { startAutoRefresh(); refreshAll(); });
 
 $$('.tab-btn').forEach(tab => {
     tab.addEventListener('click', () => {
@@ -748,11 +1173,12 @@ $$('.tab-btn').forEach(tab => {
     });
 });
 
-// ---- INIT ----
+// ===== 初始化 =====
 async function init() {
     await loadServices();
     await loadDevices();
     await loadAlerts();
+    initChinaMap();
     _activeTab = 'trend';
     if ($('#trendDevice').value) loadTrend();
     startAutoRefresh();

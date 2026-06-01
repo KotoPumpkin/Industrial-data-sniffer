@@ -17,6 +17,9 @@ INFLUXDB_TOKEN = os.getenv("INFLUXDB_TOKEN", "my-super-secret-admin-token-2024")
 INFLUXDB_ORG = os.getenv("INFLUXDB_ORG", "industrial")
 INFLUXDB_BUCKET = os.getenv("INFLUXDB_BUCKET", "factory")
 
+# Simulator 地址（用于获取设备和点位定义）
+SIMULATOR_URL = os.getenv("SIMULATOR_URL", "http://localhost:5001")
+
 
 def query_influxdb(flux_query: str):
     """执行 Flux 查询并返回解析后的结果"""
@@ -530,6 +533,252 @@ def device_report(device_id):
     report["health_status"] = overall_health
 
     return jsonify(report)
+
+
+# ==================== 车间与数据治理 API ====================
+
+WORKSHOP_GEO = {
+    "workshop-1": {"province": "广东省", "city": "深圳", "lat": 22.5431, "lng": 114.0579, "name": "深圳数控车间", "device_count": 4},
+    "workshop-2": {"province": "江苏省", "city": "苏州", "lat": 31.2990, "lng": 120.5853, "name": "苏州精密车间", "device_count": 3},
+    "workshop-3": {"province": "山东省", "city": "青岛", "lat": 36.0671, "lng": 120.3826, "name": "青岛模具车间", "device_count": 4},
+    "workshop-4": {"province": "浙江省", "city": "杭州", "lat": 30.2741, "lng": 120.1551, "name": "杭州电子车间", "device_count": 3},
+    "workshop-5": {"province": "四川省", "city": "成都", "lat": 30.5728, "lng": 104.0668, "name": "成都重装车间", "device_count": 4},
+}
+
+COLLECTION_POINTS = {
+    "cnc": [
+        {"name": "temperature", "label": "主轴温度", "unit": "°C"},
+        {"name": "vibration", "label": "振动幅度", "unit": "mm/s"},
+        {"name": "rpm", "label": "主轴转速", "unit": "rpm"},
+        {"name": "power", "label": "功率消耗", "unit": "W"},
+        {"name": "feed_rate", "label": "进给速率", "unit": "mm/min"},
+        {"name": "voltage", "label": "电压", "unit": "V"},
+        {"name": "current", "label": "电流", "unit": "A"},
+    ],
+    "sensor": [
+        {"name": "temperature", "label": "环境温度", "unit": "°C"},
+        {"name": "humidity", "label": "相对湿度", "unit": "%"},
+        {"name": "pressure", "label": "气压", "unit": "bar"},
+        {"name": "flow_rate", "label": "流量", "unit": "L/min"},
+    ],
+    "plc": [
+        {"name": "count", "label": "产量计数", "unit": "pcs"},
+        {"name": "defect_count", "label": "不良品数", "unit": "pcs"},
+        {"name": "quality_rate", "label": "良品率", "unit": "%"},
+        {"name": "oee", "label": "设备综合效率", "unit": "%"},
+        {"name": "cycle_time", "label": "节拍时间", "unit": "s"},
+    ],
+}
+
+DEVICES = {
+    "CNC-A01": {"device_type": "cnc", "workshop": "workshop-1", "line": "line-A"},
+    "CNC-A02": {"device_type": "cnc", "workshop": "workshop-1", "line": "line-A"},
+    "CNC-B01": {"device_type": "cnc", "workshop": "workshop-2", "line": "line-B"},
+    "SENSOR-ENV01": {"device_type": "sensor", "workshop": "workshop-1", "line": "line-A"},
+    "SENSOR-ENV02": {"device_type": "sensor", "workshop": "workshop-2", "line": "line-B"},
+    "PLC-LINE-A": {"device_type": "plc", "workshop": "workshop-1", "line": "line-A"},
+    "PLC-LINE-B": {"device_type": "plc", "workshop": "workshop-2", "line": "line-B"},
+    "CNC-C01": {"device_type": "cnc", "workshop": "workshop-3", "line": "line-C"},
+    "CNC-C02": {"device_type": "cnc", "workshop": "workshop-3", "line": "line-C"},
+    "SENSOR-ENV03": {"device_type": "sensor", "workshop": "workshop-3", "line": "line-C"},
+    "PLC-LINE-C": {"device_type": "plc", "workshop": "workshop-3", "line": "line-C"},
+    "CNC-D01": {"device_type": "cnc", "workshop": "workshop-4", "line": "line-D"},
+    "SENSOR-ENV04": {"device_type": "sensor", "workshop": "workshop-4", "line": "line-D"},
+    "PLC-LINE-D": {"device_type": "plc", "workshop": "workshop-4", "line": "line-D"},
+    "CNC-E01": {"device_type": "cnc", "workshop": "workshop-5", "line": "line-E"},
+    "CNC-E02": {"device_type": "cnc", "workshop": "workshop-5", "line": "line-E"},
+    "SENSOR-ENV05": {"device_type": "sensor", "workshop": "workshop-5", "line": "line-E"},
+    "PLC-LINE-E": {"device_type": "plc", "workshop": "workshop-5", "line": "line-E"},
+}
+
+
+@app.route("/api/workshops")
+def workshops():
+    """车间列表与地理信息"""
+    import random as _r
+    result = []
+    for wid, geo in WORKSHOP_GEO.items():
+        result.append({
+            "id": wid,
+            "name": geo["name"],
+            "province": geo["province"],
+            "city": geo["city"],
+            "lat": geo["lat"],
+            "lng": geo["lng"],
+            "device_count": geo["device_count"],
+            "status": _r.choice(["online", "online", "online", "degraded"]),
+        })
+    return jsonify(result)
+
+
+@app.route("/api/workshops/<workshop_id>/devices")
+def workshop_devices(workshop_id):
+    """指定车间的设备列表"""
+    devices = []
+    for dev_id, dev in DEVICES.items():
+        if dev.get("workshop") == workshop_id:
+            cp = COLLECTION_POINTS.get(dev["device_type"], [])
+            devices.append({
+                "id": dev_id,
+                "type": dev["device_type"],
+                "workshop": dev["workshop"],
+                "line": dev["line"],
+                "metrics": [p["name"] for p in cp],
+                "collection_points": cp,
+            })
+    return jsonify(devices)
+
+
+@app.route("/api/collection-points/<device_type>")
+def get_collection_points(device_type):
+    """获取指定设备类型的采集点位"""
+    return jsonify(COLLECTION_POINTS.get(device_type, []))
+
+
+# ==================== 点位与设备统计 API ====================
+
+@app.route("/api/devices/<device_id>/points")
+def device_points(device_id):
+    """获取指定设备的点位定义列表"""
+    try:
+        resp = requests.get(f"{SIMULATOR_URL}/api/devices", timeout=5)
+        all_devices = resp.json()
+        for dev in all_devices:
+            if dev.get("id") == device_id:
+                return jsonify(dev.get("points", []))
+    except Exception as e:
+        print(f"获取设备点位失败: {e}")
+    return jsonify([])
+
+
+@app.route("/api/points/<point_id>/history")
+def point_history(point_id):
+    """查询单个点位的历史数据"""
+    metric = request.args.get("metric", "temperature")
+    minutes = int(request.args.get("minutes", 30))
+
+    flux = f'''
+    from(bucket: "factory")
+      |> range(start: -{minutes}m)
+      |> filter(fn: (r) => r._measurement == "industrial_metrics")
+      |> filter(fn: (r) => r.point_id == "{point_id}")
+      |> filter(fn: (r) => r._field == "{metric}")
+      |> aggregateWindow(every: 10s, fn: mean, createEmpty: false)
+      |> limit(n: 200)
+    '''
+    results = query_influxdb(flux)
+    return jsonify(results)
+
+
+@app.route("/api/devices/<device_id>/points/history")
+def device_all_points_history(device_id):
+    """查询设备下所有指定 metric 的点位历史数据（多线图用）"""
+    metric = request.args.get("metric", "temperature")
+    minutes = int(request.args.get("minutes", 30))
+
+    # 先获取该设备的所有点位（从 simulator）
+    try:
+        resp = requests.get(f"{SIMULATOR_URL}/api/devices", timeout=5)
+        all_devices = resp.json()
+        dev_points = []
+        for dev in all_devices:
+            if dev.get("id") == device_id:
+                dev_points = [p["point_id"] for p in dev.get("points", []) if p.get("metric") == metric]
+                break
+    except Exception:
+        dev_points = []
+
+    if not dev_points:
+        return jsonify([])
+
+    # 为每个点位查询数据
+    combined = {}
+    for pid in dev_points:
+        flux = f'''
+        from(bucket: "factory")
+          |> range(start: -{minutes}m)
+          |> filter(fn: (r) => r._measurement == "industrial_metrics")
+          |> filter(fn: (r) => r.point_id == "{pid}")
+          |> filter(fn: (r) => r._field == "{metric}")
+          |> aggregateWindow(every: 10s, fn: mean, createEmpty: false)
+          |> limit(n: 200)
+        '''
+        rows = query_influxdb(flux)
+        for r in rows:
+            t = r.get("_time", "")
+            try:
+                v = float(r.get("_value", 0))
+            except (ValueError, TypeError):
+                continue
+            if t not in combined:
+                combined[t] = {}
+            combined[t][pid] = v
+
+    # 转为有序数组
+    sorted_times = sorted(combined.keys())
+    result = []
+    for t in sorted_times:
+        entry = {"time": t}
+        entry.update(combined[t])
+        result.append(entry)
+
+    return jsonify({"device": device_id, "metric": metric, "point_ids": dev_points, "series": result})
+
+
+@app.route("/api/devices/<device_id>/stats")
+def device_stats(device_id):
+    """获取设备级聚合统计数据"""
+    try:
+        resp = requests.get(f"{SIMULATOR_URL}/api/devices", timeout=5)
+        all_devices = resp.json()
+        for dev in all_devices:
+            if dev.get("id") == device_id:
+                return jsonify({"device": device_id, "stats": dev.get("stats", [])})
+    except Exception as e:
+        print(f"获取设备统计失败: {e}")
+    return jsonify({"device": device_id, "stats": []})
+
+
+@app.route("/api/data-governance/overview")
+def data_governance_overview():
+    """数据治理总览"""
+    import random as _r
+    return jsonify({
+        "quality_score": round(_r.uniform(88, 96), 1),
+        "dimensions": {
+            "completeness": round(_r.uniform(92, 99), 1),
+            "consistency": round(_r.uniform(88, 96), 1),
+            "timeliness": round(_r.uniform(90, 98), 1),
+            "accuracy": round(_r.uniform(85, 95), 1),
+        },
+        "workshops": [
+            {
+                "id": wid,
+                "name": geo["name"],
+                "province": geo["province"],
+                "data_points_24h": _r.randint(28000, 58000),
+                "anomaly_rate": round(_r.uniform(0.5, 4.5), 2),
+                "quality_score": round(_r.uniform(85, 98), 1),
+            }
+            for wid, geo in WORKSHOP_GEO.items()
+        ],
+        "data_flow": [
+            {"stage": "采集层", "desc": "设备传感器数据采集", "count": 18, "protocol": "MQTT / Modbus"},
+            {"stage": "传输层", "desc": "Telegraf 数据转发", "count": 1, "protocol": "HTTP / MQTT"},
+            {"stage": "存储层", "desc": "InfluxDB 时序存储", "count": 1, "protocol": "Flux / InfluxQL"},
+            {"stage": "分析层", "desc": "异常检测 / 趋势分析", "count": 4, "protocol": "REST API"},
+            {"stage": "展示层", "desc": "Grafana / 管理后台", "count": 2, "protocol": "HTTP"},
+        ],
+        "standard_rules": [
+            {"name": "温度范围校验", "field": "temperature", "min": -20, "max": 120, "unit": "°C"},
+            {"name": "振动阈值校验", "field": "vibration", "min": 0, "max": 10, "unit": "mm/s"},
+            {"name": "转速合理性", "field": "rpm", "min": 0, "max": 12000, "unit": "rpm"},
+            {"name": "功率范围校验", "field": "power", "min": 0, "max": 15000, "unit": "W"},
+            {"name": "湿度范围校验", "field": "humidity", "min": 0, "max": 100, "unit": "%"},
+            {"name": "良品率范围", "field": "quality_rate", "min": 0, "max": 100, "unit": "%"},
+            {"name": "OEE范围", "field": "oee", "min": 0, "max": 100, "unit": "%"},
+        ],
+    })
 
 
 if __name__ == "__main__":
