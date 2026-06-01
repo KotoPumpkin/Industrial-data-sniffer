@@ -114,7 +114,7 @@ body {
 }
 .panel-title { font-size: 0.8rem; font-weight: 500; color: var(--text-secondary); }
 .panel-body { padding: 0.8rem; flex: 1; position: relative; }
-.panel-body.p0 { padding: 0; }
+.panel-body.p0 { padding: 0; overflow: visible; }
 
 /* STAT CARDS */
 .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.8rem; }
@@ -388,46 +388,11 @@ body {
     <!-- 分析面板 -->
     <div class="panel">
         <div class="tabs">
-            <button class="tab-btn active" data-tab="trend">趋势分析</button>
-            <button class="tab-btn" data-tab="alert">实时告警</button>
+            <button class="tab-btn active" data-tab="alert">实时告警</button>
             <button class="tab-btn" data-tab="anomaly">异常检测</button>
             <button class="tab-btn" data-tab="correlation">关联分析</button>
         </div>
-        <div class="tab-content active" id="tab-trend">
-            <div class="panel-body">
-                <div class="filter-bar" style="margin-bottom:0.8rem;">
-                    <div class="fg"><label>设备</label><select id="trendDevice"></select></div>
-                    <div class="fg"><label>点位</label>
-                        <select id="trendPoint">
-                            <option value="">全部点位</option>
-                        </select>
-                    </div>
-                    <div class="fg"><label>指标</label>
-                        <select id="trendMetric">
-                            <option value="temperature">温度</option><option value="vibration">振动</option>
-                            <option value="rpm">转速</option><option value="feed_rate">进给速率</option>
-                            <option value="humidity">湿度</option><option value="pressure">气压</option>
-                            <option value="voltage">电压</option><option value="current">电流</option>
-                            <option value="power">功率</option><option value="count">产量</option>
-                            <option value="defect_count">不良品</option><option value="flow_rate">流量</option>
-                        </select>
-                    </div>
-                    <div class="fg"><label>范围</label>
-                        <select id="trendRange">
-                            <option value="30" selected>30分钟</option><option value="60">1小时</option>
-                            <option value="360">6小时</option><option value="1440">24小时</option>
-                        </select>
-                    </div>
-                    <div class="fg" style="justify-content:flex-end;">
-                        <label>&nbsp;</label>
-                        <button id="trendGenerateBtn" onclick="generateTrend()" style="font-family:var(--font);font-size:0.8rem;padding:0.3rem 1rem;border:1px solid var(--blue);border-radius:0.3rem;background:var(--blue-dim);color:var(--text-link);cursor:pointer;font-weight:500;white-space:nowrap;">生成图表</button>
-                    </div>
-                </div>
-                <div class="stats-bar" id="trendStats"></div>
-                <div class="chart-box"><canvas id="trendChart"></canvas></div>
-            </div>
-        </div>
-        <div class="tab-content" id="tab-alert">
+        <div class="tab-content active" id="tab-alert">
             <div class="panel-body">
                 <div id="alertsList"><div class="loading">加载中...</div></div>
             </div>
@@ -553,16 +518,24 @@ const DEVICE_POINTS = {
     plc: ['产量计数','不良品数','良品率','设备综合效率','节拍时间'],
 };
 
-// 字段名 <-> 中文名称映射
-const FIELD_CN_MAP = {
-    temperature: '主轴温度', vibration: '振动幅度', rpm: '主轴转速',
-    power: '功率消耗', feed_rate: '进给速率', voltage: '电压', current: '电流',
-    flow_rate: '流量', pressure: '气压', humidity: '环境温度',
-    count: '产量计数', defect_count: '不良品数',
+// 按设备类型分组的点位映射（中文标签 -> 英文字段名），解决不同设备类型同名字段冲突
+const DEVICE_POINT_FIELDS = {
+    cnc: {
+        '主轴温度': 'temperature', '振动幅度': 'vibration', '主轴转速': 'rpm',
+        '功率消耗': 'power', '进给速率': 'feed_rate', '电压': 'voltage', '电流': 'current',
+    },
+    sensor: {
+        '环境温度': 'temperature', '相对湿度': 'humidity', '气压': 'pressure', '流量': 'flow_rate',
+    },
+    plc: {
+        '产量计数': 'count', '不良品数': 'defect_count', '良品率': 'quality_rate',
+        '设备综合效率': 'oee', '节拍时间': 'cycle_time',
+    },
 };
-// 反向映射：中文名 -> 英文字段名（用于从数据中取值）
-const CN_TO_FIELD = Object.fromEntries(
-    Object.entries(FIELD_CN_MAP).map(([k, v]) => [v, k])
+const CN_TO_FIELD = {};
+(Object.values(DEVICE_POINT_FIELDS)).forEach(fields => Object.assign(CN_TO_FIELD, fields));
+const FIELD_CN_MAP = Object.fromEntries(
+    Object.entries(CN_TO_FIELD).map(([k, v]) => [v, k])
 );
 
 // ===== 页面切换 =====
@@ -613,7 +586,6 @@ function populateFilters() {
     // Save current selections
     const savedWs = $('#filterWorkshop').value;
     const savedDev = $('#filterDevice').value;
-    const savedTrend = $('#trendDevice').value;
     const savedCorr = $('#corrDevice').value;
 
     const workshops = [...new Set(allDevicesData.map(d => d.workshop).filter(Boolean))];
@@ -625,7 +597,6 @@ function populateFilters() {
     if (savedWs) ws.value = savedWs;
     updateDeviceFilter(true);
     if (savedDev) $('#filterDevice').value = savedDev;
-    if (savedTrend) $('#trendDevice').value = savedTrend;
     if (savedCorr) $('#corrDevice').value = savedCorr;
 }
 
@@ -636,13 +607,10 @@ function updateDeviceFilter(fromPopulate) {
     const ds = $('#filterDevice');
     ds.innerHTML = '<option value="">全部设备</option>' + filtered.map(d => `<option value="${d.machine_id}">${d.machine_id}</option>`).join('');
     if (!fromPopulate && savedDev) ds.value = savedDev;
-    // Sync trend/corr device lists (preserve selection)
-    const savedTrend = $('#trendDevice').value;
+    // Sync corr device list (preserve selection)
     const savedCorr = $('#corrDevice').value;
     const opts = allDevicesData.map(d => `<option value="${d.machine_id}">${d.machine_id}</option>`).join('');
-    $('#trendDevice').innerHTML = opts;
     $('#corrDevice').innerHTML = opts;
-    if (savedTrend) $('#trendDevice').value = savedTrend;
     if (savedCorr) $('#corrDevice').value = savedCorr;
 }
 
@@ -657,28 +625,24 @@ function updatePointFilter() {
 
     if (!dev) {
         // 全部设备：合并所有类型点位（去重）
-        const allPoints = new Map();
-        Object.values(DEVICE_POINTS).forEach(pts => {
-            pts.forEach(p => {
-                const field = CN_TO_FIELD[p];
-                if (field && !allPoints.has(field)) allPoints.set(field, p);
-            });
-        });
         sel.innerHTML = '<option value="">全部点位</option>';
-        allPoints.forEach((label, field) => {
-            sel.innerHTML += `<option value="${field}">${label}</option>`;
+        const seenFields = new Set();
+        Object.values(DEVICE_POINT_FIELDS).forEach(fields => {
+            Object.entries(fields).forEach(([label, field]) => {
+                if (!seenFields.has(field)) {
+                    seenFields.add(field);
+                    sel.innerHTML += `<option value="${field}">${label}</option>`;
+                }
+            });
         });
     } else {
         // 找到该设备的类型
         const device = allDevicesData.find(d => d.machine_id === dev);
         const dtype = device ? device.device_type : null;
-        const pts = DEVICE_POINTS[dtype] || [];
+        const fieldsMap = DEVICE_POINT_FIELDS[dtype] || {};
         sel.innerHTML = '<option value="">全部点位</option>';
-        pts.forEach(p => {
-            const field = CN_TO_FIELD[p];
-            if (field) {
-                sel.innerHTML += `<option value="${field}">${p}</option>`;
-            }
+        Object.entries(fieldsMap).forEach(([label, field]) => {
+            sel.innerHTML += `<option value="${field}">${label}</option>`;
         });
     }
     // 尝试恢复之前的选择
@@ -707,9 +671,11 @@ function renderDeviceTable() {
     tbody.innerHTML = list.map(d => {
         const wsInfo = WORKSHOP_MAP[d.workshop];
         const wsName = wsInfo ? wsInfo.name : (d.workshop || '-');
-        const points = DEVICE_POINTS[d.device_type] || [];
+        const dtype = d.device_type;
+        const points = DEVICE_POINTS[dtype] || [];
+        const fieldsMap = DEVICE_POINT_FIELDS[dtype] || {};
         const pointItems = points.map(p => {
-            const field = CN_TO_FIELD[p];
+            const field = fieldsMap[p];
             const val = field && d[field] !== undefined ? fmt(parseFloat(d[field])) : '--';
             const isHighlight = selField && field === selField;
             const style = isHighlight ? 'background:rgba(251,146,60,0.25);border:1px solid var(--orange);color:var(--orange);font-weight:600;' : '';
@@ -805,247 +771,8 @@ async function initChinaMap() {
     } catch(e) { console.error('地图加载失败:', e); }
 }
 
-// ===== 趋势分析（手动生成 + 渲染后自动刷新）=====
-let trendChart = null;
-let _trendRefreshTimer = null;  // 渲染后的自动刷新定时器
-let _trendLastParams = null;    // 上次生成所用的参数
-
 // 颜色板，用于多线图
 const TREND_COLORS = ['#3b82f6', '#f87171', '#34d399', '#fb923c', '#a78bfa', '#22d3ee', '#fbbf24', '#f472b6', '#818cf8', '#2dd4bf'];
-
-// 设备变化 → 加载点位列表
-async function updateTrendPoints(deviceId) {
-    if (!deviceId) {
-        $('#trendPoint').innerHTML = '<option value="">全部点位</option>';
-        return;
-    }
-    try {
-        const r = await fetch(`/api/devices/${deviceId}/points`);
-        const points = await r.json();
-        // 去重：按 metric 分组，用于点位下拉
-        let html = '<option value="">全部点位</option>';
-        points.forEach(p => {
-            html += `<option value="${p.point_id}">${p.label} (${p.metric})</option>`;
-        });
-        $('#trendPoint').innerHTML = html;
-    } catch(e) {
-        $('#trendPoint').innerHTML = '<option value="">全部点位</option>';
-    }
-}
-
-// 绑定设备变化事件
-$('#trendDevice').addEventListener('change', () => {
-    updateTrendPoints($('#trendDevice').value);
-});
-
-// 生成按钮 — 核心逻辑
-async function generateTrend() {
-    const device = $('#trendDevice').value;
-    const pointId = $('#trendPoint').value;
-    const metric = $('#trendMetric').value;
-    const minutes = $('#trendRange').value;
-    if (!device) return;
-
-    // 保存参数用于后续自动刷新
-    _trendLastParams = { device, pointId, metric, minutes };
-
-    const btn = $('#trendGenerateBtn');
-    btn.textContent = '加载中...';
-    btn.disabled = true;
-
-    try {
-        if (pointId) {
-            // 单个点位 — 单条折线
-            const r = await fetch(`/api/points/${pointId}/history?metric=${metric}&minutes=${minutes}`);
-            const rows = await r.json();
-            const dataPoints = rows.map(r => ({ time: new Date(r._time), value: parseFloat(r._value) })).filter(p => !isNaN(p.value));
-            renderTrendSingle(dataPoints, pointId);
-        } else {
-            // 全部点位 — 多条折线
-            const r = await fetch(`/api/devices/${device}/points/history?metric=${metric}&minutes=${minutes}`);
-            const d = await r.json();
-            const pointIds = d.point_ids || [];
-            const series = d.series || [];
-            if (pointIds.length === 0) {
-                $('#trendStats').innerHTML = '';
-                $('#trendChart').getContext('2d').clearRect(0, 0, $('#trendChart').width, $('#trendChart').height);
-                if (trendChart) { trendChart.destroy(); trendChart = null; }
-                btn.textContent = '生成图表';
-                btn.disabled = false;
-                return;
-            }
-            renderTrendMulti(series, pointIds, metric);
-        }
-    } catch(e) {
-        console.error(e);
-    }
-    btn.textContent = '生成图表';
-    btn.disabled = false;
-
-    // 渲染后启动自动刷新
-    startTrendRefresh();
-}
-
-function renderTrendSingle(dataPoints, label) {
-    if (trendChart) trendChart.destroy();
-    trendChart = new Chart($('#trendChart').getContext('2d'), {
-        type: 'line',
-        data: {
-            labels: dataPoints.map(p => p.time),
-            datasets: [{
-                label: label,
-                data: dataPoints.map(p => p.value),
-                borderColor: '#3b82f6',
-                backgroundColor: 'rgba(59,130,246,0.08)',
-                borderWidth: 1.5,
-                pointRadius: 0,
-                pointHoverRadius: 4,
-                pointHoverBackgroundColor: '#fb923c',
-                fill: true,
-                tension: 0.2,
-            }]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false, animation: false,
-            plugins: {
-                legend: { display: true, labels: { color: '#8b919a', font: { size: 11 } } },
-                tooltip: {
-                    backgroundColor: '#161920', titleColor: '#e0e3e8', bodyColor: '#e0e3e8',
-                    borderColor: '#232830', borderWidth: 1, cornerRadius: 4, padding: 8,
-                }
-            },
-            scales: {
-                x: { type: 'time', grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#555b66', font: { size: 10 }, maxRotation: 0 } },
-                y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#555b66', font: { size: 10 } } }
-            }
-        }
-    });
-    const vals = dataPoints.map(p => p.value);
-    if (vals.length) {
-        const avg = vals.reduce((a,b) => a+b, 0) / vals.length;
-        $('#trendStats').innerHTML = `
-            <div class="sb-item-box"><div class="sb-val">${fmt(avg)}</div><div class="sb-lbl">均值</div></div>
-            <div class="sb-item-box"><div class="sb-val">${fmt(Math.max(...vals))}</div><div class="sb-lbl">最大值</div></div>
-            <div class="sb-item-box"><div class="sb-val">${fmt(Math.min(...vals))}</div><div class="sb-lbl">最小值</div></div>
-            <div class="sb-item-box"><div class="sb-val">${vals.length}</div><div class="sb-lbl">数据点</div></div>`;
-    }
-}
-
-function renderTrendMulti(series, pointIds, metric) {
-    if (trendChart) trendChart.destroy();
-    // 收集所有时间点
-    const allTimesSet = new Set();
-    series.forEach(s => { allTimesSet.add(s.time); });
-    const allTimes = [...allTimesSet].sort();
-    const timeLabels = allTimes.map(t => new Date(t));
-
-    const datasets = pointIds.map((pid, idx) => {
-        const timeMap = {};
-        series.forEach(s => {
-            if (typeof s[pid] === 'number') timeMap[s.time] = s[pid];
-        });
-        const data = allTimes.map(t => timeMap[t] ?? null);
-        return {
-            label: pid,
-            data: data,
-            borderColor: TREND_COLORS[idx % TREND_COLORS.length],
-            backgroundColor: 'transparent',
-            borderWidth: 1.5,
-            pointRadius: 0,
-            pointHoverRadius: 3,
-            fill: false,
-            tension: 0.2,
-            spanGaps: false,
-        };
-    });
-
-    trendChart = new Chart($('#trendChart').getContext('2d'), {
-        type: 'line',
-        data: { labels: timeLabels, datasets },
-        options: {
-            responsive: true, maintainAspectRatio: false, animation: false,
-            plugins: {
-                legend: {
-                    display: true,
-                    position: 'bottom',
-                    labels: { color: '#8b919a', font: { size: 10 }, boxWidth: 12, padding: 8 }
-                },
-                tooltip: {
-                    backgroundColor: '#161920', titleColor: '#e0e3e8', bodyColor: '#e0e3e8',
-                    borderColor: '#232830', borderWidth: 1, cornerRadius: 4, padding: 8,
-                }
-            },
-            scales: {
-                x: { type: 'time', grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#555b66', font: { size: 10 }, maxRotation: 0 } },
-                y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#555b66', font: { size: 10 } } }
-            }
-        }
-    });
-
-    // 汇总所有点位的数据统计
-    const allVals = [];
-    datasets.forEach(ds => {
-        ds.data.forEach(v => { if (v != null) allVals.push(v); });
-    });
-    if (allVals.length) {
-        const avg = allVals.reduce((a,b) => a+b, 0) / allVals.length;
-        $('#trendStats').innerHTML = `
-            <div class="sb-item-box"><div class="sb-val">${fmt(avg)}</div><div class="sb-lbl">总均值</div></div>
-            <div class="sb-item-box"><div class="sb-val">${fmt(Math.max(...allVals))}</div><div class="sb-lbl">总最大值</div></div>
-            <div class="sb-item-box"><div class="sb-val">${fmt(Math.min(...allVals))}</div><div class="sb-lbl">总最小值</div></div>
-            <div class="sb-item-box"><div class="sb-val">${pointIds.length}</div><div class="sb-lbl">点位数量</div></div>`;
-    }
-}
-
-// 渲染后启动自动刷新（使用相同参数）
-function startTrendRefresh() {
-    if (_trendRefreshTimer) clearInterval(_trendRefreshTimer);
-    const sec = parseInt($('#refreshInterval').value) || 5;
-    _trendRefreshTimer = setInterval(async () => {
-        if (!_trendLastParams) return;
-        const { device, pointId, metric, minutes } = _trendLastParams;
-        try {
-            if (pointId) {
-                const r = await fetch(`/api/points/${pointId}/history?metric=${metric}&minutes=${minutes}`);
-                const rows = await r.json();
-                const dataPoints = rows.map(r => ({ time: new Date(r._time), value: parseFloat(r._value) })).filter(p => !isNaN(p.value));
-                updateTrendSingle(dataPoints);
-            } else {
-                const r = await fetch(`/api/devices/${device}/points/history?metric=${metric}&minutes=${minutes}`);
-                const d = await r.json();
-                if (d.series && d.point_ids) updateTrendMulti(d.series, d.point_ids);
-            }
-        } catch(e) {}
-    }, sec * 1000);
-}
-
-function updateTrendSingle(dataPoints) {
-    if (!trendChart) return;
-    trendChart.data.labels = dataPoints.map(p => p.time);
-    trendChart.data.datasets[0].data = dataPoints.map(p => p.value);
-    trendChart.update('none');
-}
-
-function updateTrendMulti(series, pointIds) {
-    if (!trendChart) return;
-    const allTimesSet = new Set();
-    series.forEach(s => allTimesSet.add(s.time));
-    const allTimes = [...allTimesSet].sort();
-    trendChart.data.labels = allTimes.map(t => new Date(t));
-    pointIds.forEach((pid, idx) => {
-        if (idx >= trendChart.data.datasets.length) return;
-        const timeMap = {};
-        series.forEach(s => { if (typeof s[pid] === 'number') timeMap[s.time] = s[pid]; });
-        trendChart.data.datasets[idx].data = allTimes.map(t => timeMap[t] ?? null);
-    });
-    trendChart.update('none');
-}
-
-// 原有的 loadTrend 变空壳，由 generateTrend 替代
-async function loadTrend() {
-    // 产生 "生成" 按钮触发，这里不做自动操作
-    // 但保留兼容旧调用
-}
 
 // ===== 告警 =====
 async function loadAlerts() {
@@ -1263,11 +990,10 @@ async function refreshPointRealtime() {
 
 // ===== 自动刷新 =====
 let _timer = null;
-let _activeTab = 'trend';
+let _activeTab = 'alert';
 
 function getActiveTabData() {
     switch (_activeTab) {
-        case 'trend': if ($('#trendDevice').value) loadTrend(); break;
         case 'alert': loadAlerts(); break;
         case 'anomaly': loadAnomaly(); break;
         case 'correlation': loadCorrelation(); break;
@@ -1307,9 +1033,7 @@ async function init() {
     await loadDevices();
     await loadAlerts();
     initChinaMap();
-    _activeTab = 'trend';
-    // 首次加载完成后,初始化第一个设备的点位下拉
-    if ($('#trendDevice').value) updateTrendPoints($('#trendDevice').value);
+    _activeTab = 'alert';
     startAutoRefresh();
 }
 init();
