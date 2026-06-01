@@ -1,0 +1,121 @@
+services:
+  # ==================== 时序数据库 ====================
+  influxdb:
+    image: influxdb:2.7
+    container_name: idm_influxdb
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=admin123456
+      - DOCKER_INFLUXDB_INIT_ORG=industrial
+      - DOCKER_INFLUXDB_INIT_BUCKET=factory
+      - DOCKER_INFLUXDB_INIT_RETENTION=30d
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=my-super-secret-admin-token-2024
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+      - ./influxdb/init:/docker-entrypoint-initdb.d
+    networks:
+      - industrial_net
+    healthcheck:
+      test: ["CMD", "influx", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ==================== 数据采集引擎 ====================
+  telegraf:
+    image: telegraf:1.30
+    container_name: idm_telegraf
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    volumes:
+      - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    networks:
+      - industrial_net
+    restart: unless-stopped
+
+  # ==================== 可视化平台 ====================
+  grafana:
+    image: grafana/grafana:10.4.0
+    container_name: idm_grafana
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_THEME_DEFAULT=dark
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/var/lib/grafana/dashboards/industrial_overview.json
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    networks:
+      - industrial_net
+    restart: unless-stopped
+
+  # ==================== MQTT 消息代理 ====================
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: idm_mosquitto
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+    networks:
+      - industrial_net
+    restart: unless-stopped
+
+  # ==================== 工业数据模拟器 ====================
+  simulator:
+    build:
+      context: ./simulator
+      dockerfile: Dockerfile
+    container_name: idm_simulator
+    depends_on:
+      - mosquitto
+    environment:
+      - MQTT_HOST=mosquitto
+      - MQTT_PORT=1883
+      - INFLUXDB_URL=http://influxdb:8086
+      - INFLUXDB_TOKEN=my-super-secret-admin-token-2024
+      - INFLUXDB_ORG=industrial
+      - INFLUXDB_BUCKET=factory
+    networks:
+      - industrial_net
+    restart: unless-stopped
+
+  # ==================== 管理后台 ====================
+  manager:
+    build:
+      context: ./manager
+      dockerfile: Dockerfile
+    container_name: idm_manager
+    ports:
+      - "5000:5000"
+    depends_on:
+      - influxdb
+      - telegraf
+    environment:
+      - INFLUXDB_URL=http://influxdb:8086
+      - INFLUXDB_TOKEN=my-super-secret-admin-token-2024
+      - INFLUXDB_ORG=industrial
+      - INFLUXDB_BUCKET=factory
+    networks:
+      - industrial_net
+    restart: unless-stopped
+
+volumes:
+  influxdb_data:
+  grafana_data:
+
+networks:
+  industrial_net:
+    driver: bridge

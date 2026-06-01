@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IDM - Industrial Data Mining</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<style>
+:root {
+    --bg-canvas: #0b0e13;
+    --bg-panel: #141619;
+    --bg-panel-header: #1a1d21;
+    --bg-sidebar: #111318;
+    --bg-input: #1a1d21;
+    --bg-hover: #1e2228;
+    --border: #2a2e35;
+    --border-light: #333840;
+    --text-primary: #d6d9de;
+    --text-secondary: #8b8f96;
+    --text-muted: #5a5e66;
+    --text-link: #6e9bff;
+    --blue: #3274d9;
+    --blue-light: #6e9bff;
+    --green: #73bf69;
+    --green-dark: #2a5427;
+    --orange: #ff9830;
+    --orange-dark: #543a12;
+    --red: #f2495c;
+    --red-dark: #4a1a22;
+    --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 14px; }
+body {
+    font-family: var(--font);
+    background: var(--bg-canvas);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 52px 1fr;
+    grid-template-rows: 52px 1fr;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* TOP BAR */
+.topbar {
+    grid-column: 1 / -1;
+    background: var(--bg-panel-header);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    z-index: 50;
+}
+.topbar-left { display: flex; align-items: center; gap: 12px; }
+.topbar-logo {
+    width: 28px; height: 28px;
+    background: var(--orange);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 13px; color: #000;
+}
+.topbar-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.topbar-breadcrumb { font-size: 12px; color: var(--text-muted); }
+.topbar-breadcrumb span { color: var(--text-secondary); }
+.topbar-right { display: flex; align-items: center; gap: 16px; }
+.topbar-indicator { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 500; color: var(--text-secondary); }
+.topbar-indicator .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+.topbar-clock { font-size: 12px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
+/* SIDEBAR */
+.sidebar {
+    background: var(--bg-sidebar);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; align-items: center;
+    padding: 8px 0; gap: 2px;
+}
+.sidebar-item {
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 4px; cursor: pointer;
+    color: var(--text-muted); transition: all 0.12s; position: relative;
+}
+.sidebar-item:hover { background: var(--bg-hover); color: var(--text-secondary); }
+.sidebar-item.active { background: var(--bg-hover); color: var(--text-primary); }
+.sidebar-item.active::before {
+    content: ''; position: absolute; left: -8px; top: 8px; bottom: 8px;
+    width: 3px; background: var(--blue); border-radius: 0 2px 2px 0;
+}
+.sidebar-item svg { width: 20px; height: 20px; }
+.sidebar-spacer { flex: 1; }
+
+/* MAIN */
+.main { overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+
+/* LAYOUT */
+.row { display: grid; gap: 16px; }
+.row-2 { grid-template-columns: 1fr 1fr; }
+.row-2-1 { grid-template-columns: 2fr 1fr; }
+
+/* PANEL */
+.panel {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 4px; overflow: hidden;
+    display: flex; flex-direction: column;
+}
+.panel-header {
+    background: var(--bg-panel-header);
+    padding: 8px 12px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border); min-height: 36px;
+}
+.panel-title { font-size: 12px; font-weight: 500; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; }
+.panel-body { padding: 16px; flex: 1; position: relative; }
+.panel-body.p0 { padding: 0; }
+
+/* STAT CARDS */
+.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.stat-card {
+    background: var(--bg-panel); border: 1px solid var(--border);
+    border-radius: 4px; padding: 16px; display: flex; flex-direction: column; gap: 4px;
+}
+.stat-card .sc-label { font-size: 11px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.stat-card .sc-value { font-size: 28px; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.sc-value.blue { color: var(--blue-light); }
+.sc-value.green { color: var(--green); }
+.sc-value.red { color: var(--red); }
+.sc-value.orange { color: var(--orange); }
+
+/* SERVICE LIST */
+.service-list { display: flex; flex-direction: column; }
+.service-row {
+    display: grid; grid-template-columns: 1fr auto auto; align-items: center;
+    gap: 12px; padding: 8px 12px; border-bottom: 1px solid var(--border); font-size: 12px;
+}
+.service-row:last-child { border-bottom: none; }
+.service-name { color: var(--text-primary); font-weight: 500; }
+.service-port { color: var(--text-muted); font-variant-numeric: tabular-nums; font-size: 11px; }
+.service-badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 3px; text-transform: uppercase; }
+.service-badge.online { background: var(--green-dark); color: var(--green); }
+.service-badge.offline { background: var(--red-dark); color: var(--red); }
+
+/* TABLE */
+.table-wrap { overflow-x: auto; }
+.data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.data-table th {
+    padding: 8px 12px; text-align: left; font-weight: 600; font-size: 11px;
+    color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em;
+    border-bottom: 1px solid var(--border); background: var(--bg-panel-header); white-space: nowrap;
+}
+.data-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); color: var(--text-secondary); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.data-table tr:hover td { background: var(--bg-hover); }
+.data-table td.highlight { color: var(--text-primary); font-weight: 500; }
+.data-table td.device-link { color: var(--text-link); cursor: pointer; }
+.data-table td.device-link:hover { text-decoration: underline; }
+
+/* TABS */
+.tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--bg-panel-header); padding: 0 12px; }
+.tab-btn {
+    padding: 8px 16px; font-size: 12px; font-weight: 500; color: var(--text-muted);
+    background: none; border: none; border-bottom: 2px solid transparent;
+    cursor: pointer; transition: all 0.12s; font-family: var(--font);
+}
+.tab-btn:hover { color: var(--text-secondary); }
+.tab-btn.active { color: var(--text-link); border-bottom-color: var(--blue); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* CONTROLS */
+.controls { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: flex-end; }
+.ctrl-group { display: flex; flex-direction: column; gap: 4px; }
+.ctrl-group label { font-size: 10px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.ctrl-group select, .ctrl-group input {
+    font-family: var(--font); font-size: 12px; padding: 4px 8px;
+    border: 1px solid var(--border); border-radius: 4px;
+    background: var(--bg-input); color: var(--text-primary); outline: none; min-width: 120px;
+}
+.ctrl-group select:focus, .ctrl-group input:focus { border-color: var(--blue); }
+.btn {
+    font-family: var(--font); font-size: 12px; font-weight: 500;
+    padding: 5px 16px; border-radius: 4px; border: 1px solid var(--border);
+    background: var(--bg-panel-header); color: var(--text-primary); cursor: pointer; transition: all 0.12s;
+}
+.btn:hover { background: var(--bg-hover); border-color: var(--border-light); }
+.btn-primary { background: var(--blue); color: #fff; border-color: var(--blue); }
+.btn-primary:hover { background: #2860b8; }
+
+/* CHART */
+.chart-container { position: relative; width: 100%; height: 280px; }
+.chart-container canvas { width: 100% !important; height: 100% !important; }
+
+/* STATS BAR */
+.stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+.stats-bar .sb-item { background: var(--bg-panel-header); border: 1px solid var(--border); border-radius: 4px; padding: 10px 12px; }
+.stats-bar .sb-val { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+.stats-bar .sb-lbl { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 2px; }
+
+/* ALERTS */
+.alert-item { display: grid; grid-template-columns: 80px 1fr auto; align-items: center; gap: 12px; padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 12px; }
+.alert-item:last-child { border-bottom: none; }
+.alert-item .a-badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 3px; text-transform: uppercase; text-align: center; }
+.alert-item .a-badge.critical { background: var(--red-dark); color: var(--red); }
+.alert-item .a-badge.warning { background: var(--orange-dark); color: var(--orange); }
+.alert-item .a-msg { color: var(--text-secondary); }
+.alert-item .a-time { font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
+/* CORRELATION */
+.corr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 16px 0; }
+.corr-main { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px; background: var(--bg-panel-header); border: 1px solid var(--border); border-radius: 4px; }
+.corr-value { font-size: 48px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.corr-value.positive { color: var(--green); }
+.corr-value.negative { color: var(--red); }
+.corr-label { font-size: 11px; color: var(--text-muted); margin-top: 8px; text-transform: uppercase; letter-spacing: 0.04em; }
+.corr-details { display: flex; flex-direction: column; gap: 8px; }
+.corr-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+.corr-row .cr-lbl { color: var(--text-muted); }
+.corr-row .cr-val { color: var(--text-primary); font-weight: 500; }
+
+/* MODAL */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; align-items: center; justify-content: center; }
+.modal-overlay.active { display: flex; }
+.modal-content { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 4px; max-width: 800px; width: 92%; max-height: 85vh; overflow-y: auto; }
+.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--bg-panel-header); gap: 12px; }
+.modal-header h3 { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.modal-close { background: none; border: 1px solid var(--border); border-radius: 4px; font-family: var(--font); font-size: 11px; font-weight: 500; padding: 4px 12px; cursor: pointer; color: var(--text-secondary); }
+.modal-close:hover { border-color: var(--red); color: var(--red); }
+.modal-body { padding: 16px; }
+.report-health { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 3px; text-transform: uppercase; }
+.report-health.normal { background: var(--green-dark); color: var(--green); }
+.report-health.warning { background: var(--orange-dark); color: var(--orange); }
+.report-health.critical { background: var(--red-dark); color: var(--red); }
+.report-metrics { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-top: 12px; }
+.rm-card { background: var(--bg-panel-header); border: 1px solid var(--border); border-radius: 4px; padding: 12px; }
+.rm-card .rm-name { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+.rm-card .rm-row { display: flex; justify-content: space-between; font-size: 12px; padding: 3px 0; }
+.rm-card .rm-row .rm-lbl { color: var(--text-muted); }
+.rm-card .rm-row .rm-v { color: var(--text-primary); font-weight: 500; font-variant-numeric: tabular-nums; }
+
+/* UTILS */
+.loading { display: flex; align-items: center; justify-content: center; padding: 40px; font-size: 12px; color: var(--text-muted); }
+.no-data { text-align: center; padding: 40px; font-size: 12px; color: var(--text-muted); }
+.badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 3px; text-transform: uppercase; }
+.badge.high { background: var(--red-dark); color: var(--red); }
+.badge.medium { background: var(--orange-dark); color: var(--orange); }
+.badge.low { background: rgba(115,191,105,0.15); color: var(--green); }
+
+@media (max-width: 1024px) {
+    body { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    .stat-grid, .stats-bar { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 768px) {
+    .row-2, .row-2-1, .corr-grid { grid-template-columns: 1fr; }
+    .stat-grid, .stats-bar { grid-template-columns: 1fr 1fr; }
+    .topbar-breadcrumb { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+    <div class="topbar-left">
+        <div class="topbar-logo">I</div>
+        <div class="topbar-title">Industrial Data Mining</div>
+        <div class="topbar-breadcrumb">/ <span>Dashboard</span></div>
+    </div>
+    <div class="topbar-right">
+        <div class="topbar-indicator">
+            <div class="dot" id="statusDot"></div>
+            <span id="navStatusText">Connecting</span>
+        </div>
+        <div class="topbar-clock" id="clock">--:--:--</div>
+    </div>
+</div>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+    <div class="sidebar-item active" title="Dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    </div>
+    <div class="sidebar-item" title="Grafana" onclick="window.open('http://localhost:3000','_blank')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+    </div>
+    <div class="sidebar-item" title="InfluxDB" onclick="window.open('http://localhost:8086','_blank')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M9 9h6v6H9z"/><line x1="9" y1="4" x2="9" y2="9"/><line x1="15" y1="4" x2="15" y2="9"/><line x1="9" y1="15" x2="9" y2="20"/><line x1="15" y1="15" x2="15" y2="20"/></svg>
+    </div>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+
+    <!-- STATS -->
+    <div class="stat-grid">
+        <div class="stat-card"><div class="sc-label">Online Devices</div><div class="sc-value blue" id="heroDevices">--</div></div>
+        <div class="stat-card"><div class="sc-label">Active Alerts</div><div class="sc-value orange" id="heroAlerts">--</div></div>
+        <div class="stat-card"><div class="sc-label">Anomalies</div><div class="sc-value red" id="heroAnomalies">--</div></div>
+        <div class="stat-card"><div class="sc-label">Services</div><div class="sc-value green" id="heroServices">--</div></div>
+    </div>
+
+    <!-- DEVICES + SERVICES -->
+    <div class="row row-2-1" id="devicesSection">
+        <div class="panel">
+            <div class="panel-header"><div class="panel-title">Devices - Realtime</div></div>
+            <div class="panel-body p0">
+                <div class="table-wrap">
+                    <table class="data-table" id="devicesTable">
+                        <thead><tr><th>Device ID</th><th>Type</th><th>Workshop</th><th>Line</th><th>Metrics</th></tr></thead>
+                        <tbody><tr><td colspan="5"><div class="loading">Loading...</div></td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="panel">
+            <div class="panel-header"><div class="panel-title">Services</div></div>
+            <div class="panel-body p0">
+                <div class="service-list" id="servicesList"><div class="loading">Loading...</div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ANALYTICS -->
+    <div class="panel" id="analyticsSection">
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="trend">Trend</button>
+            <button class="tab-btn" data-tab="alert">Alerts</button>
+            <button class="tab-btn" data-tab="anomaly">Anomaly</button>
+            <button class="tab-btn" data-tab="correlation">Correlation</button>
+        </div>
+
+        <div class="tab-content active" id="tab-trend">
+            <div class="panel-body">
+                <div class="controls">
+                    <div class="ctrl-group"><label>Device</label><select id="trendDevice" title="Device"></select></div>
+                    <div class="ctrl-group"><label>Metric</label>
+                        <select id="trendMetric" title="Metric">
+                            <option value="temperature">temperature</option>
+                            <option value="vibration">vibration</option>
+                            <option value="rpm">rpm</option>
+                            <option value="feed_rate">feed_rate</option>
+                            <option value="humidity">humidity</option>
+                            <option value="pressure">pressure</option>
+                            <option value="voltage">voltage</option>
+                            <option value="current">current</option>
+                            <option value="power">power</option>
+                            <option value="count">count</option>
+                            <option value="defect_count">defect_count</option>
+                            <option value="flow_rate">flow_rate</option>
+                        </select>
+                    </div>
+                    <div class="ctrl-group"><label>Range</label>
+                        <select id="trendRange" title="Range">
+                            <option value="30">30 min</option>
+                            <option value="60">1 hour</option>
+                            <option value="360">6 hours</option>
+                            <option value="1440" selected>24 hours</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" onclick="loadTrend()">Query</button>
+                </div>
+                <div class="stats-bar" id="trendStats"></div>
+                <div class="chart-container"><canvas id="trendChart"></canvas></div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="tab-alert">
+            <div class="panel-body">
+                <div class="controls">
+                    <div class="ctrl-group"><label>Range</label>
+                        <select id="alertRange" title="Range">
+                            <option value="60" selected>1 hour</option>
+                            <option value="360">6 hours</option>
+                            <option value="1440">24 hours</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" onclick="loadAlerts()">Query</button>
+                </div>
+                <div id="alertsList"><div class="loading">Loading...</div></div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="tab-anomaly">
+            <div class="panel-body">
+                <div class="controls">
+                    <div class="ctrl-group"><label>Metric</label>
+                        <select id="anomalyMetric" title="Metric">
+                            <option value="temperature">temperature</option>
+                            <option value="vibration">vibration</option>
+                            <option value="rpm">rpm</option>
+                            <option value="power">power</option>
+                            <option value="humidity">humidity</option>
+                            <option value="pressure">pressure</option>
+                        </select>
+                    </div>
+                    <div class="ctrl-group"><label>Range</label>
+                        <select id="anomalyRange" title="Range">
+                            <option value="60" selected>1 hour</option>
+                            <option value="360">6 hours</option>
+                            <option value="1440">24 hours</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" onclick="loadAnomaly()">Detect</button>
+                </div>
+                <div id="anomalyResult"><div class="no-data">Select metric and range, then click Detect</div></div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="tab-correlation">
+            <div class="panel-body">
+                <div class="controls">
+                    <div class="ctrl-group"><label>Device</label><select id="corrDevice" title="Device"></select></div>
+                    <div class="ctrl-group"><label>Metric A</label>
+                        <select id="corrMetricA">
+                            <option value="temperature">temperature</option>
+                            <option value="vibration">vibration</option>
+                            <option value="rpm">rpm</option>
+                            <option value="pressure">pressure</option>
+                            <option value="humidity">humidity</option>
+                            <option value="power">power</option>
+                            <option value="current">current</option>
+                        </select>
+                    </div>
+                    <div class="ctrl-group"><label>Metric B</label>
+                        <select id="corrMetricB">
+                            <option value="temperature">temperature</option>
+                            <option value="vibration" selected>vibration</option>
+                            <option value="rpm">rpm</option>
+                            <option value="pressure">pressure</option>
+                            <option value="humidity">humidity</option>
+                            <option value="power">power</option>
+                            <option value="current">current</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" onclick="loadCorrelation()">Analyze</button>
+                </div>
+                <div id="corrResult"><div class="no-data">Select device and metrics, then click Analyze</div></div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+    <div class="modal-content" id="modalInner"></div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+function fmt(v, d=1) { return v != null ? Number(v).toFixed(d) : '--'; }
+
+// Clock
+(function tickClock() {
+    const now = new Date();
+    $('#clock').textContent = now.toLocaleTimeString('zh-CN', { hour12: false });
+    requestAnimationFrame(tickClock);
+})();
+
+// ---- SERVICES ----
+async function loadServices() {
+    try {
+        const r = await fetch('/api/system/status');
+        const services = await r.json(); // returns array directly
+        const online = services.filter(s => s.status === 'online').length;
+        $('#heroServices').textContent = `${online}/${services.length}`;
+        $('#navStatusText').textContent = online === services.length ? 'All systems nominal' : 'Degraded';
+        $('#statusDot').style.background = online === services.length ? 'var(--green)' : 'var(--orange)';
+        $('#servicesList').innerHTML = services.map(s => {
+            const clickable = s.url ? `style="cursor:pointer" onclick="window.open('${s.url}','_blank')"` : '';
+            const nameHtml = s.url ? `<span class="service-name" style="color:var(--text-link)">${s.name}</span>` : `<span class="service-name">${s.name}</span>`;
+            return `<div class="service-row" ${clickable}>
+                ${nameHtml}
+                <span class="service-port">${s.port || ''}</span>
+                <span class="service-badge ${s.status}">${s.status}</span>
+            </div>`;
+        }).join('');
+    } catch(e) {
+        $('#servicesList').innerHTML = '<div class="no-data">Cannot connect to backend</div>';
+    }
+}
+
+// ---- DEVICES ----
+async function loadDevices() {
+    try {
+        const r = await fetch('/api/devices/latest');
+        const devices = await r.json(); // returns array directly
+        $('#heroDevices').textContent = devices.length;
+
+        const opts = devices.map(d => `<option value="${d.machine_id}">${d.machine_id}</option>`).join('');
+        $('#trendDevice').innerHTML = opts;
+        $('#corrDevice').innerHTML = opts;
+
+        const tbody = $('#devicesTable tbody');
+        if (!devices.length) {
+            tbody.innerHTML = '<tr><td colspan="5"><div class="no-data">No device data</div></td></tr>';
+            return;
+        }
+        tbody.innerHTML = devices.map(dev => {
+            const tags = dev.tags || {};
+            const fields = dev.fields || {};
+            // Backend returns pivoted data: each device row has field values as columns
+            // Actually backend returns raw InfluxDB pivot rows, let's extract all non-meta fields
+            const skip = new Set(['','result','table','_start','_stop','_measurement','machine_id','workshop','line','device_type','collected_by']);
+            const metrics = Object.entries(dev).filter(([k,v]) => !skip.has(k) && !k.startsWith('_') && v && !isNaN(parseFloat(v))).map(([k,v]) => `${k}: ${fmt(parseFloat(v))}`).join(', ');
+            return `<tr>
+                <td class="device-link" onclick="openReport('${dev.machine_id || ''}')">${dev.machine_id || '-'}</td>
+                <td>${tags.device_type || dev.device_type || '-'}</td>
+                <td>${tags.workshop || dev.workshop || '-'}</td>
+                <td>${tags.line || dev.line || '-'}</td>
+                <td style="white-space:normal;max-width:300px">${metrics}</td>
+            </tr>`;
+        }).join('');
+    } catch(e) {
+        $('#devicesTable tbody').innerHTML = '<tr><td colspan="5"><div class="no-data">Load failed</div></td></tr>';
+    }
+}
+
+// ---- TREND ----
+let trendChart = null;
+async function loadTrend() {
+    const device = $('#trendDevice').value;
+    const metric = $('#trendMetric').value;
+    const minutes = $('#trendRange').value;
+    if (!device) return;
+    try {
+        const r = await fetch(`/api/metrics/history?metric=${metric}&device=${device}&minutes=${minutes}`);
+        const rows = await r.json(); // returns array of {_time, _value, ...}
+        // Parse into {time, value}
+        const points = rows.map(r => ({ time: r._time, value: parseFloat(r._value) })).filter(p => !isNaN(p.value));
+
+        if (trendChart) trendChart.destroy();
+        trendChart = new Chart($('#trendChart').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: points.map(p => new Date(p.time)),
+                datasets: [{
+                    label: metric, data: points.map(p => p.value),
+                    borderColor: '#3274d9', backgroundColor: 'rgba(50,116,217,0.1)',
+                    borderWidth: 1.5, pointRadius: 0, pointHoverRadius: 4,
+                    pointHoverBackgroundColor: '#ff9830', fill: true, tension: 0.2,
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#161920', titleColor: '#d6d9de', bodyColor: '#d6d9de',
+                        borderColor: '#2a2e35', borderWidth: 1,
+                        titleFont: { family: 'Inter', size: 11 }, bodyFont: { family: 'Inter', size: 12, weight: '600' },
+                        padding: 10, cornerRadius: 4,
+                    }
+                },
+                scales: {
+                    x: { type: 'time', grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#5a5e66', font: { family: 'Inter', size: 10 }, maxRotation: 0 } },
+                    y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#5a5e66', font: { family: 'Inter', size: 10 } } }
+                }
+            }
+        });
+
+        const vals = points.map(p => p.value);
+        if (vals.length) {
+            const avg = vals.reduce((a,b) => a+b, 0) / vals.length;
+            $('#trendStats').innerHTML = `
+                <div class="sb-item"><div class="sb-val">${fmt(avg)}</div><div class="sb-lbl">Avg</div></div>
+                <div class="sb-item"><div class="sb-val">${fmt(Math.max(...vals))}</div><div class="sb-lbl">Max</div></div>
+                <div class="sb-item"><div class="sb-val">${fmt(Math.min(...vals))}</div><div class="sb-lbl">Min</div></div>
+                <div class="sb-item"><div class="sb-val">${vals.length}</div><div class="sb-lbl">Points</div></div>
+            `;
+        }
+    } catch(e) { console.error('Trend error:', e); }
+}
+
+// ---- ALERTS ----
+async function loadAlerts() {
+    try {
+        const r = await fetch('/api/analytics/alerts');
+        const d = await r.json();
+        const alerts = d.alerts || [];
+        $('#heroAlerts').textContent = d.total || alerts.length;
+        if (!alerts.length) { $('#alertsList').innerHTML = '<div class="no-data">No alerts</div>'; return; }
+        $('#alertsList').innerHTML = alerts.map(a => `
+            <div class="alert-item">
+                <span class="a-badge ${a.level === 'critical' ? 'critical' : 'warning'}">${a.level.toUpperCase()}</span>
+                <span class="a-msg">${a.message || a.msg || ''}</span>
+                <span class="a-time">${a.time ? new Date(a.time).toLocaleTimeString('zh-CN',{hour12:false}) : ''}</span>
+            </div>
+        `).join('');
+    } catch(e) { $('#alertsList').innerHTML = '<div class="no-data">Load failed</div>'; }
+}
+
+// ---- ANOMALY ----
+async function loadAnomaly() {
+    const metric = $('#anomalyMetric').value;
+    const minutes = $('#anomalyRange').value;
+    try {
+        const r = await fetch(`/api/analytics/anomaly?metric=${metric}&minutes=${minutes}`);
+        const d = await r.json();
+        const anomalies = d.anomalies || [];
+        $('#heroAnomalies').textContent = d.anomaly_count || anomalies.length;
+        if (!anomalies.length) { $('#anomalyResult').innerHTML = '<div class="no-data">No anomalies detected</div>'; return; }
+        let html = `<div class="table-wrap"><table class="data-table">
+            <thead><tr><th>Device</th><th>Value</th><th>Z-Score</th><th>Severity</th><th>Time</th></tr></thead><tbody>`;
+        anomalies.forEach(a => {
+            const sev = (a.severity || 'low').toLowerCase();
+            html += `<tr>
+                <td class="highlight">${a.machine_id || ''}</td>
+                <td class="highlight">${fmt(a.value)}</td>
+                <td>${a.z_score || ''}</td>
+                <td><span class="badge ${sev}">${sev}</span></td>
+                <td>${a.time ? new Date(a.time).toLocaleTimeString('zh-CN',{hour12:false}) : ''}</td>
+            </tr>`;
+        });
+        html += '</tbody></table></div>';
+        $('#anomalyResult').innerHTML = html;
+    } catch(e) { $('#anomalyResult').innerHTML = '<div class="no-data">Detection failed</div>'; }
+}
+
+// ---- CORRELATION ----
+async function loadCorrelation() {
+    const device = $('#corrDevice').value;
+    const ma = $('#corrMetricA').value;
+    const mb = $('#corrMetricB').value;
+    if (!device) return;
+    try {
+        const r = await fetch(`/api/analytics/correlation?metric_a=${ma}&metric_b=${mb}&device=${device}&minutes=60`);
+        const d = await r.json();
+        const corr = d.correlation;
+        if (corr == null || corr === 0) { $('#corrResult').innerHTML = '<div class="no-data">Insufficient data</div>'; return; }
+        const pct = (corr * 100).toFixed(1);
+        const dir = corr >= 0 ? 'positive' : 'negative';
+        const strength = Math.abs(corr) > 0.7 ? 'Strong' : Math.abs(corr) > 0.4 ? 'Moderate' : 'Weak';
+        $('#corrResult').innerHTML = `
+            <div class="corr-grid">
+                <div class="corr-main">
+                    <div class="corr-value ${dir}">${pct}%</div>
+                    <div class="corr-label">r = ${corr.toFixed(4)}</div>
+                </div>
+                <div class="corr-details">
+                    <div class="corr-row"><span class="cr-lbl">Device</span><span class="cr-val">${device}</span></div>
+                    <div class="corr-row"><span class="cr-lbl">Metric A</span><span class="cr-val">${ma}</span></div>
+                    <div class="corr-row"><span class="cr-lbl">Metric B</span><span class="cr-val">${mb}</span></div>
+                    <div class="corr-row"><span class="cr-lbl">Direction</span><span class="cr-val">${corr >= 0 ? 'Positive' : 'Negative'}</span></div>
+                    <div class="corr-row"><span class="cr-lbl">Strength</span><span class="cr-val">${strength}</span></div>
+                    <div class="corr-row"><span class="cr-lbl">Interpretation</span><span class="cr-val">${d.interpretation || ''}</span></div>
+                </div>
+            </div>
+        `;
+    } catch(e) { $('#corrResult').innerHTML = '<div class="no-data">Analysis failed</div>'; }
+}
+
+// ---- REPORT MODAL ----
+async function openReport(deviceId) {
+    const modal = $('#modal');
+    const inner = $('#modalInner');
+    inner.innerHTML = '<div class="loading">Loading report...</div>';
+    modal.classList.add('active');
+    try {
+        const r = await fetch(`/api/analytics/device_report/${deviceId}`);
+        const report = await r.json(); // returns report directly
+        const health = report.health_status || 'normal';
+        const metricsHtml = Object.entries(report.metrics || {}).map(([name, m]) => `
+            <div class="rm-card">
+                <div class="rm-name">${name}</div>
+                <div class="rm-row"><span class="rm-lbl">Latest</span><span class="rm-v">${fmt(m.latest)}</span></div>
+                <div class="rm-row"><span class="rm-lbl">Mean</span><span class="rm-v">${fmt(m.mean)}</span></div>
+                <div class="rm-row"><span class="rm-lbl">Min</span><span class="rm-v">${fmt(m.min)}</span></div>
+                <div class="rm-row"><span class="rm-lbl">Max</span><span class="rm-v">${fmt(m.max)}</span></div>
+                <div class="rm-row"><span class="rm-lbl">Std Dev</span><span class="rm-v">${fmt(m.std)}</span></div>
+            </div>
+        `).join('');
+        inner.innerHTML = `
+            <div class="modal-header">
+                <h3>${deviceId} - Device Report</h3>
+                <span class="report-health ${health}">${health.toUpperCase()}</span>
+                <button class="modal-close" onclick="closeModal()">Close</button>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom:8px;font-size:12px;color:var(--text-muted)">Health Score: ${report.health_score}/100 | Period: ${report.period_minutes}min</div>
+                <div class="report-metrics">${metricsHtml || '<div class="no-data">No metric data</div>'}</div>
+            </div>
+        `;
+    } catch(e) { inner.innerHTML = '<div class="no-data">Report load failed</div>'; }
+}
+
+function closeModal() { $('#modal').classList.remove('active'); }
+$('#modal').addEventListener('click', e => { if (e.target === $('#modal')) closeModal(); });
+
+// ---- TABS ----
+$$('.tab-btn').forEach(tab => {
+    tab.addEventListener('click', () => {
+        $$('.tab-btn').forEach(t => t.classList.remove('active'));
+        $$('.tab-content').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        $(`#tab-${tab.dataset.tab}`).classList.add('active');
+    });
+});
+
+// ---- INIT ----
+async function init() {
+    await loadServices();
+    await loadDevices();
+    await loadAlerts();
+    if ($('#trendDevice').value) loadTrend();
+}
+init();
+setInterval(loadDevices, 15000);
+setInterval(loadServices, 30000);
+</script>
+</body>
+</html>
