@@ -524,15 +524,8 @@ def health():
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("  工业数据模拟器启动")
+    print("  🏭 工业数据模拟器启动")
     print(f"  MQTT: {MQTT_HOST}:{MQTT_PORT}")
     print(f"  HTTP: http://0.0.0.0:{HTTP_PORT}/api/metrics")
     print(f"  设备数量: {len(DEVICES)}")
-    total_points = sum(len(d.get("points", {})) for d in DEVICES.values())
-    print(f"  点位数量: {total_points}")
-    print("=" * 60)
-
-    mqtt_thread = threading.Thread(target=mqtt_publisher, daemon=True)
-    mqtt_thread.start()
-
-    app.run(host="0.0.0.0", port=HTTP_PORT, debug=False)
+    total_points = sum(len(d.get("points", {}

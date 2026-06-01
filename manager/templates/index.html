@@ -826,6 +826,9 @@ async function generateTrend() {
     }
     btn.textContent = '生成图表';
     btn.disabled = false;
+
+    // 渲染后启动自动刷新
+    startTrendRefresh();
 }
 
 function renderTrendSingle(dataPoints, label) {
@@ -1180,7 +1183,8 @@ async function init() {
     await loadAlerts();
     initChinaMap();
     _activeTab = 'trend';
-    if ($('#trendDevice').value) loadTrend();
+    // 首次加载完成后,初始化第一个设备的点位下拉
+    if ($('#trendDevice').value) updateTrendPoints($('#trendDevice').value);
     startAutoRefresh();
 }
 init();

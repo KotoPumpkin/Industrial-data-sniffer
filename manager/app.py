@@ -18,7 +18,7 @@ INFLUXDB_ORG = os.getenv("INFLUXDB_ORG", "industrial")
 INFLUXDB_BUCKET = os.getenv("INFLUXDB_BUCKET", "factory")
 
 # Simulator 地址（用于获取设备和点位定义）
-SIMULATOR_URL = os.getenv("SIMULATOR_URL", "http://localhost:5001")
+SIMULATOR_URL = os.getenv("SIMULATOR_URL", "http://simulator:5001")
 
 
 def query_influxdb(flux_query: str):
