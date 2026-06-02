@@ -612,18 +612,15 @@ const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 function fmt(v, d=1) { return v != null ? Number(v).toFixed(d) : '--'; }
 
-// 滚动位置保持工具：在替换DOM内容前保存滚动位置，替换后恢复
-function preserveScroll(element, replaceFn) {
-    let scroller = element;
-    while (scroller && scroller !== document.body) {
-        const style = getComputedStyle(scroller);
-        if ((style.overflowY === 'auto' || style.overflowY === 'scroll')
-            && scroller.scrollHeight > scroller.clientHeight) break;
-        scroller = scroller.parentElement;
-    }
-    const scrollTop = scroller ? scroller.scrollTop : 0;
-    replaceFn();
-    if (scroller) requestAnimationFrame(() => { scroller.scrollTop = scrollTop; });
+// 滚动位置保持：直接保存/恢复已知滚动容器的 scrollTop（立即恢复，不使用 rAF）
+function _saveScroll(el) {
+    const main = document.querySelector('.main');
+    return { el, mainST: main ? main.scrollTop : 0, selfST: el.scrollTop || 0 };
+}
+function _restoreScroll(ctx, useSelf) {
+    const main = document.querySelector('.main');
+    if (main && main.scrollTop !== ctx.mainST) main.scrollTop = ctx.mainST;
+    if (useSelf) ctx.el.scrollTop = ctx.selfST;
 }
 
 // 时钟
@@ -688,18 +685,18 @@ async function loadServices() {
         const online = svcs.filter(s => s.status === 'online').length;
         $('#statusText').textContent = online === svcs.length ? '全部正常' : '部分异常';
         $('#statusDot').style.background = online === svcs.length ? 'var(--green)' : 'var(--orange)';
-        preserveScroll($('#servicesList'), () => {
-            $('#servicesList').innerHTML = svcs.map(s => {
-                const cls = s.url ? 'svc-name link' : 'svc-name';
-                const click = s.url ? `onclick="window.open('${s.url}','_blank')"` : '';
-                return `<div class="svc-row" ${click}>
-                    <span class="${cls}">${s.name}</span>
-                    <span class="svc-port">${s.port || ''}</span>
-                    <span class="svc-badge ${s.status}">${s.status === 'online' ? '在线' : '异常'}</span>
-                </div>`;
-            }).join('');
-        });
-    } catch(e) { preserveScroll($('#servicesList'), () => { $('#servicesList').innerHTML = '<div class="no-data">无法连接后端</div>'; }); }
+        const _s = _saveScroll($('#servicesList'));
+        $('#servicesList').innerHTML = svcs.map(s => {
+            const cls = s.url ? 'svc-name link' : 'svc-name';
+            const click = s.url ? `onclick="window.open('${s.url}','_blank')"` : '';
+            return `<div class="svc-row" ${click}>
+                <span class="${cls}">${s.name}</span>
+                <span class="svc-port">${s.port || ''}</span>
+                <span class="svc-badge ${s.status}">${s.status === 'online' ? '在线' : '异常'}</span>
+            </div>`;
+        }).join('');
+        _restoreScroll(_s, true);
+    } catch(e) { const _s = _saveScroll($('#servicesList')); $('#servicesList').innerHTML = '<div class="no-data">无法连接后端</div>'; _restoreScroll(_s, true); }
 }
 
 // ===== 设备数据（嵌套表格：车间 → 设备 → 点位） =====
@@ -824,6 +821,10 @@ function renderDeviceTable() {
         if (key) collapsedKeys.add(key);
     });
 
+    // 保存滚动容器的 scrollTop
+    const tableWrap = tbody.closest('.table-wrap');
+    const savedST = tableWrap ? tableWrap.scrollTop : 0;
+
     // 1. 未选车间：提示
     if (!ws) {
         tbody.innerHTML = '<tr><td colspan="5"><div class="no-data">请先选择车间</div></td></tr>';
@@ -871,9 +872,9 @@ function renderDeviceTable() {
         });
     }
 
-    preserveScroll(tbody, () => { tbody.innerHTML = rows.join(''); });
+    tbody.innerHTML = rows.join('');
 
-    // 默认全部展开，然后恢复之前折叠的行
+    // 默认全部展开 → 恢复折叠状态 → 最后恢复滚动位置
     requestAnimationFrame(() => {
         $$('#devicesTable tr.child-row').forEach(r => r.classList.add('show'));
         $$('#devicesTable tr.lv-row, #devicesTable tr.lv2-row').forEach(r => {
@@ -888,6 +889,8 @@ function renderDeviceTable() {
                 }
             }
         });
+        // 所有 DOM 变更完成后再恢复滚动
+        if (tableWrap) tableWrap.scrollTop = savedST;
     });
 }
 
@@ -1003,16 +1006,16 @@ async function loadAlerts() {
         const d = await r.json();
         const alerts = d.alerts || [];
         $('#heroAlerts').textContent = d.total || 0;
-        if (!alerts.length) { preserveScroll($('#alertsList'), () => { $('#alertsList').innerHTML = '<div class="no-data">暂无告警</div>'; }); return; }
-        preserveScroll($('#alertsList'), () => {
-            $('#alertsList').innerHTML = alerts.map(a => `
-                <div class="alert-item">
-                    <span class="a-badge ${a.level === 'critical' ? 'critical' : 'warning'}">${a.level === 'critical' ? '危险' : '警告'}</span>
-                    <span class="a-msg">${a.message || ''}</span>
-                    <span class="a-time">${a.time ? new Date(a.time).toLocaleTimeString('zh-CN',{hour12:false}) : ''}</span>
-                </div>`).join('');
-        });
-    } catch(e) { preserveScroll($('#alertsList'), () => { $('#alertsList').innerHTML = '<div class="no-data">加载失败</div>'; }); }
+        if (!alerts.length) { const _s = _saveScroll($('#alertsList')); $('#alertsList').innerHTML = '<div class="no-data">暂无告警</div>'; _restoreScroll(_s); return; }
+        const _s = _saveScroll($('#alertsList'));
+        $('#alertsList').innerHTML = alerts.map(a => `
+            <div class="alert-item">
+                <span class="a-badge ${a.level === 'critical' ? 'critical' : 'warning'}">${a.level === 'critical' ? '危险' : '警告'}</span>
+                <span class="a-msg">${a.message || ''}</span>
+                <span class="a-time">${a.time ? new Date(a.time).toLocaleTimeString('zh-CN',{hour12:false}) : ''}</span>
+            </div>`).join('');
+        _restoreScroll(_s);
+    } catch(e) { const _s = _saveScroll($('#alertsList')); $('#alertsList').innerHTML = '<div class="no-data">加载失败</div>'; _restoreScroll(_s); }
 }
 
 // ===== 异常检测 =====
@@ -1024,7 +1027,7 @@ async function loadAnomaly() {
         const d = await r.json();
         const anomalies = d.anomalies || [];
         $('#heroAnomalies').textContent = d.anomaly_count || 0;
-        if (!anomalies.length) { preserveScroll($('#anomalyResult'), () => { $('#anomalyResult').innerHTML = '<div class="no-data">未检测到异常</div>'; }); return; }
+        if (!anomalies.length) { const _s = _saveScroll($('#anomalyResult')); $('#anomalyResult').innerHTML = '<div class="no-data">未检测到异常</div>'; _restoreScroll(_s); return; }
         let html = `<div class="table-wrap"><table class="data-table">
             <thead><tr><th>设备</th><th>数值</th><th>Z-Score</th><th>严重程度</th><th>时间</th></tr></thead><tbody>`;
         anomalies.forEach(a => {
@@ -1039,8 +1042,10 @@ async function loadAnomaly() {
             </tr>`;
         });
         html += '</tbody></table></div>';
-        preserveScroll($('#anomalyResult'), () => { $('#anomalyResult').innerHTML = html; });
-    } catch(e) { preserveScroll($('#anomalyResult'), () => { $('#anomalyResult').innerHTML = '<div class="no-data">检测失败</div>'; }); }
+        const _s = _saveScroll($('#anomalyResult'));
+        $('#anomalyResult').innerHTML = html;
+        _restoreScroll(_s);
+    } catch(e) { const _s = _saveScroll($('#anomalyResult')); $('#anomalyResult').innerHTML = '<div class="no-data">检测失败</div>'; _restoreScroll(_s); }
 }
 
 // ===== 关联分析 =====
@@ -1353,7 +1358,6 @@ function getActiveTabData() {
 function refreshAll() {
     loadServices();
     loadDevices();
-    loadAlerts();
     getActiveTabData();
     if (_selectedPointField) refreshPointRealtime();
 }
