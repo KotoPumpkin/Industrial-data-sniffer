@@ -93,8 +93,18 @@ body {
 .main { overflow-y: auto; overflow-x: hidden; padding: 1rem; display: flex; flex-direction: column; gap: 1rem; }
 
 /* PAGE VIEWS */
-.page-view { display: none; }
-.page-view.active { display: flex; flex-direction: column; gap: 1rem; }
+.page-view {
+    display: flex; flex-direction: column; gap: 1rem;
+    opacity: 0; visibility: hidden; transform: translateY(10px);
+    position: absolute; width: calc(100% - 2rem);
+    pointer-events: none;
+    transition: opacity 0.2s ease, visibility 0s 0.25s, transform 0.2s ease;
+}
+.page-view.active {
+    opacity: 1; visibility: visible; transform: translateY(0);
+    position: relative; width: auto; pointer-events: auto;
+    transition: opacity 0.25s ease 0.05s, visibility 0s 0s, transform 0.25s ease 0.05s;
+}
 
 /* ROW */
 .row { display: grid; gap: 1rem; }
@@ -180,8 +190,17 @@ body {
 }
 .tab-btn:hover { color: var(--text-secondary); }
 .tab-btn.active { color: var(--text-link); border-bottom-color: var(--blue); }
-.tab-content { display: none; }
-.tab-content.active { display: block; }
+.tab-content {
+    display: block; opacity: 0; visibility: hidden;
+    max-height: 0; overflow: hidden; transform: translateY(6px);
+    pointer-events: none;
+    transition: opacity 0.2s ease, visibility 0s 0.25s, max-height 0.25s ease, transform 0.2s ease;
+}
+.tab-content.active {
+    opacity: 1; visibility: visible; max-height: 2000px;
+    transform: translateY(0); pointer-events: auto;
+    transition: opacity 0.25s ease 0.05s, visibility 0s 0s, max-height 0.25s ease 0.05s, transform 0.25s ease 0.05s;
+}
 
 /* CHART */
 .chart-box { position: relative; width: 100%; height: 18rem; }
@@ -372,7 +391,7 @@ body {
     <!-- 地图 + 服务 -->
     <div class="row row-map">
         <div class="panel">
-            <div class="panel-header"><div class="panel-title">🗺 全国车间分布</div></div>
+            <div class="panel-header"><div class="panel-title">全国车间分布</div></div>
             <div class="panel-body p0"><div id="chinaMap"></div></div>
         </div>
         <div class="panel">
@@ -516,6 +535,69 @@ body {
             </div>
         </div>
     </div>
+
+    <!-- 质量趋势 + 维度雷达 -->
+    <div class="row row-2">
+        <div class="panel">
+            <div class="panel-header"><div class="panel-title">数据质量趋势（近7天）</div></div>
+            <div class="panel-body p0">
+                <div id="govQualityTrend" style="width:100%;height:18rem;"></div>
+            </div>
+        </div>
+        <div class="panel">
+            <div class="panel-header"><div class="panel-title">数据质量维度雷达</div></div>
+            <div class="panel-body p0">
+                <div id="govRadar" style="width:100%;height:18rem;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 采集统计卡片 -->
+    <div class="stat-grid">
+        <div class="stat-card"><div class="sc-label">今日采集点数</div><div class="sc-value blue" id="govTotalPoints">--</div></div>
+        <div class="stat-card"><div class="sc-label">采集成功率</div><div class="sc-value green" id="govSuccessRate">--</div></div>
+        <div class="stat-card"><div class="sc-label">平均延迟</div><div class="sc-value orange" id="govAvgLatency">--</div></div>
+        <div class="stat-card"><div class="sc-label">在线设备 / 配置点位</div><div class="sc-value blue" id="govActiveDevices">--</div></div>
+    </div>
+
+    <!-- 异常分布 + 规则执行日志 -->
+    <div class="row row-2">
+        <div class="panel">
+            <div class="panel-header"><div class="panel-title">数据异常分布</div></div>
+            <div class="panel-body p0">
+                <div class="table-wrap">
+                    <table class="data-table" id="govAnomalyTable">
+                        <thead><tr><th>车间</th><th>异常总数</th><th>危险</th><th>警告</th><th>温度</th><th>振动</th><th>功率</th><th>湿度</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="panel">
+            <div class="panel-header"><div class="panel-title">规则执行日志</div></div>
+            <div class="panel-body p0">
+                <div class="table-wrap tall">
+                    <table class="data-table" id="govRuleLog">
+                        <thead><tr><th>规则</th><th>时间</th><th>检查数</th><th>通过</th><th>失败</th><th>通过率</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 数据字典 -->
+    <div class="panel">
+        <div class="panel-header"><div class="panel-title">数据字典 — 测量字段定义</div></div>
+        <div class="panel-body p0">
+            <div class="table-wrap tall">
+                <table class="data-table" id="govDictTable">
+                    <thead><tr><th>字段名</th><th>中文标签</th><th>设备类型</th><th>单位</th><th>数据类型</th><th>描述</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 
 </main>
@@ -529,6 +611,20 @@ body {
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 function fmt(v, d=1) { return v != null ? Number(v).toFixed(d) : '--'; }
+
+// 滚动位置保持工具：在替换DOM内容前保存滚动位置，替换后恢复
+function preserveScroll(element, replaceFn) {
+    let scroller = element;
+    while (scroller && scroller !== document.body) {
+        const style = getComputedStyle(scroller);
+        if ((style.overflowY === 'auto' || style.overflowY === 'scroll')
+            && scroller.scrollHeight > scroller.clientHeight) break;
+        scroller = scroller.parentElement;
+    }
+    const scrollTop = scroller ? scroller.scrollTop : 0;
+    replaceFn();
+    if (scroller) requestAnimationFrame(() => { scroller.scrollTop = scrollTop; });
+}
 
 // 时钟
 (function tick() {
@@ -592,16 +688,18 @@ async function loadServices() {
         const online = svcs.filter(s => s.status === 'online').length;
         $('#statusText').textContent = online === svcs.length ? '全部正常' : '部分异常';
         $('#statusDot').style.background = online === svcs.length ? 'var(--green)' : 'var(--orange)';
-        $('#servicesList').innerHTML = svcs.map(s => {
-            const cls = s.url ? 'svc-name link' : 'svc-name';
-            const click = s.url ? `onclick="window.open('${s.url}','_blank')"` : '';
-            return `<div class="svc-row" ${click}>
-                <span class="${cls}">${s.name}</span>
-                <span class="svc-port">${s.port || ''}</span>
-                <span class="svc-badge ${s.status}">${s.status === 'online' ? '在线' : '异常'}</span>
-            </div>`;
-        }).join('');
-    } catch(e) { $('#servicesList').innerHTML = '<div class="no-data">无法连接后端</div>'; }
+        preserveScroll($('#servicesList'), () => {
+            $('#servicesList').innerHTML = svcs.map(s => {
+                const cls = s.url ? 'svc-name link' : 'svc-name';
+                const click = s.url ? `onclick="window.open('${s.url}','_blank')"` : '';
+                return `<div class="svc-row" ${click}>
+                    <span class="${cls}">${s.name}</span>
+                    <span class="svc-port">${s.port || ''}</span>
+                    <span class="svc-badge ${s.status}">${s.status === 'online' ? '在线' : '异常'}</span>
+                </div>`;
+            }).join('');
+        });
+    } catch(e) { preserveScroll($('#servicesList'), () => { $('#servicesList').innerHTML = '<div class="no-data">无法连接后端</div>'; }); }
 }
 
 // ===== 设备数据（嵌套表格：车间 → 设备 → 点位） =====
@@ -719,6 +817,13 @@ function renderDeviceTable() {
     const dev = $('#filterDevice').value;
     const tbody = $('#devicesTable tbody');
 
+    // 保存当前折叠状态（用行文本特征作为key）
+    const collapsedKeys = new Set();
+    $$('#devicesTable tr.lv-row.collapsed, #devicesTable tr.lv2-row.collapsed').forEach(r => {
+        const key = r.textContent.trim().substring(0, 60);
+        if (key) collapsedKeys.add(key);
+    });
+
     // 1. 未选车间：提示
     if (!ws) {
         tbody.innerHTML = '<tr><td colspan="5"><div class="no-data">请先选择车间</div></td></tr>';
@@ -766,11 +871,23 @@ function renderDeviceTable() {
         });
     }
 
-    tbody.innerHTML = rows.join('');
+    preserveScroll(tbody, () => { tbody.innerHTML = rows.join(''); });
 
-    // 默认全部展开
+    // 默认全部展开，然后恢复之前折叠的行
     requestAnimationFrame(() => {
         $$('#devicesTable tr.child-row').forEach(r => r.classList.add('show'));
+        $$('#devicesTable tr.lv-row, #devicesTable tr.lv2-row').forEach(r => {
+            const key = r.textContent.trim().substring(0, 60);
+            if (collapsedKeys.has(key)) {
+                r.classList.add('collapsed');
+                const rowId = r.id;
+                if (rowId) {
+                    $$(`#devicesTable tr.${rowId}-child`).forEach(child => {
+                        child.classList.remove('show');
+                    });
+                }
+            }
+        });
     });
 }
 
@@ -886,14 +1003,16 @@ async function loadAlerts() {
         const d = await r.json();
         const alerts = d.alerts || [];
         $('#heroAlerts').textContent = d.total || 0;
-        if (!alerts.length) { $('#alertsList').innerHTML = '<div class="no-data">暂无告警</div>'; return; }
-        $('#alertsList').innerHTML = alerts.map(a => `
-            <div class="alert-item">
-                <span class="a-badge ${a.level === 'critical' ? 'critical' : 'warning'}">${a.level === 'critical' ? '危险' : '警告'}</span>
-                <span class="a-msg">${a.message || ''}</span>
-                <span class="a-time">${a.time ? new Date(a.time).toLocaleTimeString('zh-CN',{hour12:false}) : ''}</span>
-            </div>`).join('');
-    } catch(e) { $('#alertsList').innerHTML = '<div class="no-data">加载失败</div>'; }
+        if (!alerts.length) { preserveScroll($('#alertsList'), () => { $('#alertsList').innerHTML = '<div class="no-data">暂无告警</div>'; }); return; }
+        preserveScroll($('#alertsList'), () => {
+            $('#alertsList').innerHTML = alerts.map(a => `
+                <div class="alert-item">
+                    <span class="a-badge ${a.level === 'critical' ? 'critical' : 'warning'}">${a.level === 'critical' ? '危险' : '警告'}</span>
+                    <span class="a-msg">${a.message || ''}</span>
+                    <span class="a-time">${a.time ? new Date(a.time).toLocaleTimeString('zh-CN',{hour12:false}) : ''}</span>
+                </div>`).join('');
+        });
+    } catch(e) { preserveScroll($('#alertsList'), () => { $('#alertsList').innerHTML = '<div class="no-data">加载失败</div>'; }); }
 }
 
 // ===== 异常检测 =====
@@ -905,7 +1024,7 @@ async function loadAnomaly() {
         const d = await r.json();
         const anomalies = d.anomalies || [];
         $('#heroAnomalies').textContent = d.anomaly_count || 0;
-        if (!anomalies.length) { $('#anomalyResult').innerHTML = '<div class="no-data">未检测到异常</div>'; return; }
+        if (!anomalies.length) { preserveScroll($('#anomalyResult'), () => { $('#anomalyResult').innerHTML = '<div class="no-data">未检测到异常</div>'; }); return; }
         let html = `<div class="table-wrap"><table class="data-table">
             <thead><tr><th>设备</th><th>数值</th><th>Z-Score</th><th>严重程度</th><th>时间</th></tr></thead><tbody>`;
         anomalies.forEach(a => {
@@ -920,8 +1039,8 @@ async function loadAnomaly() {
             </tr>`;
         });
         html += '</tbody></table></div>';
-        $('#anomalyResult').innerHTML = html;
-    } catch(e) { $('#anomalyResult').innerHTML = '<div class="no-data">检测失败</div>'; }
+        preserveScroll($('#anomalyResult'), () => { $('#anomalyResult').innerHTML = html; });
+    } catch(e) { preserveScroll($('#anomalyResult'), () => { $('#anomalyResult').innerHTML = '<div class="no-data">检测失败</div>'; }); }
 }
 
 // ===== 关联分析 =====
@@ -958,15 +1077,22 @@ async function loadCorrelation() {
 
 // ===== 数据治理 =====
 let govLoaded = false;
+let govTrendChart = null;
+let govRadarChart = null;
+
 async function loadGovernance() {
     if (govLoaded) return;
     try {
         const r = await fetch('/api/data-governance/overview');
         const d = await r.json();
+
+        // 统计卡片
         $('#govScore').textContent = d.quality_score;
         $('#govComplete').textContent = d.dimensions.completeness + '%';
         $('#govConsist').textContent = d.dimensions.consistency + '%';
         $('#govTimely').textContent = d.dimensions.timeliness + '%';
+
+        // 数据血缘
         $('#govFlow').innerHTML = d.data_flow.map(f => `
             <div class="gov-flow-item">
                 <span class="gf-stage">${f.stage}</span>
@@ -974,8 +1100,12 @@ async function loadGovernance() {
                 <span class="gf-count">${f.count} 个</span>
                 <span class="gf-proto">${f.protocol}</span>
             </div>`).join('');
+
+        // 标准化规则
         $('#govRules tbody').innerHTML = d.standard_rules.map(r => `
             <tr><td>${r.name}</td><td>${r.field}</td><td>${r.min}</td><td>${r.max}</td><td>${r.unit}</td></tr>`).join('');
+
+        // 车间质量表
         $('#govWorkshopTable tbody').innerHTML = d.workshops.map(w => `
             <tr>
                 <td class="hl">${w.name}</td>
@@ -984,7 +1114,122 @@ async function loadGovernance() {
                 <td>${w.anomaly_rate}%</td>
                 <td><span style="color:${w.quality_score > 90 ? 'var(--green)' : 'var(--orange)'}; font-weight:600">${w.quality_score}</span></td>
             </tr>`).join('');
+
+        // --- 新增：采集统计 ---
+        const cs = d.collection_stats;
+        $('#govTotalPoints').textContent = (cs.total_points_today / 1000).toFixed(1) + 'k';
+        $('#govSuccessRate').textContent = cs.success_rate + '%';
+        $('#govAvgLatency').textContent = cs.avg_latency_ms + 'ms';
+        $('#govActiveDevices').textContent = cs.active_devices + ' / ' + cs.total_points_configured;
+
+        // --- 新增：质量趋势图 ---
+        const trendDom = document.getElementById('govQualityTrend');
+        govTrendChart = echarts.init(trendDom, null, { renderer: 'canvas' });
+        govTrendChart.setOption({
+            grid: { top: 30, right: 20, bottom: 30, left: 50 },
+            tooltip: { trigger: 'axis', backgroundColor: 'rgba(15,18,24,0.95)', borderColor: '#232830', textStyle: { color: '#e0e3e8', fontSize: 12 } },
+            xAxis: {
+                type: 'category',
+                data: d.quality_trend.map(t => t.date),
+                axisLabel: { color: '#555b66' },
+                axisLine: { lineStyle: { color: '#232830' } },
+            },
+            yAxis: {
+                type: 'value', min: 80, max: 100,
+                axisLabel: { color: '#555b66' },
+                splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } },
+                axisLine: { lineStyle: { color: '#232830' } },
+            },
+            series: [{
+                type: 'line',
+                data: d.quality_trend.map(t => t.score),
+                smooth: true,
+                lineStyle: { color: '#3b82f6', width: 2 },
+                areaStyle: {
+                    color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                        { offset: 0, color: 'rgba(59,130,246,0.3)' },
+                        { offset: 1, color: 'rgba(59,130,246,0.02)' },
+                    ]),
+                },
+                symbol: 'circle', symbolSize: 6,
+                itemStyle: { color: '#3b82f6' },
+            }],
+        });
+
+        // --- 新增：质量维度雷达图 ---
+        const radarDom = document.getElementById('govRadar');
+        govRadarChart = echarts.init(radarDom, null, { renderer: 'canvas' });
+        govRadarChart.setOption({
+            radar: {
+                indicator: [
+                    { name: '完整性', max: 100 },
+                    { name: '一致性', max: 100 },
+                    { name: '时效性', max: 100 },
+                    { name: '准确性', max: 100 },
+                ],
+                shape: 'polygon', splitNumber: 5,
+                axisName: { color: '#8b919a', fontSize: 11 },
+                splitLine: { lineStyle: { color: 'rgba(255,255,255,0.08)' } },
+                splitArea: { areaStyle: { color: ['rgba(255,255,255,0.02)', 'rgba(255,255,255,0.04)'] } },
+                axisLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
+            },
+            series: [{
+                type: 'radar',
+                data: [{
+                    value: [d.dimensions.completeness, d.dimensions.consistency, d.dimensions.timeliness, d.dimensions.accuracy],
+                    name: '质量维度',
+                    lineStyle: { color: '#22d3ee', width: 2 },
+                    areaStyle: { color: 'rgba(34,211,238,0.2)' },
+                    itemStyle: { color: '#22d3ee' },
+                }],
+            }],
+        });
+
+        // --- 新增：异常分布表 ---
+        $('#govAnomalyTable tbody').innerHTML = d.anomaly_distribution.map(a => `
+            <tr>
+                <td class="hl">${a.workshop_name}</td>
+                <td>${a.total_anomalies}</td>
+                <td><span style="color:var(--red)">${a.critical}</span></td>
+                <td><span style="color:var(--orange)">${a.warning}</span></td>
+                <td>${a.by_metric.temperature || 0}</td>
+                <td>${a.by_metric.vibration || 0}</td>
+                <td>${a.by_metric.power || 0}</td>
+                <td>${a.by_metric.humidity || 0}</td>
+            </tr>`).join('');
+
+        // --- 新增：规则执行日志 ---
+        $('#govRuleLog tbody').innerHTML = d.rule_execution_log.map(l => {
+            const prColor = l.pass_rate >= 99 ? 'var(--green)' : l.pass_rate >= 95 ? 'var(--orange)' : 'var(--red)';
+            return `<tr>
+                <td class="hl">${l.rule_name}</td>
+                <td>${new Date(l.timestamp).toLocaleString('zh-CN', { hour12: false, month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' })}</td>
+                <td>${l.total_checked}</td>
+                <td>${l.passed}</td>
+                <td>${l.failed}</td>
+                <td><span style="color:${prColor};font-weight:600">${l.pass_rate}%</span></td>
+            </tr>`;
+        }).join('');
+
+        // --- 新增：数据字典 ---
+        $('#govDictTable tbody').innerHTML = d.data_dictionary.map(f => `
+            <tr>
+                <td class="hl">${f.field}</td>
+                <td>${f.label}</td>
+                <td>${f.device_type_cn}</td>
+                <td>${f.unit}</td>
+                <td>${f.data_type}</td>
+                <td>${f.description}</td>
+            </tr>`).join('');
+
         govLoaded = true;
+
+        // 图表响应式
+        window.addEventListener('resize', () => {
+            if (govTrendChart) govTrendChart.resize();
+            if (govRadarChart) govRadarChart.resize();
+        });
+
     } catch(e) { console.error(e); }
 }
 
@@ -1044,7 +1289,7 @@ async function refreshPointRealtime() {
     }
     $('#pointRealtimePanel').style.display = '';
     const label = _selectedPointLabel || field;
-    $('#pointRealtimeTitle').textContent = `📈 ${label} — 实时趋势`;
+    $('#pointRealtimeTitle').textContent = `${label} — 实时趋势`;
 
     const dev = $('#filterDevice').value;
     const params = new URLSearchParams();
@@ -1111,11 +1356,6 @@ function refreshAll() {
     loadAlerts();
     getActiveTabData();
     if (_selectedPointField) refreshPointRealtime();
-    // 嵌套表格默认展开 — 刷新数据后重新展开所有节点
-    requestAnimationFrame(() => {
-        $$('#devicesTable tr.child-row').forEach(r => r.classList.add('show'));
-        $$('#devicesTable tr.lv-row, #devicesTable tr.lv2-row').forEach(r => r.classList.remove('collapsed'));
-    });
 }
 
 function startAutoRefresh() {

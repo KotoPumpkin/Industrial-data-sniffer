@@ -877,14 +877,87 @@ def point_all_devices_history(field_name):
 def data_governance_overview():
     """数据治理总览"""
     import random as _r
+
+    # 数据质量维度
+    dimensions = {
+        "completeness": round(_r.uniform(92, 99), 1),
+        "consistency": round(_r.uniform(88, 96), 1),
+        "timeliness": round(_r.uniform(90, 98), 1),
+        "accuracy": round(_r.uniform(85, 95), 1),
+    }
+    quality_score = round(sum(dimensions.values()) / len(dimensions), 1)
+
+    # 质量趋势（近7天）
+    today = datetime.now(timezone.utc)
+    quality_trend = []
+    for i in range(6, -1, -1):
+        day = today - timedelta(days=i)
+        quality_trend.append({
+            "date": day.strftime("%m-%d"),
+            "score": round(_r.uniform(88, 96), 1),
+        })
+
+    # 各车间异常分布
+    anomaly_distribution = []
+    for wid, geo in WORKSHOP_GEO.items():
+        anomaly_distribution.append({
+            "workshop_id": wid,
+            "workshop_name": geo["name"],
+            "total_anomalies": _r.randint(2, 25),
+            "critical": _r.randint(0, 5),
+            "warning": _r.randint(2, 15),
+            "by_metric": {
+                m: _r.randint(0, 8)
+                for m in ["temperature", "vibration", "power", "humidity"]
+            },
+        })
+
+    # 采集统计
+    total_configured = sum(len(pts) for pts in COLLECTION_POINTS.values())
+    collection_stats = {
+        "total_points_today": _r.randint(80000, 150000),
+        "success_rate": round(_r.uniform(97.5, 99.9), 2),
+        "avg_latency_ms": round(_r.uniform(15, 45), 1),
+        "active_devices": len(DEVICES),
+        "total_points_configured": total_configured,
+    }
+
+    # 数据字典
+    data_dictionary = []
+    for dev_type, points in COLLECTION_POINTS.items():
+        for p in points:
+            data_dictionary.append({
+                "field": p["name"],
+                "label": p["label"],
+                "device_type": dev_type,
+                "device_type_cn": DEVICE_TYPE_CN.get(dev_type, dev_type),
+                "unit": p["unit"],
+                "data_type": "float",
+                "description": f"{DEVICE_TYPE_CN.get(dev_type, dev_type)}的{p['label']}采集点",
+            })
+
+    # 规则执行日志
+    rule_names = ["温度范围校验", "振动阈值校验", "转速合理性", "功率范围校验", "湿度范围校验", "良品率范围", "OEE范围"]
+    rule_execution_log = []
+    for _ in range(10):
+        hours_ago = _r.randint(0, 23)
+        mins_ago = _r.randint(0, 59)
+        ts = (datetime.now(timezone.utc) - timedelta(hours=hours_ago, minutes=mins_ago)).isoformat()
+        total = _r.randint(100, 500)
+        passed = total - _r.randint(0, int(total * 0.08))
+        rule_execution_log.append({
+            "rule_name": _r.choice(rule_names),
+            "timestamp": ts,
+            "total_checked": total,
+            "passed": passed,
+            "failed": total - passed,
+            "pass_rate": round(passed / total * 100, 2),
+        })
+    rule_execution_log.sort(key=lambda x: x["timestamp"], reverse=True)
+
     return jsonify({
-        "quality_score": round(_r.uniform(88, 96), 1),
-        "dimensions": {
-            "completeness": round(_r.uniform(92, 99), 1),
-            "consistency": round(_r.uniform(88, 96), 1),
-            "timeliness": round(_r.uniform(90, 98), 1),
-            "accuracy": round(_r.uniform(85, 95), 1),
-        },
+        "quality_score": quality_score,
+        "dimensions": dimensions,
         "workshops": [
             {
                 "id": wid,
@@ -912,6 +985,11 @@ def data_governance_overview():
             {"name": "良品率范围", "field": "quality_rate", "min": 0, "max": 100, "unit": "%"},
             {"name": "OEE范围", "field": "oee", "min": 0, "max": 100, "unit": "%"},
         ],
+        "quality_trend": quality_trend,
+        "anomaly_distribution": anomaly_distribution,
+        "collection_stats": collection_stats,
+        "data_dictionary": data_dictionary,
+        "rule_execution_log": rule_execution_log,
     })
 
 
