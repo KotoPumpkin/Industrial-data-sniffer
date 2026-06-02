@@ -98,6 +98,88 @@ def system_status():
     return jsonify(services)
 
 
+# 设备类型中文映射
+DEVICE_TYPE_CN = {"cnc": "CNC机床", "sensor": "环境传感器", "plc": "产线PLC"}
+
+
+@app.route("/api/devices/tree")
+def devices_tree():
+    """获取设备树（设备 → 点位级最新值），用于嵌套表格展示。
+
+    返回结构：
+    [
+      {
+        "device_id": "CNC-A01",
+        "device_type": "cnc",
+        "device_type_cn": "CNC机床",
+        "workshop": "workshop-1",
+        "points": [
+          {"point_id":"...","label":"...","metric":"...","unit":"...","value":47.2},
+          ...
+        ]
+      }
+    ]
+    """
+    # 1. 从 simulator 拉取设备/点位元数据
+    try:
+        resp = requests.get(f"{SIMULATOR_URL}/api/devices", timeout=5)
+        meta_devices = resp.json()
+    except Exception as e:
+        print(f"获取 simulator 元数据失败: {e}")
+        return jsonify([])
+
+    result = []
+    for dev in meta_devices:
+        dev_id = dev.get("id")
+        if not dev_id:
+            continue
+        points_meta = dev.get("points", []) or []
+
+        # 2. 按 metric 分组，批量查询每个 metric 下该设备的最新值（带 point_id tag）
+        point_values = {}  # point_id -> value
+        metrics_set = sorted({p.get("metric") for p in points_meta if p.get("metric")})
+        for metric in metrics_set:
+            flux = f'''
+            from(bucket: "factory")
+              |> range(start: -10m)
+              |> filter(fn: (r) => r._measurement == "industrial_metrics")
+              |> filter(fn: (r) => r.machine_id == "{dev_id}")
+              |> filter(fn: (r) => r._field == "{metric}")
+              |> last()
+            '''
+            rows = query_influxdb(flux)
+            for r in rows:
+                pid = r.get("point_id", "")
+                try:
+                    val = float(r.get("_value", 0))
+                except (ValueError, TypeError):
+                    continue
+                if pid:
+                    point_values[pid] = val
+
+        # 3. 组装点位列表（保留元数据顺序）
+        points = []
+        for p in points_meta:
+            pid = p.get("point_id", "")
+            points.append({
+                "point_id": pid,
+                "label": p.get("label", ""),
+                "metric": p.get("metric", ""),
+                "unit": p.get("unit", ""),
+                "value": point_values.get(pid),
+            })
+
+        result.append({
+            "device_id": dev_id,
+            "device_type": dev.get("type", ""),
+            "device_type_cn": DEVICE_TYPE_CN.get(dev.get("type", ""), dev.get("type", "")),
+            "workshop": dev.get("workshop", ""),
+            "points": points,
+        })
+
+    return jsonify(result)
+
+
 @app.route("/api/devices/latest")
 def devices_latest():
     """获取所有设备最新数据"""

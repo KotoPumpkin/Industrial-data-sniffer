@@ -528,4 +528,12 @@ if __name__ == "__main__":
     print(f"  MQTT: {MQTT_HOST}:{MQTT_PORT}")
     print(f"  HTTP: http://0.0.0.0:{HTTP_PORT}/api/metrics")
     print(f"  设备数量: {len(DEVICES)}")
-    total_points = sum(len(d.get("points", {}
+    total_points = sum(len(d.get("points", {})) for d in DEVICES.values())
+    print(f"  点位总数: {total_points}")
+    print("=" * 60)
+
+    # 启动 MQTT 发布线程
+    mqtt_thread = threading.Thread(target=mqtt_publisher, daemon=True)
+    mqtt_thread.start()
+
+    app.run(host="0.0.0.0", port=HTTP_PORT, debug=False)

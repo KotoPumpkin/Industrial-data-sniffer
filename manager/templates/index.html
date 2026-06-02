@@ -186,7 +186,7 @@ body {
 /* CHART */
 .chart-box { position: relative; width: 100%; height: 18rem; }
 .chart-box canvas { width: 100% !important; height: 100% !important; }
-#chinaMap { width: 100%; height: 45rem; }
+#chinaMap { width: 100%; height: 55rem; }
 
 /* STATS BAR */
 .stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.6rem; margin-bottom: 0.8rem; }
@@ -267,6 +267,32 @@ body {
 /* Collection points tags */
 .cp-tags { display: flex; flex-wrap: wrap; gap: 0.25rem; }
 .cp-tag { font-size: 0.65rem; padding: 0.1rem 0.4rem; border-radius: 0.15rem; background: var(--blue-dim); color: var(--text-link); }
+
+/* Nested device table */
+.data-table tr.lv-row { cursor: pointer; }
+.data-table tr.lv-row td { font-weight: 600; color: var(--text-primary); background: var(--bg-panel-header); }
+.data-table tr.lv2-row td { color: var(--text-primary); background: rgba(22,26,34,0.5); }
+.data-table tr.lv3-row td { color: var(--text-secondary); }
+.data-table tr.lv2-row td.indent-1 { padding-left: 1.6rem; }
+.data-table tr.lv3-row td.indent-2 { padding-left: 2.6rem; font-weight: 400; }
+.data-table tr.lv3-row td.indent-2 .point-label { color: var(--text-primary); font-weight: 500; }
+.data-table tr.lv-row .caret { display: inline-block; width: 0.8rem; transition: transform 0.18s; color: var(--text-muted); margin-right: 0.35rem; font-size: 0.7rem; }
+.data-table tr.lv-row.collapsed .caret { transform: rotate(-90deg); }
+.data-table tr.child-row { display: none; }
+.data-table tr.child-row.show { display: table-row; }
+
+/* Manual refresh button */
+.btn-refresh {
+    font-family: var(--font); font-size: 0.75rem; font-weight: 500;
+    padding: 0.3rem 0.7rem; border: 1px solid var(--border); border-radius: 0.3rem;
+    background: var(--bg-input); color: var(--text-secondary); cursor: pointer;
+    display: inline-flex; align-items: center; gap: 0.35rem; transition: all 0.12s;
+}
+.btn-refresh:hover { border-color: var(--blue); color: var(--text-link); }
+.btn-refresh:disabled { cursor: not-allowed; opacity: 0.7; }
+.btn-refresh .spin-icon { width: 0.85rem; height: 0.85rem; transition: transform 0.4s; }
+.btn-refresh.spinning .spin-icon { animation: btn-spin 0.9s linear infinite; }
+@keyframes btn-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
 @media (max-width: 90rem) {
     .row-map { grid-template-columns: 1fr; }
@@ -368,7 +394,7 @@ body {
             </div>
             <div class="table-wrap tall">
                 <table class="data-table" id="devicesTable">
-                    <thead><tr><th>设备ID</th><th>类型</th><th>车间</th><th>产线</th><th>采集点位数据</th></tr></thead>
+                    <thead><tr><th>名称</th><th>点位ID</th><th>类型</th><th>当前值</th><th>单位</th></tr></thead>
                     <tbody><tr><td colspan="5"><div class="loading">加载中...</div></td></tr></tbody>
                 </table>
             </div>
@@ -378,7 +404,7 @@ body {
     <!-- 点位实时趋势面板 -->
     <div class="panel" id="pointRealtimePanel" style="display:none;">
         <div class="panel-header">
-            <div class="panel-title" id="pointRealtimeTitle">📈 点位实时趋势</div>
+            <div class="panel-title" id="pointRealtimeTitle">点位实时趋势</div>
         </div>
         <div class="panel-body p0">
             <div class="chart-box" style="height:20rem;"><div id="pointRealtimeChart" style="width:100%;height:100%"></div></div>
@@ -401,27 +427,31 @@ body {
             <div class="panel-body">
                 <div class="filter-bar" style="margin-bottom:0.8rem;">
                     <div class="fg"><label>指标</label>
-                        <select id="anomalyMetric">
+                        <select id="anomalyMetric" title="指标">
                             <option value="temperature">温度</option><option value="vibration">振动</option>
                             <option value="rpm">转速</option><option value="power">功率</option>
                             <option value="humidity">湿度</option><option value="pressure">气压</option>
                         </select>
                     </div>
                     <div class="fg"><label>范围</label>
-                        <select id="anomalyRange">
+                        <select id="anomalyRange" title="范围">
                             <option value="60" selected>1小时</option><option value="360">6小时</option><option value="1440">24小时</option>
                         </select>
                     </div>
+                    <button class="btn-refresh" id="anomalyRefreshBtn" onclick="manualLoadAnomaly()" title="刷新过滤项">
+                        <svg class="spin-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"/><path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"/></svg>
+                        刷新过滤项
+                    </button>
                 </div>
-                <div id="anomalyResult"><div class="no-data">选择指标和时间范围后自动检测</div></div>
+                <div id="anomalyResult"><div class="no-data">点击"刷新过滤项"开始检测</div></div>
             </div>
         </div>
         <div class="tab-content" id="tab-correlation">
             <div class="panel-body">
                 <div class="filter-bar" style="margin-bottom:0.8rem;">
-                    <div class="fg"><label>设备</label><select id="corrDevice"></select></div>
+                    <div class="fg"><label>设备</label><select id="corrDevice" title="设备"></select></div>
                     <div class="fg"><label>指标A</label>
-                        <select id="corrMetricA">
+                        <select id="corrMetricA" title="指标A">
                             <option value="temperature">温度</option><option value="vibration">振动</option>
                             <option value="rpm">转速</option><option value="pressure">气压</option>
                             <option value="humidity">湿度</option><option value="power">功率</option>
@@ -429,15 +459,19 @@ body {
                         </select>
                     </div>
                     <div class="fg"><label>指标B</label>
-                        <select id="corrMetricB">
+                        <select id="corrMetricB" title="指标B">
                             <option value="temperature">温度</option><option value="vibration" selected>振动</option>
                             <option value="rpm">转速</option><option value="pressure">气压</option>
                             <option value="humidity">湿度</option><option value="power">功率</option>
                             <option value="current">电流</option>
                         </select>
                     </div>
+                    <button class="btn-refresh" id="corrRefreshBtn" onclick="manualLoadCorrelation()" title="刷新">
+                        <svg class="spin-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"/><path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"/></svg>
+                        刷新
+                    </button>
                 </div>
-                <div id="corrResult"><div class="no-data">选择设备和指标后自动分析</div></div>
+                <div id="corrResult"><div class="no-data">点击"刷新"开始关联分析</div></div>
             </div>
         </div>
     </div>
@@ -455,12 +489,12 @@ body {
     <div class="row row-2">
         <!-- 数据血缘 -->
         <div class="panel">
-            <div class="panel-header"><div class="panel-title">🔗 数据血缘 — 流转路径</div></div>
+            <div class="panel-header"><div class="panel-title">数据血缘 — 流转路径</div></div>
             <div class="panel-body"><div class="gov-flow" id="govFlow"><div class="loading">加载中...</div></div></div>
         </div>
         <!-- 标准化规则 -->
         <div class="panel">
-            <div class="panel-header"><div class="panel-title">📐 数据标准化规则</div></div>
+            <div class="panel-header"><div class="panel-title">数据标准化规则</div></div>
             <div class="panel-body p0">
                 <div class="table-wrap"><table class="data-table" id="govRules">
                     <thead><tr><th>规则名称</th><th>字段</th><th>最小值</th><th>最大值</th><th>单位</th></tr></thead>
@@ -472,7 +506,7 @@ body {
 
     <!-- 各车间数据质量 -->
     <div class="panel">
-        <div class="panel-header"><div class="panel-title">🏭 各车间数据质量概览</div></div>
+        <div class="panel-header"><div class="panel-title">各车间数据质量概览</div></div>
         <div class="panel-body p0">
             <div class="table-wrap">
                 <table class="data-table" id="govWorkshopTable">
@@ -570,20 +604,22 @@ async function loadServices() {
     } catch(e) { $('#servicesList').innerHTML = '<div class="no-data">无法连接后端</div>'; }
 }
 
-// ===== 设备数据 =====
+// ===== 设备数据（嵌套表格：车间 → 设备 → 点位） =====
+// allDevicesData 结构（来自 /api/devices/tree）：
+// [{ device_id, device_type, device_type_cn, workshop, points:[{point_id,label,metric,unit,value}] }]
+
 async function loadDevices() {
     try {
-        const r = await fetch('/api/devices/latest');
+        const r = await fetch('/api/devices/tree');
         allDevicesData = await r.json();
         $('#heroDevices').textContent = allDevicesData.length;
-        $('#heroWorkshops').textContent = new Set(allDevicesData.map(d => d.machine_id?.match(/workshop-\d/)?.[0] || d.workshop)).size || 5;
+        $('#heroWorkshops').textContent = new Set(allDevicesData.map(d => d.workshop).filter(Boolean)).size || 5;
         populateFilters();
         renderDeviceTable();
     } catch(e) { console.error(e); }
 }
 
 function populateFilters() {
-    // Save current selections
     const savedWs = $('#filterWorkshop').value;
     const savedDev = $('#filterDevice').value;
     const savedCorr = $('#corrDevice').value;
@@ -605,47 +641,42 @@ function updateDeviceFilter(fromPopulate) {
     const savedDev = $('#filterDevice').value;
     const filtered = ws ? allDevicesData.filter(d => d.workshop === ws) : allDevicesData;
     const ds = $('#filterDevice');
-    ds.innerHTML = '<option value="">全部设备</option>' + filtered.map(d => `<option value="${d.machine_id}">${d.machine_id}</option>`).join('');
+    ds.innerHTML = '<option value="">全部设备</option>' + filtered.map(d => `<option value="${d.device_id}">${d.device_id}</option>`).join('');
     if (!fromPopulate && savedDev) ds.value = savedDev;
-    // Sync corr device list (preserve selection)
+    // Sync corr device list（保留选中）
     const savedCorr = $('#corrDevice').value;
-    const opts = allDevicesData.map(d => `<option value="${d.machine_id}">${d.machine_id}</option>`).join('');
+    const opts = allDevicesData.map(d => `<option value="${d.device_id}">${d.device_id}</option>`).join('');
     $('#corrDevice').innerHTML = opts;
     if (savedCorr) $('#corrDevice').value = savedCorr;
 }
 
-// 点位筛选状态
-let _selectedPointField = null;  // 当前选中的点位英文字段名（如 temperature）
-let _selectedPointLabel = null;  // 当前选中的点位中文名（如 主轴温度）
+// 点位筛选状态（用于实时趋势图）
+let _selectedPointField = null;
+let _selectedPointLabel = null;
 
 function updatePointFilter() {
     const dev = $('#filterDevice').value;
+    const ws = $('#filterWorkshop').value;
     const saved = $('#filterPoint').value;
     const sel = $('#filterPoint');
 
-    if (!dev) {
-        // 全部设备：合并所有类型点位（去重）
-        sel.innerHTML = '<option value="">全部点位</option>';
-        const seenFields = new Set();
-        Object.values(DEVICE_POINT_FIELDS).forEach(fields => {
-            Object.entries(fields).forEach(([label, field]) => {
-                if (!seenFields.has(field)) {
-                    seenFields.add(field);
-                    sel.innerHTML += `<option value="${field}">${label}</option>`;
-                }
-            });
+    // 当前筛选范围内的设备集合
+    const filtered = dev
+        ? allDevicesData.filter(d => d.device_id === dev)
+        : (ws ? allDevicesData.filter(d => d.workshop === ws) : allDevicesData);
+
+    // 汇总所有 metric，去重（field -> label）
+    const metricSet = new Map();
+    filtered.forEach(d => {
+        (d.points || []).forEach(p => {
+            if (p.metric && !metricSet.has(p.metric)) metricSet.set(p.metric, p.label || p.metric);
         });
-    } else {
-        // 找到该设备的类型
-        const device = allDevicesData.find(d => d.machine_id === dev);
-        const dtype = device ? device.device_type : null;
-        const fieldsMap = DEVICE_POINT_FIELDS[dtype] || {};
-        sel.innerHTML = '<option value="">全部点位</option>';
-        Object.entries(fieldsMap).forEach(([label, field]) => {
-            sel.innerHTML += `<option value="${field}">${label}</option>`;
-        });
-    }
-    // 尝试恢复之前的选择
+    });
+
+    sel.innerHTML = '<option value="">全部点位</option>';
+    [...metricSet.entries()].forEach(([field, label]) => {
+        sel.innerHTML += `<option value="${field}">${label} (${field})</option>`;
+    });
     if (saved) sel.value = saved;
 }
 
@@ -656,41 +687,115 @@ function applyDeviceFilter() {
     refreshPointRealtime();
 }
 
+// ===== 嵌套表格渲染 =====
+let _rowIdSeq = 0;
+function nextRowId() { return 'r' + (++_rowIdSeq); }
+function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&','<':'<','>':'>','"':'"',"'":'&#39;'}[c]));
+}
+
+async function manualLoadAnomaly() {
+    const btn = $('#anomalyRefreshBtn');
+    if (!btn) return;
+    btn.disabled = true;
+    btn.classList.add('spinning');
+    try { await loadAnomaly(); } finally {
+        setTimeout(() => { btn.classList.remove('spinning'); btn.disabled = false; }, 450);
+    }
+}
+
+async function manualLoadCorrelation() {
+    const btn = $('#corrRefreshBtn');
+    if (!btn) return;
+    btn.disabled = true;
+    btn.classList.add('spinning');
+    try { await loadCorrelation(); } finally {
+        setTimeout(() => { btn.classList.remove('spinning'); btn.disabled = false; }, 450);
+    }
+}
+
 function renderDeviceTable() {
     const ws = $('#filterWorkshop').value;
     const dev = $('#filterDevice').value;
-    let list = allDevicesData;
-    if (ws) list = list.filter(d => d.workshop === ws);
-    if (dev) list = list.filter(d => d.machine_id === dev);
-    // Save scroll position
-    const tableWrap = $('#devicesTable').closest('.table-wrap');
-    const scrollTop = tableWrap ? tableWrap.scrollTop : 0;
     const tbody = $('#devicesTable tbody');
-    if (!list.length) { tbody.innerHTML = '<tr><td colspan="5"><div class="no-data">暂无设备数据</div></td></tr>'; return; }
-    const selField = _selectedPointField;
-    tbody.innerHTML = list.map(d => {
-        const wsInfo = WORKSHOP_MAP[d.workshop];
-        const wsName = wsInfo ? wsInfo.name : (d.workshop || '-');
-        const dtype = d.device_type;
-        const points = DEVICE_POINTS[dtype] || [];
-        const fieldsMap = DEVICE_POINT_FIELDS[dtype] || {};
-        const pointItems = points.map(p => {
-            const field = fieldsMap[p];
-            const val = field && d[field] !== undefined ? fmt(parseFloat(d[field])) : '--';
-            const isHighlight = selField && field === selField;
-            const style = isHighlight ? 'background:rgba(251,146,60,0.25);border:1px solid var(--orange);color:var(--orange);font-weight:600;' : '';
-            return `<span class="cp-tag" style="${style}">${p}: ${val}</span>`;
-        }).join('');
-        return `<tr>
-            <td class="link" onclick="openReport('${d.machine_id || ''}')">${d.machine_id || '-'}</td>
-            <td>${d.device_type || '-'}</td>
-            <td>${wsName}</td>
-            <td>${d.line || '-'}</td>
-            <td style="white-space:normal;max-width:24rem"><div class="cp-tags">${pointItems}</div></td>
-        </tr>`;
-    }).join('');
-    // Restore scroll position
-    if (tableWrap) tableWrap.scrollTop = scrollTop;
+
+    // 1. 未选车间：提示
+    if (!ws) {
+        tbody.innerHTML = '<tr><td colspan="5"><div class="no-data">请先选择车间</div></td></tr>';
+        return;
+    }
+
+    // 2. 过滤数据
+    let devices = allDevicesData.filter(d => d.workshop === ws);
+    if (dev) devices = devices.filter(d => d.device_id === dev);
+    if (!devices.length) {
+        tbody.innerHTML = '<tr><td colspan="5"><div class="no-data">该车间暂无设备数据</div></td></tr>';
+        return;
+    }
+
+    const wsInfo = WORKSHOP_MAP[ws];
+    const wsName = wsInfo ? wsInfo.name : ws;
+
+    const rows = [];
+
+    if (dev) {
+        // 模式B：顶级=设备，次级=点位
+        devices.forEach(d => {
+            const topId = nextRowId();
+            rows.push(`<tr class="lv-row" id="${topId}" onclick="toggleRow('${topId}')">
+                <td colspan="5"><span class="caret">▼</span>${escapeHtml(d.device_id)} <span style="color:var(--text-muted);font-weight:400;margin-left:0.6rem;">${escapeHtml(d.device_type_cn || d.device_type || '')} · ${escapeHtml(wsName)} · ${d.points?.length || 0} 点位</span></td>
+            </tr>`);
+            (d.points || []).forEach(p => rows.push(pointRow(p, topId, 2)));
+        });
+    } else {
+        // 模式A：顶级=车间，次级=设备，末级=点位
+        const topId = nextRowId();
+        rows.push(`<tr class="lv-row" id="${topId}" onclick="toggleRow('${topId}')">
+            <td colspan="5"><span class="caret">▼</span>${escapeHtml(wsName)} <span style="color:var(--text-muted);font-weight:400;margin-left:0.6rem;">${devices.length} 台设备</span></td>
+        </tr>`);
+        devices.forEach(d => {
+            const devRowId = nextRowId();
+            rows.push(`<tr class="lv2-row child-row ${topId}-child" id="${devRowId}" onclick="toggleRow('${devRowId}', event)">
+                <td class="indent-1"><span class="caret">▼</span><span class="link" onclick="event.stopPropagation();openReport('${escapeHtml(d.device_id)}')">${escapeHtml(d.device_id)}</span></td>
+                <td style="color:var(--text-muted)">${escapeHtml(d.device_type_cn || d.device_type || '')}</td>
+                <td style="color:var(--text-muted)">—</td>
+                <td style="color:var(--text-muted)">${d.points?.length || 0} 点位</td>
+                <td style="color:var(--text-muted)">—</td>
+            </tr>`);
+            (d.points || []).forEach(p => rows.push(pointRow(p, devRowId, 3)));
+        });
+    }
+
+    tbody.innerHTML = rows.join('');
+
+    // 默认全部展开
+    requestAnimationFrame(() => {
+        $$('#devicesTable tr.child-row').forEach(r => r.classList.add('show'));
+    });
+}
+
+function pointRow(p, parentRowId, level) {
+    const indentCls = 'indent-2';
+    const childCls = `${parentRowId}-child`;
+    const valStr = (p.value != null && !isNaN(p.value)) ? Number(p.value).toFixed(2) : '--';
+    return `<tr class="lv3-row child-row ${childCls}">
+        <td class="${indentCls}"><span class="point-label">${escapeHtml(p.label || '-')}</span></td>
+        <td style="color:var(--text-muted)">${escapeHtml(p.point_id || '')}</td>
+        <td>${escapeHtml(p.metric || '-')}</td>
+        <td class="hl">${valStr}</td>
+        <td>${escapeHtml(p.unit || '')}</td>
+    </tr>`;
+}
+
+function toggleRow(rowId, ev) {
+    const row = document.getElementById(rowId);
+    if (!row) return;
+    const collapsed = row.classList.toggle('collapsed');
+    document.querySelectorAll(`#devicesTable tr.${rowId}-child`).forEach(k => {
+        if (collapsed) k.classList.remove('show');
+        else k.classList.add('show');
+    });
+    if (ev) ev.stopPropagation();
 }
 
 // ===== 中国地图 =====
@@ -973,7 +1078,7 @@ async function refreshPointRealtime() {
         }));
         pointRealtimeChart.setOption({
             grid: { top: 20, right: 20, bottom: 30, left: 50 },
-            tooltip: { trigger: 'axis' },
+            tooltip: { trigger: 'axis', appendToBody: true, confine: false },
             legend: {
                 bottom: 0,
                 textStyle: { color: '#8b919a', fontSize: 10 },
@@ -995,8 +1100,8 @@ let _activeTab = 'alert';
 function getActiveTabData() {
     switch (_activeTab) {
         case 'alert': loadAlerts(); break;
-        case 'anomaly': loadAnomaly(); break;
-        case 'correlation': loadCorrelation(); break;
+        case 'anomaly': loadAnomaly(); break;   // 异常检测参与自动刷新（按需求）
+        // correlation 由手动刷新按钮触发，不参与自动循环
     }
 }
 
@@ -1006,6 +1111,11 @@ function refreshAll() {
     loadAlerts();
     getActiveTabData();
     if (_selectedPointField) refreshPointRealtime();
+    // 嵌套表格默认展开 — 刷新数据后重新展开所有节点
+    requestAnimationFrame(() => {
+        $$('#devicesTable tr.child-row').forEach(r => r.classList.add('show'));
+        $$('#devicesTable tr.lv-row, #devicesTable tr.lv2-row').forEach(r => r.classList.remove('collapsed'));
+    });
 }
 
 function startAutoRefresh() {
