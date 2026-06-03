@@ -110,7 +110,7 @@ body {
 .row { display: grid; gap: 1rem; }
 .row-2 { grid-template-columns: 1fr 1fr; }
 .row-3-2 { grid-template-columns: 3fr 2fr; }
-.row-map { grid-template-columns: 1.6fr 1fr; }
+.row-map { grid-template-columns: 1fr 1fr; }
 
 /* PANEL */
 .panel {
@@ -205,7 +205,15 @@ body {
 /* CHART */
 .chart-box { position: relative; width: 100%; height: 18rem; }
 .chart-box canvas { width: 100% !important; height: 100% !important; }
-#chinaMap { width: 100%; height: 55rem; }
+#chinaMap { width: 100%; height: 28rem; }
+.refresh-hint { font-size: 0.65rem; color: var(--text-muted); }
+.icon-sm { width: 0.85rem; height: 0.85rem; }
+/* 下拉菜单 */
+.dropdown { position: relative; display: inline-block; }
+.dropdown-menu { display: none; position: absolute; right: 0; top: 100%; z-index: 10; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 0.3rem; min-width: 12rem; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+.dropdown-menu.show { display: block; }
+.dropdown-item { padding: 0.5rem 0.8rem; font-size: 0.8rem; color: var(--text-secondary); cursor: pointer; white-space: nowrap; }
+.dropdown-item:hover { background: var(--bg-panel-header); color: var(--text-link); }
 
 /* STATS BAR */
 .stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.6rem; margin-bottom: 0.8rem; }
@@ -315,7 +323,7 @@ body {
 
 @media (max-width: 90rem) {
     .row-map { grid-template-columns: 1fr; }
-    #chinaMap { height: 40rem; }
+    #chinaMap { height: 20rem; }
 }
 @media (max-width: 64rem) {
     body { grid-template-columns: 1fr; }
@@ -334,11 +342,6 @@ body {
     </div>
     <div class="topbar-right">
         <div class="topbar-indicator"><div class="dot" id="statusDot"></div><span id="statusText">连接中</span></div>
-        <select class="refresh-select" id="refreshInterval" title="刷新间隔">
-            <option value="5" selected>5秒</option>
-            <option value="15">15秒</option>
-            <option value="60">1分钟</option>
-        </select>
         <div class="topbar-clock" id="clock">--:--:--</div>
     </div>
 </div>
@@ -404,10 +407,17 @@ body {
     <div class="panel">
         <div class="panel-header">
             <div class="panel-title">设备实时数据</div>
+            <select class="refresh-select" id="deviceRefreshInterval" title="设备数据刷新间隔" onchange="setModuleInterval('devices', parseInt(this.value)*1000)">
+                <option value="1">1秒</option>
+                <option value="5" selected>5秒</option>
+                <option value="15">15秒</option>
+                <option value="60">1分钟</option>
+            </select>
         </div>
         <div class="panel-body p0">
             <div style="padding:0.5rem 0.8rem; border-bottom:1px solid var(--border); display:flex; gap:0.6rem; align-items:flex-end; flex-wrap:wrap;">
                 <div class="fg"><label>车间</label><select id="filterWorkshop" onchange="applyDeviceFilter()"><option value="">全部车间</option></select></div>
+                <div class="fg"><label>类型</label><select id="filterDeviceType" onchange="applyDeviceFilter()"><option value="">全部类型</option></select></div>
                 <div class="fg"><label>设备</label><select id="filterDevice" onchange="applyDeviceFilter()"><option value="">全部设备</option></select></div>
                 <div class="fg"><label>点位</label><select id="filterPoint" onchange="onPointFilterChange()"><option value="">全部点位</option></select></div>
             </div>
@@ -424,6 +434,12 @@ body {
     <div class="panel" id="pointRealtimePanel" style="display:none;">
         <div class="panel-header">
             <div class="panel-title" id="pointRealtimeTitle">点位实时趋势</div>
+            <select class="refresh-select" id="trendRefreshInterval" title="趋势图刷新间隔" onchange="setModuleInterval('trend', parseInt(this.value)*1000)">
+                <option value="1">1秒</option>
+                <option value="5" selected>5秒</option>
+                <option value="15">15秒</option>
+                <option value="60">1分钟</option>
+            </select>
         </div>
         <div class="panel-body p0">
             <div class="chart-box" style="height:20rem;"><div id="pointRealtimeChart" style="width:100%;height:100%"></div></div>
@@ -433,7 +449,7 @@ body {
     <!-- 分析面板 -->
     <div class="panel">
         <div class="tabs">
-            <button class="tab-btn active" data-tab="alert">实时告警</button>
+            <button class="tab-btn active" data-tab="alert">实时告警 <span class="refresh-hint">(1s)</span></button>
             <button class="tab-btn" data-tab="anomaly">异常检测</button>
             <button class="tab-btn" data-tab="correlation">关联分析</button>
         </div>
@@ -461,6 +477,24 @@ body {
                         <svg class="spin-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"/><path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"/></svg>
                         刷新过滤项
                     </button>
+                    <select class="refresh-select" id="anomalyRefreshInterval" title="异常检测刷新间隔" onchange="setModuleInterval('anomaly', parseInt(this.value)*1000)">
+                        <option value="1">1秒</option>
+                        <option value="5">5秒</option>
+                        <option value="15" selected>15秒</option>
+                        <option value="60">1分钟</option>
+                    </select>
+                    <div class="dropdown" id="anomalyClearDropdown">
+                        <button type="button" class="btn-refresh" id="anomalyClearBtn" onclick="toggleAnomalyClearMenu()" title="清除记录">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-sm"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                            清除记录
+                        </button>
+                        <div class="dropdown-menu" id="anomalyClearMenu">
+                            <div class="dropdown-item" onclick="clearAnomalyRecords('all')">清除全部记录</div>
+                            <div class="dropdown-item" onclick="clearAnomalyRecords('metric')">按当前指标清除</div>
+                            <div class="dropdown-item" onclick="clearAnomalyRecords('time')">按当前时间范围清除</div>
+                            <div class="dropdown-item" onclick="clearAnomalyRecords('all_filters')">按当前指标+时间范围清除</div>
+                        </div>
+                    </div>
                 </div>
                 <div id="anomalyResult"><div class="no-data">点击"刷新过滤项"开始检测</div></div>
             </div>
@@ -716,6 +750,7 @@ async function loadDevices() {
 
 function populateFilters() {
     const savedWs = $('#filterWorkshop').value;
+    const savedDt = $('#filterDeviceType').value;
     const savedDev = $('#filterDevice').value;
     const savedCorr = $('#corrDevice').value;
 
@@ -726,15 +761,33 @@ function populateFilters() {
         return `<option value="${w}">${info ? info.name : w}</option>`;
     }).join('');
     if (savedWs) ws.value = savedWs;
+    updateDeviceTypeFilter();
+    if (savedDt) $('#filterDeviceType').value = savedDt;
     updateDeviceFilter(true);
     if (savedDev) $('#filterDevice').value = savedDev;
     if (savedCorr) $('#corrDevice').value = savedCorr;
 }
 
+function updateDeviceTypeFilter() {
+    const ws = $('#filterWorkshop').value;
+    const filtered = ws ? allDevicesData.filter(d => d.workshop === ws) : allDevicesData;
+    const types = [...new Set(filtered.map(d => d.device_type).filter(Boolean))];
+    const typeNames = { cnc: '数控机床', sensor: '环境传感器', plc: 'PLC控制器' };
+    const sel = $('#filterDeviceType');
+    const saved = sel.value;
+    sel.innerHTML = '<option value="">全部类型</option>' + types.map(t =>
+        `<option value="${t}">${typeNames[t] || t}</option>`
+    ).join('');
+    if (saved && types.includes(saved)) sel.value = saved;
+}
+
 function updateDeviceFilter(fromPopulate) {
     const ws = $('#filterWorkshop').value;
+    const dt = $('#filterDeviceType').value;
     const savedDev = $('#filterDevice').value;
-    const filtered = ws ? allDevicesData.filter(d => d.workshop === ws) : allDevicesData;
+    let filtered = allDevicesData;
+    if (ws) filtered = filtered.filter(d => d.workshop === ws);
+    if (dt) filtered = filtered.filter(d => d.device_type === dt);
     const ds = $('#filterDevice');
     ds.innerHTML = '<option value="">全部设备</option>' + filtered.map(d => `<option value="${d.device_id}">${d.device_id}</option>`).join('');
     if (!fromPopulate && savedDev) ds.value = savedDev;
@@ -776,6 +829,7 @@ function updatePointFilter() {
 }
 
 function applyDeviceFilter() {
+    updateDeviceTypeFilter();
     updateDeviceFilter();
     updatePointFilter();
     renderDeviceTable();
@@ -1019,6 +1073,14 @@ async function loadAlerts() {
 }
 
 // ===== 异常检测 =====
+async function loadTotalAnomalyCount() {
+    try {
+        const r = await fetch('/api/analytics/anomaly-count?minutes=60');
+        const d = await r.json();
+        $('#heroAnomalies').textContent = d.total_anomaly_count || 0;
+    } catch(e) { console.error('anomaly count error:', e); }
+}
+
 async function loadAnomaly() {
     const metric = $('#anomalyMetric').value;
     const minutes = $('#anomalyRange').value;
@@ -1026,7 +1088,6 @@ async function loadAnomaly() {
         const r = await fetch(`/api/analytics/anomaly?metric=${metric}&minutes=${minutes}`);
         const d = await r.json();
         const anomalies = d.anomalies || [];
-        $('#heroAnomalies').textContent = d.anomaly_count || 0;
         if (!anomalies.length) { const _s = _saveScroll($('#anomalyResult')); $('#anomalyResult').innerHTML = '<div class="no-data">未检测到异常</div>'; _restoreScroll(_s); return; }
         let html = `<div class="table-wrap"><table class="data-table">
             <thead><tr><th>设备</th><th>数值</th><th>Z-Score</th><th>严重程度</th><th>时间</th></tr></thead><tbody>`;
@@ -1042,10 +1103,53 @@ async function loadAnomaly() {
             </tr>`;
         });
         html += '</tbody></table></div>';
+        // 保存内部 .table-wrap 的滚动位置
+        const oldTW = document.querySelector('#anomalyResult .table-wrap');
+        const savedTWST = oldTW ? oldTW.scrollTop : 0;
         const _s = _saveScroll($('#anomalyResult'));
         $('#anomalyResult').innerHTML = html;
         _restoreScroll(_s);
+        // 恢复 .table-wrap 滚动位置
+        const newTW = document.querySelector('#anomalyResult .table-wrap');
+        if (newTW) newTW.scrollTop = savedTWST;
     } catch(e) { const _s = _saveScroll($('#anomalyResult')); $('#anomalyResult').innerHTML = '<div class="no-data">检测失败</div>'; _restoreScroll(_s); }
+}
+
+// ===== 异常清除记录 =====
+function toggleAnomalyClearMenu() {
+    const menu = $('#anomalyClearMenu');
+    menu.classList.toggle('show');
+}
+
+// 点击页面其他区域关闭菜单
+document.addEventListener('click', e => {
+    const dd = document.getElementById('anomalyClearDropdown');
+    const menu = document.getElementById('anomalyClearMenu');
+    if (dd && menu && !dd.contains(e.target)) menu.classList.remove('show');
+});
+
+async function clearAnomalyRecords(scope) {
+    $('#anomalyClearMenu').classList.remove('show');
+    const payload = {};
+    if (scope === 'all') {
+        payload.clear_all = true;
+    } else if (scope === 'metric') {
+        payload.metric = $('#anomalyMetric').value;
+    } else if (scope === 'time') {
+        payload.minutes = parseInt($('#anomalyRange').value) || 60;
+    } else if (scope === 'all_filters') {
+        payload.metric = $('#anomalyMetric').value;
+        payload.minutes = parseInt($('#anomalyRange').value) || 60;
+    }
+    try {
+        await fetch('/api/analytics/anomaly/acknowledge', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        loadAnomaly();
+        loadTotalAnomalyCount();
+    } catch(e) { console.error('clear anomaly error:', e); }
 }
 
 // ===== 关联分析 =====
@@ -1297,8 +1401,12 @@ async function refreshPointRealtime() {
     $('#pointRealtimeTitle').textContent = `${label} — 实时趋势`;
 
     const dev = $('#filterDevice').value;
+    const ws = $('#filterWorkshop').value;
+    const dt = $('#filterDeviceType').value;
     const params = new URLSearchParams();
     if (dev) params.set('device', dev);
+    if (ws) params.set('workshop', ws);
+    if (dt) params.set('device_type', dt);
     params.set('minutes', '30');
 
     try {
@@ -1343,32 +1451,47 @@ async function refreshPointRealtime() {
     }
 }
 
-// ===== 自动刷新 =====
-let _timer = null;
+// ===== 独立模块定时器 =====
 let _activeTab = 'alert';
 
-function getActiveTabData() {
-    switch (_activeTab) {
-        case 'alert': loadAlerts(); break;
-        case 'anomaly': loadAnomaly(); break;   // 异常检测参与自动刷新（按需求）
-        // correlation 由手动刷新按钮触发，不参与自动循环
-    }
+const moduleTimers = {
+    alerts:   { timer: null, interval: 1000,  fixed: true,  fetching: false },
+    devices:  { timer: null, interval: 5000,  fixed: false, fetching: false },
+    trend:    { timer: null, interval: 5000,  fixed: false, fetching: false },
+    anomaly:  { timer: null, interval: 15000, fixed: false, fetching: false },
+};
+
+function startModuleTimer(name, fn) {
+    const m = moduleTimers[name];
+    if (m.timer) clearInterval(m.timer);
+    m.timer = setInterval(() => {
+        if (m.fetching) return; // 防并发
+        m.fetching = true;
+        Promise.resolve(fn()).finally(() => { m.fetching = false; });
+    }, m.interval);
 }
 
-function refreshAll() {
-    loadServices();
-    loadDevices();
-    getActiveTabData();
-    if (_selectedPointField) refreshPointRealtime();
+function stopModuleTimer(name) {
+    const m = moduleTimers[name];
+    if (m.timer) { clearInterval(m.timer); m.timer = null; }
 }
 
-function startAutoRefresh() {
-    if (_timer) clearInterval(_timer);
-    const sec = parseInt($('#refreshInterval').value) || 5;
-    _timer = setInterval(refreshAll, sec * 1000);
+function setModuleInterval(name, ms) {
+    const m = moduleTimers[name];
+    if (m.fixed) return;
+    m.interval = ms;
+    // 用对应的回调重启定时器
+    const callbacks = {
+        devices: () => { loadDevices(); loadServices(); },
+        trend:   () => { if (_selectedPointField) refreshPointRealtime(); },
+        anomaly: () => { if (_activeTab === 'anomaly') loadAnomaly(); loadTotalAnomalyCount(); },
+    };
+    if (callbacks[name]) startModuleTimer(name, callbacks[name]);
 }
 
-$('#refreshInterval').addEventListener('change', () => { startAutoRefresh(); refreshAll(); });
+function stopAllModuleTimers() {
+    Object.keys(moduleTimers).forEach(stopModuleTimer);
+}
 
 $$('.tab-btn').forEach(tab => {
     tab.addEventListener('click', () => {
@@ -1377,7 +1500,9 @@ $$('.tab-btn').forEach(tab => {
         tab.classList.add('active');
         $(`#tab-${tab.dataset.tab}`).classList.add('active');
         _activeTab = tab.dataset.tab;
-        getActiveTabData();
+        // 切换 tab 时立即加载对应数据
+        if (_activeTab === 'alert') loadAlerts();
+        else if (_activeTab === 'anomaly') loadAnomaly();
     });
 });
 
@@ -1386,9 +1511,15 @@ async function init() {
     await loadServices();
     await loadDevices();
     await loadAlerts();
+    await loadTotalAnomalyCount();
     initChinaMap();
     _activeTab = 'alert';
-    startAutoRefresh();
+
+    // 启动独立模块定时器
+    startModuleTimer('alerts',  loadAlerts);
+    startModuleTimer('devices', () => { loadDevices(); loadServices(); });
+    startModuleTimer('trend',   () => { if (_selectedPointField) refreshPointRealtime(); });
+    startModuleTimer('anomaly', () => { if (_activeTab === 'anomaly') loadAnomaly(); loadTotalAnomalyCount(); });
 }
 init();
 </script>

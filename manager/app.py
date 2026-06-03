@@ -320,16 +320,120 @@ def analytics_anomaly():
                     "severity": "high" if z_score > 3.0 else "medium" if z_score > 2.5 else "low",
                 })
 
+    # 过滤已确认（清除）的异常
+    filtered_anomalies = [a for a in anomalies if not _is_anomaly_acknowledged(metric, a.get("machine_id", ""), a.get("time", ""))]
+
     return jsonify({
         "metric": metric,
         "total_points": len(values),
-        "anomaly_count": len(anomalies),
-        "anomaly_rate": round(len(anomalies) / len(values) * 100, 2) if values else 0,
+        "anomaly_count": len(filtered_anomalies),
+        "anomaly_rate": round(len(filtered_anomalies) / len(values) * 100, 2) if values else 0,
         "mean": round(mean_val, 3),
         "stdev": round(stdev_val, 3),
         "threshold": threshold,
-        "anomalies": anomalies[:50],
+        "anomalies": filtered_anomalies[:50],
     })
+
+
+@app.route("/api/analytics/anomaly-count")
+def analytics_anomaly_count():
+    """所有指标异常检测数量总和"""
+    minutes = int(request.args.get("minutes", 60))
+    threshold = float(request.args.get("threshold", 2.0))
+    metrics = ["temperature", "vibration", "rpm", "power", "humidity", "pressure"]
+    total_count = 0
+    detail = {}
+
+    for metric_name in metrics:
+        flux = f'''
+        from(bucket: "factory")
+          |> range(start: -{minutes}m)
+          |> filter(fn: (r) => r._measurement == "industrial_metrics")
+          |> filter(fn: (r) => r._field == "{metric_name}")
+          |> aggregateWindow(every: 30s, fn: mean, createEmpty: false)
+        '''
+        results = query_influxdb(flux)
+
+        if len(results) < 5:
+            detail[metric_name] = 0
+            continue
+
+        values = []
+        for r in results:
+            try:
+                val = float(r.get("_value", 0))
+                values.append(val)
+            except (ValueError, TypeError):
+                continue
+
+        if not values:
+            detail[metric_name] = 0
+            continue
+
+        mean_val = statistics.mean(values)
+        stdev_val = statistics.stdev(values) if len(values) > 1 else 0
+
+        count = 0
+        if stdev_val > 0:
+            for v in values:
+                z_score = abs(v - mean_val) / stdev_val
+                if z_score > threshold:
+                    count += 1
+
+        detail[metric_name] = count
+        total_count += count
+
+    return jsonify({
+        "total_anomaly_count": total_count,
+        "minutes": minutes,
+        "threshold": threshold,
+        "detail": detail,
+    })
+
+
+# 异常确认（清除）记录 — 内存存储
+_anomaly_acks = []  # [{metric, device, cutoff_time}]
+
+
+@app.route("/api/analytics/anomaly/acknowledge", methods=["POST"])
+def acknowledge_anomalies():
+    """确认（清除）异常记录"""
+    data = request.get_json() or {}
+    clear_all = data.get("clear_all", False)
+    metric = data.get("metric", "")
+    device = data.get("device", "")
+    minutes = data.get("minutes", 0)
+
+    if clear_all:
+        _anomaly_acks.clear()
+    else:
+        cutoff = ""
+        if minutes > 0:
+            cutoff = (datetime.now(timezone.utc) - timedelta(minutes=minutes)).isoformat()
+        _anomaly_acks.append({
+            "metric": metric or "*",
+            "device": device or "*",
+            "cutoff_time": cutoff,
+            "acknowledged_at": datetime.now(timezone.utc).isoformat(),
+        })
+
+    return jsonify({"status": "ok", "cleared": True})
+
+
+def _is_anomaly_acknowledged(metric, machine_id, time_str):
+    """检查异常记录是否已被确认"""
+    for ack in _anomaly_acks:
+        # 匹配指标
+        if ack["metric"] != "*" and ack["metric"] != metric:
+            continue
+        # 匹配设备
+        if ack["device"] != "*" and ack["device"] != machine_id:
+            continue
+        # 匹配时间范围（cutoff_time 为空表示匹配所有时间）
+        if ack["cutoff_time"] and time_str < ack["cutoff_time"]:
+            continue
+        return True
+    return False
 
 
 @app.route("/api/analytics/trend")
@@ -825,9 +929,13 @@ def device_stats(device_id):
 def point_all_devices_history(field_name):
     """查询某字段在所有设备上的历史数据（用于实时点位对比图）"""
     device = request.args.get("device", "")
+    workshop = request.args.get("workshop", "")
+    device_type = request.args.get("device_type", "")
     minutes = int(request.args.get("minutes", 30))
 
     device_filter = f'|> filter(fn: (r) => r.machine_id == "{device}")' if device else ""
+    workshop_filter = f'|> filter(fn: (r) => r.workshop == "{workshop}")' if workshop else ""
+    dtype_filter = f'|> filter(fn: (r) => r.device_type == "{device_type}")' if device_type else ""
 
     flux = f'''
     from(bucket: "factory")
@@ -835,6 +943,8 @@ def point_all_devices_history(field_name):
       |> filter(fn: (r) => r._measurement == "industrial_metrics")
       |> filter(fn: (r) => r._field == "{field_name}")
       {device_filter}
+      {workshop_filter}
+      {dtype_filter}
       |> aggregateWindow(every: 10s, fn: mean, createEmpty: false)
       |> limit(n: 300)
     '''

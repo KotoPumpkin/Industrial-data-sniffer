@@ -455,7 +455,7 @@ def mqtt_publisher():
                 stats_payload.update(stats)
                 client.publish(topic_prefix, json.dumps(stats_payload), qos=1)
 
-            time.sleep(3)
+            time.sleep(1)
         except Exception as e:
             print(f"[MQTT] 发布错误: {e}")
             time.sleep(5)
