@@ -34,7 +34,14 @@
     --font: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { font-size: 14px; }
+html { font-size: 14px; scrollbar-color: #3a3f4a #0f1218; }
+
+/* Dark scrollbar with glass effect */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: rgba(15,18,24,0.6); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+::-webkit-scrollbar-thumb { background: #3a3f4a; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #555b66; }
+::-webkit-scrollbar-corner { background: transparent; }
 body {
     font-family: var(--font); background: var(--bg-canvas); color: var(--text-primary);
     min-height: 100vh; display: grid;
@@ -51,9 +58,9 @@ body {
 }
 .topbar-left { display: flex; align-items: center; gap: 0.6rem; }
 .topbar-logo {
-    width: 1.8rem; height: 1.8rem; background: linear-gradient(135deg, #fb923c, #f87171);
+    width: 1.8rem; height: 1.8rem; border: 1px dashed var(--border-light);
     border-radius: 0.4rem; display: flex; align-items: center; justify-content: center;
-    font-weight: 700; font-size: 0.9rem; color: #fff;
+    color: var(--text-muted); font-size: 0.55rem;
 }
 .topbar-title { font-size: 0.95rem; font-weight: 600; }
 .topbar-right { display: flex; align-items: center; gap: 1rem; }
@@ -65,6 +72,14 @@ body {
     border: 1px solid var(--border); border-radius: 0.2rem;
     background: var(--bg-input); color: var(--text-secondary); outline: none; cursor: pointer;
 }
+.trend-pause-btn {
+    background: none; border: none; color: #9ca3af; cursor: pointer;
+    padding: 0; font-size: 0.75rem; line-height: 1;
+    transition: color 0.15s;
+}
+.trend-pause-btn:hover { color: #e5e7eb; }
+.trend-pause-btn.paused { color: #f87171; }
+.trend-title-group { display: flex; align-items: center; gap: 0.4rem; }
 
 /* SIDEBAR */
 .sidebar {
@@ -72,14 +87,14 @@ body {
     display: flex; flex-direction: column; padding: 0.5rem 0; overflow-y: auto;
 }
 .sb-section { padding: 0.3rem 0.6rem; }
-.sb-label { font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; padding: 0.4rem 0.6rem; }
+.sb-label { font-size: 0.6rem; color: #7a8290; text-transform: uppercase; letter-spacing: 0.08em; padding: 0.4rem 0.6rem; }
 .sb-item {
     display: flex; align-items: center; gap: 0.5rem;
     padding: 0.45rem 0.7rem; border-radius: 0.35rem; cursor: pointer;
-    color: var(--text-muted); transition: all 0.15s; font-size: 0.8rem;
+    color: #9aa0ab; transition: all 0.15s; font-size: 0.8rem;
 }
-.sb-item:hover { background: var(--bg-hover); color: var(--text-secondary); }
-.sb-item.active { background: var(--bg-hover); color: var(--text-primary); }
+.sb-item:hover { background: var(--bg-hover); color: #d0d4db; }
+.sb-item.active { background: var(--bg-hover); color: #e8eaef; }
 .sb-item.active::before {
     content: ''; position: absolute; left: 0; width: 3px; height: 1.2rem;
     background: var(--blue); border-radius: 0 2px 2px 0;
@@ -154,9 +169,29 @@ body {
 .svc-badge.online { background: var(--green-dark); color: var(--green); }
 .svc-badge.degraded { background: var(--orange-dark); color: var(--orange); }
 
+/* Map info overlay */
+.map-info-overlay {
+    position: absolute; bottom: 0.8rem; left: 0.8rem; z-index: 5;
+    background: rgba(15,18,24,0.94); border: 1px solid var(--border);
+    border-radius: 0.35rem; padding: 0.5rem 0.7rem; font-size: 0.75rem;
+    color: var(--text-primary); max-width: 16rem;
+    opacity: 0; transform: translateY(6px); pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.map-info-overlay.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+.map-info-overlay .mi-name { font-weight: 600; font-size: 0.82rem; margin-bottom: 0.15rem; }
+.map-info-overlay .mi-detail { color: var(--text-secondary); font-size: 0.7rem; }
+.map-info-overlay .mi-pj { display: inline-block; padding: 0.08rem 0.35rem; border-radius: 0.15rem; font-size: 0.65rem; margin-top: 0.2rem; }
+
 /* TABLE */
 .table-wrap { max-height: 18rem; overflow-y: auto; }
 .table-wrap.tall { max-height: 26rem; }
+.panel-scroll { display: flex; flex-direction: column; max-height: 30rem; }
+.panel-scroll-body { flex: 1; overflow: hidden; }
+.panel-scroll-table { max-height: 100%; height: 100%; }
+.panel-trend { display: flex; flex-direction: column; }
+.panel-trend-body { flex: 1; min-height: 0; overflow: visible; }
+.panel-trend-chart { min-height: 20rem; height: 100%; }
 .data-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
 .data-table th {
     padding: 0.5rem 0.7rem; text-align: left; font-weight: 600; font-size: 0.7rem;
@@ -180,6 +215,37 @@ body {
     background: var(--bg-input); color: var(--text-primary); outline: none; min-width: 7rem;
 }
 .fg select:focus, .fg input:focus { border-color: var(--blue); }
+
+/* Custom animated select */
+.cs-wrap { position: relative; }
+.cs-native { position: absolute; opacity: 0; pointer-events: none; width: 100%; height: 100%; top: 0; left: 0; }
+.cs-trigger {
+    font-family: var(--font); font-size: 0.8rem; padding: 0.3rem 0.5rem;
+    border: 1px solid var(--border); border-radius: 0.3rem;
+    background: var(--bg-input); color: var(--text-primary); outline: none;
+    min-width: 7rem; cursor: pointer; display: flex; align-items: center;
+    justify-content: space-between; gap: 0.4rem; user-select: none; -webkit-user-select: none;
+    transition: border-color 0.15s;
+}
+.cs-trigger:hover { border-color: #555b66; }
+.cs-trigger.open { border-color: var(--blue); }
+.cs-arrow { font-size: 0.6rem; color: var(--text-muted); transition: transform 0.2s; }
+.cs-trigger.open .cs-arrow { transform: rotate(180deg); }
+.cs-dropdown {
+    position: absolute; top: 100%; left: 0; z-index: 15; margin-top: 2px;
+    min-width: 100%; background: var(--bg-panel); border: 1px solid var(--border);
+    border-radius: 0.3rem; box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+    opacity: 0; transform: translateY(-6px); pointer-events: none;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    max-height: 14rem; overflow-y: auto;
+}
+.cs-dropdown.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+.cs-option {
+    padding: 0.4rem 0.6rem; font-size: 0.78rem; color: var(--text-secondary);
+    cursor: pointer; white-space: nowrap; transition: background 0.1s;
+}
+.cs-option:hover { background: var(--bg-panel-header); color: var(--text-link); }
+.cs-option.selected { color: var(--text-link); font-weight: 500; }
 
 /* TABS */
 .tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--bg-panel-header); padding: 0 0.8rem; }
@@ -210,8 +276,15 @@ body {
 .icon-sm { width: 0.85rem; height: 0.85rem; }
 /* 下拉菜单 */
 .dropdown { position: relative; display: inline-block; }
-.dropdown-menu { display: none; position: absolute; right: 0; top: 100%; z-index: 10; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 0.3rem; min-width: 12rem; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-.dropdown-menu.show { display: block; }
+.dropdown-menu {
+    display: block; opacity: 0; transform: translateY(-6px); pointer-events: none;
+    position: absolute; right: 0; top: 100%; z-index: 10;
+    background: var(--bg-panel); border: 1px solid var(--border);
+    border-radius: 0.3rem; min-width: 12rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.dropdown-menu.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
 .dropdown-item { padding: 0.5rem 0.8rem; font-size: 0.8rem; color: var(--text-secondary); cursor: pointer; white-space: nowrap; }
 .dropdown-item:hover { background: var(--bg-panel-header); color: var(--text-link); }
 
@@ -221,7 +294,8 @@ body {
 .sb-item-box .sb-val { font-size: 1.1rem; font-weight: 600; font-variant-numeric: tabular-nums; }
 .sb-item-box .sb-lbl { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 0.1rem; }
 
-/* ALERTS */
+/* ALERTS / ANOMALY / CORRELATION — unified fixed height */
+#alertsList, #anomalyResult, #corrResult { max-height: 16rem; overflow-y: auto; }
 .alert-item { display: grid; grid-template-columns: 4.5rem 1fr auto; align-items: center; gap: 0.6rem; padding: 0.55rem 0.8rem; border-bottom: 1px solid var(--border); font-size: 0.8rem; }
 .alert-item:last-child { border-bottom: none; }
 .a-badge { font-size: 0.65rem; font-weight: 600; padding: 0.1rem 0.5rem; border-radius: 0.2rem; text-align: center; }
@@ -229,6 +303,39 @@ body {
 .a-badge.warning { background: var(--orange-dark); color: var(--orange); }
 .a-msg { color: var(--text-secondary); }
 .a-time { font-size: 0.7rem; color: var(--text-muted); }
+
+/* TOAST — 右上角告警弹窗 */
+.toast-container {
+    position: fixed; top: 3.6rem; right: 1rem; z-index: 999;
+    display: flex; flex-direction: column; gap: 0.5rem;
+    pointer-events: none;
+}
+.toast {
+    pointer-events: auto;
+    display: flex; align-items: flex-start; gap: 0.6rem;
+    min-width: 18rem; max-width: 24rem;
+    padding: 0.65rem 0.85rem;
+    background: rgba(10,12,18,0.72);
+    border: none;
+    border-radius: 0.5rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.06);
+    -webkit-backdrop-filter: blur(20px) saturate(1.4); backdrop-filter: blur(20px) saturate(1.4);
+    font-size: 0.78rem; color: #e0e3e8;
+    animation: toastIn 0.3s ease, toastOut 0.3s ease 4.7s forwards;
+}
+.toast.critical { box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(248,113,113,0.15), 0 0 12px rgba(248,113,113,0.08); }
+.toast.warning { box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(251,146,60,0.15), 0 0 12px rgba(251,146,60,0.08); }
+.toast-icon { font-size: 1.1rem; flex-shrink: 0; }
+.toast-body { flex: 1; min-width: 0; }
+.toast-msg { line-height: 1.4; word-break: break-all; }
+.toast-time { font-size: 0.65rem; color: rgba(255,255,255,0.35); margin-top: 0.15rem; }
+.toast-close {
+    flex-shrink: 0; background: none; border: none; color: rgba(255,255,255,0.25);
+    cursor: pointer; font-size: 1rem; line-height: 1; padding: 0 0.2rem;
+}
+.toast-close:hover { color: rgba(255,255,255,0.7); }
+@keyframes toastIn { from { opacity: 0; transform: translateX(60px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes toastOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(60px); } }
 
 /* CORRELATION */
 .corr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; padding: 0.8rem 0; }
@@ -264,9 +371,20 @@ body {
 .gov-rule-table td { padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border); color: var(--text-secondary); }
 
 /* MODAL */
-.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; align-items: center; justify-content: center; }
-.modal-overlay.active { display: flex; }
-.modal-content { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 0.4rem; max-width: 50rem; width: 92%; max-height: 80vh; overflow-y: auto; }
+.modal-overlay {
+    display: flex; align-items: center; justify-content: center;
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200;
+    opacity: 0; visibility: hidden; pointer-events: none;
+    transition: opacity 0.22s ease, visibility 0s 0.25s;
+}
+.modal-overlay.active { opacity: 1; visibility: visible; pointer-events: auto; transition: opacity 0.22s ease, visibility 0s 0s; }
+.modal-content {
+    background: var(--bg-panel); border: 1px solid var(--border);
+    border-radius: 0.4rem; max-width: 65rem; width: 92%; max-height: 80vh; overflow-y: auto;
+    transform: scale(0.94) translateY(12px);
+    transition: transform 0.22s ease;
+}
+.modal-overlay.active .modal-content { transform: scale(1) translateY(0); }
 .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 0.7rem 1rem; border-bottom: 1px solid var(--border); background: var(--bg-panel-header); gap: 0.6rem; }
 .modal-header h3 { font-size: 0.95rem; font-weight: 600; }
 .modal-close { background: none; border: 1px solid var(--border); border-radius: 0.3rem; font-family: var(--font); font-size: 0.75rem; padding: 0.2rem 0.6rem; cursor: pointer; color: var(--text-secondary); }
@@ -276,6 +394,9 @@ body {
 .report-health.normal { background: var(--green-dark); color: var(--green); }
 .report-health.warning { background: var(--orange-dark); color: var(--orange); }
 .report-health.critical { background: var(--red-dark); color: var(--red); }
+.anomaly-summary { padding: 0.5rem 0.8rem; font-size: 0.8rem; color: var(--text-secondary); border-bottom: 1px solid var(--border); margin-bottom: 0.5rem; }
+.anomaly-summary .hl { color: var(--orange); font-weight: 600; }
+.report-tabs .tab-btn { font-size: 0.75rem; padding: 0.4rem 0.8rem; }
 .report-metrics { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: 0.6rem; margin-top: 0.6rem; }
 .rm-card { background: var(--bg-panel-header); border: 1px solid var(--border); border-radius: 0.3rem; padding: 0.7rem; }
 .rm-card .rm-name { font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.4rem; padding-bottom: 0.3rem; border-bottom: 1px solid var(--border); }
@@ -303,10 +424,23 @@ body {
 .data-table tr.lv2-row td.indent-1 { padding-left: 1.6rem; }
 .data-table tr.lv3-row td.indent-2 { padding-left: 2.6rem; font-weight: 400; }
 .data-table tr.lv3-row td.indent-2 .point-label { color: var(--text-primary); font-weight: 500; }
-.data-table tr.lv-row .caret { display: inline-block; width: 0.8rem; transition: transform 0.18s; color: var(--text-muted); margin-right: 0.35rem; font-size: 0.7rem; }
-.data-table tr.lv-row.collapsed .caret { transform: rotate(-90deg); }
+.data-table tr.lv-row .caret, .data-table tr.lv2-row .caret {
+    display: inline-block; width: 1rem; height: 1rem; line-height: 1rem; text-align: center;
+    transition: transform 0.18s; color: var(--text-muted); margin-right: 0.35rem;
+    font-size: 0.7rem; cursor: pointer; border-radius: 0.15rem; user-select: none; -webkit-user-select: none;
+}
+.data-table tr.lv-row .caret:hover, .data-table tr.lv2-row .caret:hover { color: var(--text-primary); background: rgba(255,255,255,0.06); }
+.data-table tr.lv-row.collapsed .caret, .data-table tr.lv2-row.collapsed .caret { transform: rotate(-90deg); }
+.data-table .ws-link, .data-table .dev-link { cursor: pointer; }
+.data-table .ws-link:hover, .data-table .dev-link:hover { color: var(--text-link); }
 .data-table tr.child-row { display: none; }
 .data-table tr.child-row.show { display: table-row; }
+.data-table tr.child-row.animating { animation: rowSlideIn 0.22s ease; }
+
+@keyframes rowSlideIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
 
 /* Manual refresh button */
 .btn-refresh {
@@ -337,7 +471,7 @@ body {
 <!-- TOPBAR -->
 <div class="topbar">
     <div class="topbar-left">
-        <div class="topbar-logo">I</div>
+        <div class="topbar-logo" title="Logo 占位">SVG</div>
         <div class="topbar-title">工业数据采集管理平台</div>
     </div>
     <div class="topbar-right">
@@ -395,7 +529,7 @@ body {
     <div class="row row-map">
         <div class="panel">
             <div class="panel-header"><div class="panel-title">全国车间分布</div></div>
-            <div class="panel-body p0"><div id="chinaMap"></div></div>
+            <div class="panel-body p0" style="position:relative;"><div id="chinaMap"></div><div class="map-info-overlay" id="mapInfoOverlay"></div></div>
         </div>
         <div class="panel">
             <div class="panel-header"><div class="panel-title">系统服务</div></div>
@@ -416,6 +550,7 @@ body {
         </div>
         <div class="panel-body p0">
             <div style="padding:0.5rem 0.8rem; border-bottom:1px solid var(--border); display:flex; gap:0.6rem; align-items:flex-end; flex-wrap:wrap;">
+                <div class="fg"><label>项目</label><select id="filterProject" onchange="applyDeviceFilter()"><option value="">全部项目</option></select></div>
                 <div class="fg"><label>车间</label><select id="filterWorkshop" onchange="applyDeviceFilter()"><option value="">全部车间</option></select></div>
                 <div class="fg"><label>类型</label><select id="filterDeviceType" onchange="applyDeviceFilter()"><option value="">全部类型</option></select></div>
                 <div class="fg"><label>设备</label><select id="filterDevice" onchange="applyDeviceFilter()"><option value="">全部设备</option></select></div>
@@ -431,9 +566,12 @@ body {
     </div>
 
     <!-- 点位实时趋势面板 -->
-    <div class="panel" id="pointRealtimePanel" style="display:none;">
+    <div class="panel panel-trend" id="pointRealtimePanel" style="display:none;">
         <div class="panel-header">
-            <div class="panel-title" id="pointRealtimeTitle">点位实时趋势</div>
+            <div class="trend-title-group">
+                <div class="panel-title" id="pointRealtimeTitle">点位实时趋势</div>
+                <button type="button" class="trend-pause-btn" id="trendPauseBtn" title="暂停" onclick="toggleTrendPause()">⏸</button>
+            </div>
             <select class="refresh-select" id="trendRefreshInterval" title="趋势图刷新间隔" onchange="setModuleInterval('trend', parseInt(this.value)*1000)">
                 <option value="1">1秒</option>
                 <option value="5" selected>5秒</option>
@@ -441,8 +579,8 @@ body {
                 <option value="60">1分钟</option>
             </select>
         </div>
-        <div class="panel-body p0">
-            <div class="chart-box" style="height:20rem;"><div id="pointRealtimeChart" style="width:100%;height:100%"></div></div>
+        <div class="panel-body p0 panel-trend-body">
+            <div class="chart-box panel-trend-chart"><div id="pointRealtimeChart" style="width:100%;height:100%"></div></div>
         </div>
     </div>
 
@@ -492,7 +630,6 @@ body {
                             <div class="dropdown-item" onclick="clearAnomalyRecords('all')">清除全部记录</div>
                             <div class="dropdown-item" onclick="clearAnomalyRecords('metric')">按当前指标清除</div>
                             <div class="dropdown-item" onclick="clearAnomalyRecords('time')">按当前时间范围清除</div>
-                            <div class="dropdown-item" onclick="clearAnomalyRecords('all_filters')">按当前指标+时间范围清除</div>
                         </div>
                     </div>
                 </div>
@@ -542,12 +679,28 @@ body {
     <div class="row row-2">
         <!-- 数据血缘 -->
         <div class="panel">
-            <div class="panel-header"><div class="panel-title">数据血缘 — 流转路径</div></div>
+            <div class="panel-header">
+                <div class="panel-title">数据血缘 — 流转路径</div>
+                <select class="refresh-select gov-refresh-sel" title="刷新间隔" onchange="setModuleInterval('gov', parseInt(this.value)*1000)">
+                    <option value="1">1秒</option>
+                    <option value="5" selected>5秒</option>
+                    <option value="15">15秒</option>
+                    <option value="60">1分钟</option>
+                </select>
+            </div>
             <div class="panel-body"><div class="gov-flow" id="govFlow"><div class="loading">加载中...</div></div></div>
         </div>
         <!-- 标准化规则 -->
         <div class="panel">
-            <div class="panel-header"><div class="panel-title">数据标准化规则</div></div>
+            <div class="panel-header">
+                <div class="panel-title">数据标准化规则</div>
+                <select class="refresh-select gov-refresh-sel" title="刷新间隔" onchange="setModuleInterval('gov', parseInt(this.value)*1000)">
+                    <option value="1">1秒</option>
+                    <option value="5" selected>5秒</option>
+                    <option value="15">15秒</option>
+                    <option value="60">1分钟</option>
+                </select>
+            </div>
             <div class="panel-body p0">
                 <div class="table-wrap"><table class="data-table" id="govRules">
                     <thead><tr><th>规则名称</th><th>字段</th><th>最小值</th><th>最大值</th><th>单位</th></tr></thead>
@@ -559,7 +712,15 @@ body {
 
     <!-- 各车间数据质量 -->
     <div class="panel">
-        <div class="panel-header"><div class="panel-title">各车间数据质量概览</div></div>
+        <div class="panel-header">
+            <div class="panel-title">各车间数据质量概览</div>
+            <select class="refresh-select gov-refresh-sel" title="刷新间隔" onchange="setModuleInterval('gov', parseInt(this.value)*1000)">
+                <option value="1">1秒</option>
+                <option value="5" selected>5秒</option>
+                <option value="15">15秒</option>
+                <option value="60">1分钟</option>
+            </select>
+        </div>
         <div class="panel-body p0">
             <div class="table-wrap">
                 <table class="data-table" id="govWorkshopTable">
@@ -573,13 +734,13 @@ body {
     <!-- 质量趋势 + 维度雷达 -->
     <div class="row row-2">
         <div class="panel">
-            <div class="panel-header"><div class="panel-title">数据质量趋势（近7天）</div></div>
+            <div class="panel-header"><div class="panel-title">数据质量趋势（近7天）<span class="refresh-hint">(24h)</span></div></div>
             <div class="panel-body p0">
                 <div id="govQualityTrend" style="width:100%;height:18rem;"></div>
             </div>
         </div>
         <div class="panel">
-            <div class="panel-header"><div class="panel-title">数据质量维度雷达</div></div>
+            <div class="panel-header"><div class="panel-title">数据质量维度雷达<span class="refresh-hint">(24h)</span></div></div>
             <div class="panel-body p0">
                 <div id="govRadar" style="width:100%;height:18rem;"></div>
             </div>
@@ -596,10 +757,18 @@ body {
 
     <!-- 异常分布 + 规则执行日志 -->
     <div class="row row-2">
-        <div class="panel">
-            <div class="panel-header"><div class="panel-title">数据异常分布</div></div>
-            <div class="panel-body p0">
-                <div class="table-wrap">
+        <div class="panel panel-scroll">
+            <div class="panel-header">
+                <div class="panel-title">数据异常分布</div>
+                <select class="refresh-select gov-refresh-sel" title="刷新间隔" onchange="setModuleInterval('gov', parseInt(this.value)*1000)">
+                    <option value="1">1秒</option>
+                    <option value="5" selected>5秒</option>
+                    <option value="15">15秒</option>
+                    <option value="60">1分钟</option>
+                </select>
+            </div>
+            <div class="panel-body p0 panel-scroll-body">
+                <div class="table-wrap panel-scroll-table">
                     <table class="data-table" id="govAnomalyTable">
                         <thead><tr><th>车间</th><th>异常总数</th><th>危险</th><th>警告</th><th>温度</th><th>振动</th><th>功率</th><th>湿度</th></tr></thead>
                         <tbody></tbody>
@@ -607,10 +776,18 @@ body {
                 </div>
             </div>
         </div>
-        <div class="panel">
-            <div class="panel-header"><div class="panel-title">规则执行日志</div></div>
-            <div class="panel-body p0">
-                <div class="table-wrap tall">
+        <div class="panel panel-scroll">
+            <div class="panel-header">
+                <div class="panel-title">规则执行日志</div>
+                <select class="refresh-select gov-refresh-sel" title="刷新间隔" onchange="setModuleInterval('gov', parseInt(this.value)*1000)">
+                    <option value="1">1秒</option>
+                    <option value="5" selected>5秒</option>
+                    <option value="15">15秒</option>
+                    <option value="60">1分钟</option>
+                </select>
+            </div>
+            <div class="panel-body p0 panel-scroll-body">
+                <div class="table-wrap panel-scroll-table">
                     <table class="data-table" id="govRuleLog">
                         <thead><tr><th>规则</th><th>时间</th><th>检查数</th><th>通过</th><th>失败</th><th>通过率</th></tr></thead>
                         <tbody></tbody>
@@ -622,7 +799,15 @@ body {
 
     <!-- 数据字典 -->
     <div class="panel">
-        <div class="panel-header"><div class="panel-title">数据字典 — 测量字段定义</div></div>
+        <div class="panel-header">
+            <div class="panel-title">数据字典 — 测量字段定义</div>
+            <select class="refresh-select gov-refresh-sel" title="刷新间隔" onchange="setModuleInterval('gov', parseInt(this.value)*1000)">
+                <option value="1">1秒</option>
+                <option value="5" selected>5秒</option>
+                <option value="15">15秒</option>
+                <option value="60">1分钟</option>
+            </select>
+        </div>
         <div class="panel-body p0">
             <div class="table-wrap tall">
                 <table class="data-table" id="govDictTable">
@@ -646,6 +831,71 @@ const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 function fmt(v, d=1) { return v != null ? Number(v).toFixed(d) : '--'; }
 
+// ===== Custom animated select =====
+const _customSelects = [];
+
+class CustomSelect {
+    constructor(nativeSel) {
+        this.native = nativeSel;
+        this.wrap = document.createElement('div');
+        this.wrap.className = 'cs-wrap';
+        this.trigger = document.createElement('div');
+        this.trigger.className = 'cs-trigger';
+        this.trigger.innerHTML = '<span class="cs-text"></span><span class="cs-arrow">▾</span>';
+        this.dropdown = document.createElement('div');
+        this.dropdown.className = 'cs-dropdown';
+
+        nativeSel.parentNode.insertBefore(this.wrap, nativeSel);
+        this.wrap.appendChild(nativeSel);
+        this.wrap.appendChild(this.trigger);
+        this.wrap.appendChild(this.dropdown);
+        nativeSel.classList.add('cs-native');
+
+        this.trigger.addEventListener('click', e => { e.stopPropagation(); this.toggle(); });
+        this.dropdown.addEventListener('click', e => {
+            const opt = e.target.closest('.cs-option');
+            if (!opt) return;
+            this.native.value = opt.dataset.value;
+            this.syncDisplay();
+            this.close();
+            this.native.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+        this.native.addEventListener('change', () => this.syncDisplay());
+        document.addEventListener('click', e => {
+            if (!this.wrap.contains(e.target)) this.close();
+        });
+
+        this.observer = new MutationObserver(() => this.rebuildOptions());
+        this.observer.observe(nativeSel, { childList: true, subtree: true });
+
+        this.rebuildOptions();
+        this.syncDisplay();
+        _customSelects.push(this);
+    }
+    rebuildOptions() {
+        this.dropdown.innerHTML = Array.from(this.native.options).map(o =>
+            `<div class="cs-option${o.selected ? ' selected' : ''}" data-value="${o.value}">${o.textContent}</div>`
+        ).join('');
+    }
+    syncDisplay() {
+        const opt = this.native.selectedOptions[0];
+        this.trigger.querySelector('.cs-text').textContent = opt ? opt.textContent : '';
+    }
+    toggle() {
+        if (this.dropdown.classList.contains('show')) { this.close(); } else { this.open(); }
+    }
+    open() {
+        _customSelects.forEach(cs => { if (cs !== this) cs.close(); });
+        this.dropdown.classList.add('show');
+        this.trigger.classList.add('open');
+        this.rebuildOptions();
+    }
+    close() {
+        this.dropdown.classList.remove('show');
+        this.trigger.classList.remove('open');
+    }
+}
+
 // 滚动位置保持：直接保存/恢复已知滚动容器的 scrollTop（立即恢复，不使用 rAF）
 function _saveScroll(el) {
     const main = document.querySelector('.main');
@@ -665,11 +915,21 @@ function _restoreScroll(ctx, useSelf) {
 
 // 车间映射
 const WORKSHOP_MAP = {
-    'workshop-1': { name: '深圳数控车间', province: '广东省', city: '深圳', lat: 22.5431, lng: 114.0579 },
-    'workshop-2': { name: '苏州精密车间', province: '江苏省', city: '苏州', lat: 31.2990, lng: 120.5853 },
-    'workshop-3': { name: '青岛模具车间', province: '山东省', city: '青岛', lat: 36.0671, lng: 120.3826 },
-    'workshop-4': { name: '杭州电子车间', province: '浙江省', city: '杭州', lat: 30.2741, lng: 120.1551 },
-    'workshop-5': { name: '成都重装车间', province: '四川省', city: '成都', lat: 30.5728, lng: 104.0668 },
+    'workshop-sz':  { name: '深圳数控车间', province: '广东省', city: '深圳', lat: 22.5431, lng: 114.0579, project_id: 'project-huadong' },
+    'workshop-szh': { name: '苏州精密车间', province: '江苏省', city: '苏州', lat: 31.2990, lng: 120.5853, project_id: 'project-huadong' },
+    'workshop-hz':  { name: '杭州电子车间', province: '浙江省', city: '杭州', lat: 30.2741, lng: 120.1551, project_id: 'project-huadong' },
+    'workshop-qd':  { name: '青岛模具车间', province: '山东省', city: '青岛', lat: 36.0671, lng: 120.3826, project_id: 'project-beifang' },
+    'workshop-tj':  { name: '天津装配车间', province: '天津市', city: '天津', lat: 39.0842, lng: 117.2009, project_id: 'project-beifang' },
+    'workshop-dl':  { name: '大连重工车间', province: '辽宁省', city: '大连', lat: 38.9140, lng: 121.6147, project_id: 'project-beifang' },
+    'workshop-cd':  { name: '成都重装车间', province: '四川省', city: '成都', lat: 30.5728, lng: 104.0668, project_id: 'project-xinan' },
+    'workshop-cq':  { name: '重庆模具车间', province: '重庆市', city: '重庆', lat: 29.4316, lng: 106.9123, project_id: 'project-xinan' },
+    'workshop-km':  { name: '昆明精工车间', province: '云南省', city: '昆明', lat: 25.0389, lng: 102.7183, project_id: 'project-xinan' },
+};
+
+const PROJECTS_MAP = {
+    'project-huadong': { name: '华东制造基地', color: '#3b82f6', provinces: ['广东省','江苏省','浙江省'] },
+    'project-beifang': { name: '北方工业中心', color: '#fb923c', provinces: ['山东省','天津市','辽宁省'] },
+    'project-xinan':   { name: '西南智造园区', color: '#34d399', provinces: ['四川省','重庆市','云南省'] },
 };
 
 // 设备类型采集点位
@@ -700,13 +960,23 @@ const FIELD_CN_MAP = Object.fromEntries(
 );
 
 // ===== 页面切换 =====
+let _currentPage = 'dashboard';
+
 function switchPage(page) {
+    // 离开治理页时停止刷新定时器
+    if (_currentPage === 'governance') stopModuleTimer('gov');
+
     $$('.sb-item').forEach(i => i.classList.remove('active'));
     const item = $(`.sb-item[data-page="${page}"]`);
     if (item) item.classList.add('active');
     $$('.page-view').forEach(p => p.classList.remove('active'));
     $(`#page-${page}`).classList.add('active');
-    if (page === 'governance') loadGovernance();
+    _currentPage = page;
+
+    if (page === 'governance') {
+        loadGovernance();
+        startModuleTimer('gov', () => loadGovernance());
+    }
     if (page === 'dashboard' && !chinaMapReady) initChinaMap();
 }
 
@@ -749,19 +1019,20 @@ async function loadDevices() {
 }
 
 function populateFilters() {
+    const savedProj = $('#filterProject').value;
     const savedWs = $('#filterWorkshop').value;
     const savedDt = $('#filterDeviceType').value;
     const savedDev = $('#filterDevice').value;
     const savedCorr = $('#corrDevice').value;
 
-    const workshops = [...new Set(allDevicesData.map(d => d.workshop).filter(Boolean))];
-    const ws = $('#filterWorkshop');
-    ws.innerHTML = '<option value="">全部车间</option>' + workshops.map(w => {
-        const info = WORKSHOP_MAP[w];
-        return `<option value="${w}">${info ? info.name : w}</option>`;
-    }).join('');
-    if (savedWs) ws.value = savedWs;
-    updateDeviceTypeFilter();
+    // Populate project dropdown
+    const projSel = $('#filterProject');
+    projSel.innerHTML = '<option value="">全部项目</option>' + Object.entries(PROJECTS_MAP).map(([id, p]) =>
+        `<option value="${id}">${p.name}</option>`
+    ).join('');
+    if (savedProj) projSel.value = savedProj;
+
+    updateWorkshopFilter();
     if (savedDt) $('#filterDeviceType').value = savedDt;
     updateDeviceFilter(true);
     if (savedDev) $('#filterDevice').value = savedDev;
@@ -781,17 +1052,37 @@ function updateDeviceTypeFilter() {
     if (saved && types.includes(saved)) sel.value = saved;
 }
 
+function updateWorkshopFilter() {
+    const proj = $('#filterProject').value;
+    const sel = $('#filterWorkshop');
+    const saved = sel.value;
+    const workshops = Object.entries(WORKSHOP_MAP);
+    const filtered = proj ? workshops.filter(([_, w]) => w.project_id === proj) : workshops;
+    sel.innerHTML = '<option value="">全部车间</option>' + filtered.map(([id, w]) =>
+        `<option value="${id}">${w.name}</option>`
+    ).join('');
+    // Try to restore selection
+    if (saved && sel.querySelector(`option[value="${saved}"]`)) sel.value = saved;
+    else sel.value = '';
+}
+
 function updateDeviceFilter(fromPopulate) {
     const ws = $('#filterWorkshop').value;
     const dt = $('#filterDeviceType').value;
+    const proj = $('#filterProject').value;
     const savedDev = $('#filterDevice').value;
     let filtered = allDevicesData;
+    if (proj) filtered = filtered.filter(d => {
+        // Match project by checking device's workshop against WORKSHOP_MAP
+        const wsInfo = WORKSHOP_MAP[d.workshop];
+        return wsInfo && wsInfo.project_id === proj;
+    });
     if (ws) filtered = filtered.filter(d => d.workshop === ws);
     if (dt) filtered = filtered.filter(d => d.device_type === dt);
     const ds = $('#filterDevice');
     ds.innerHTML = '<option value="">全部设备</option>' + filtered.map(d => `<option value="${d.device_id}">${d.device_id}</option>`).join('');
     if (!fromPopulate && savedDev) ds.value = savedDev;
-    // Sync corr device list（保留选中）
+    // Sync corr device list
     const savedCorr = $('#corrDevice').value;
     const opts = allDevicesData.map(d => `<option value="${d.device_id}">${d.device_id}</option>`).join('');
     $('#corrDevice').innerHTML = opts;
@@ -813,22 +1104,23 @@ function updatePointFilter() {
         ? allDevicesData.filter(d => d.device_id === dev)
         : (ws ? allDevicesData.filter(d => d.workshop === ws) : allDevicesData);
 
-    // 汇总所有 metric，去重（field -> label）
+    // 汇总所有 metric，去重（field -> {label, unit}）
     const metricSet = new Map();
     filtered.forEach(d => {
         (d.points || []).forEach(p => {
-            if (p.metric && !metricSet.has(p.metric)) metricSet.set(p.metric, p.label || p.metric);
+            if (p.metric && !metricSet.has(p.metric)) metricSet.set(p.metric, { label: p.label || p.metric, unit: p.unit || '' });
         });
     });
 
     sel.innerHTML = '<option value="">全部点位</option>';
-    [...metricSet.entries()].forEach(([field, label]) => {
-        sel.innerHTML += `<option value="${field}">${label} (${field})</option>`;
+    [...metricSet.entries()].forEach(([field, info]) => {
+        sel.innerHTML += `<option value="${field}">${info.label} (${field})</option>`;
     });
     if (saved) sel.value = saved;
 }
 
 function applyDeviceFilter() {
+    updateWorkshopFilter();
     updateDeviceTypeFilter();
     updateDeviceFilter();
     updatePointFilter();
@@ -864,86 +1156,110 @@ async function manualLoadCorrelation() {
 }
 
 function renderDeviceTable() {
+    const proj = $('#filterProject').value;
     const ws = $('#filterWorkshop').value;
+    const dt = $('#filterDeviceType').value;
     const dev = $('#filterDevice').value;
     const tbody = $('#devicesTable tbody');
 
-    // 保存当前折叠状态（用行文本特征作为key）
-    const collapsedKeys = new Set();
-    $$('#devicesTable tr.lv-row.collapsed, #devicesTable tr.lv2-row.collapsed').forEach(r => {
+    // 保存当前展开状态（用行文本特征作为key）
+    const expandedKeys = new Set();
+    $$('#devicesTable tr.lv-row:not(.collapsed), #devicesTable tr.lv2-row:not(.collapsed)').forEach(r => {
         const key = r.textContent.trim().substring(0, 60);
-        if (key) collapsedKeys.add(key);
+        if (key) expandedKeys.add(key);
     });
 
     // 保存滚动容器的 scrollTop
     const tableWrap = tbody.closest('.table-wrap');
     const savedST = tableWrap ? tableWrap.scrollTop : 0;
 
-    // 1. 未选车间：提示
-    if (!ws) {
-        tbody.innerHTML = '<tr><td colspan="5"><div class="no-data">请先选择车间</div></td></tr>';
+    // 1. 未选项目：提示
+    if (!proj) {
+        tbody.innerHTML = '<tr><td colspan="5"><div class="no-data">请先选择项目</div></td></tr>';
         return;
     }
 
     // 2. 过滤数据
-    let devices = allDevicesData.filter(d => d.workshop === ws);
+    let devices = allDevicesData.filter(d => {
+        const wsInfo = WORKSHOP_MAP[d.workshop];
+        return wsInfo && wsInfo.project_id === proj;
+    });
+    if (ws) devices = devices.filter(d => d.workshop === ws);
+    if (dt) devices = devices.filter(d => d.device_type === dt);
     if (dev) devices = devices.filter(d => d.device_id === dev);
     if (!devices.length) {
-        tbody.innerHTML = '<tr><td colspan="5"><div class="no-data">该车间暂无设备数据</div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5"><div class="no-data">该项目暂无设备数据</div></td></tr>';
         return;
     }
-
-    const wsInfo = WORKSHOP_MAP[ws];
-    const wsName = wsInfo ? wsInfo.name : ws;
 
     const rows = [];
 
     if (dev) {
-        // 模式B：顶级=设备，次级=点位
+        // 模式C：顶级=设备，次级=点位
         devices.forEach(d => {
             const topId = nextRowId();
-            rows.push(`<tr class="lv-row" id="${topId}" onclick="toggleRow('${topId}')">
-                <td colspan="5"><span class="caret">▼</span>${escapeHtml(d.device_id)} <span style="color:var(--text-muted);font-weight:400;margin-left:0.6rem;">${escapeHtml(d.device_type_cn || d.device_type || '')} · ${escapeHtml(wsName)} · ${d.points?.length || 0} 点位</span></td>
+            const wsInfo = WORKSHOP_MAP[d.workshop];
+            const wsName = wsInfo ? wsInfo.name : d.workshop;
+            rows.push(`<tr class="lv-row collapsed" id="${topId}">
+                <td colspan="5"><span class="caret" onclick="toggleRow('${topId}', event)">▼</span><span class="link dev-link" onclick="openReport('${escapeHtml(d.device_id)}')">${escapeHtml(d.device_id)}</span> <span style="color:var(--text-muted);font-weight:400;margin-left:0.3rem;">${escapeHtml(d.device_type_cn || d.device_type || '')} · ${escapeHtml(wsName)} · ${d.points?.length || 0} 点位</span></td>
+            </tr>`);
+            (d.points || []).forEach(p => rows.push(pointRow(p, topId, 2)));
+        });
+    } else if (ws) {
+        // 模式B：已选车间，顶级=设备，次级=点位
+        const wsInfo = WORKSHOP_MAP[ws];
+        const wsName = wsInfo ? wsInfo.name : ws;
+        devices.forEach(d => {
+            const topId = nextRowId();
+            rows.push(`<tr class="lv-row collapsed" id="${topId}">
+                <td colspan="5"><span class="caret" onclick="toggleRow('${topId}', event)">▼</span><span class="link dev-link" onclick="openReport('${escapeHtml(d.device_id)}')">${escapeHtml(d.device_id)}</span> <span style="color:var(--text-muted);font-weight:400;margin-left:0.3rem;">${escapeHtml(d.device_type_cn || d.device_type || '')} · ${escapeHtml(wsName)} · ${d.points?.length || 0} 点位</span></td>
             </tr>`);
             (d.points || []).forEach(p => rows.push(pointRow(p, topId, 2)));
         });
     } else {
-        // 模式A：顶级=车间，次级=设备，末级=点位
-        const topId = nextRowId();
-        rows.push(`<tr class="lv-row" id="${topId}" onclick="toggleRow('${topId}')">
-            <td colspan="5"><span class="caret">▼</span>${escapeHtml(wsName)} <span style="color:var(--text-muted);font-weight:400;margin-left:0.6rem;">${devices.length} 台设备</span></td>
-        </tr>`);
+        // 模式A：仅选项目，顶级=车间，次级=设备，末级=点位
+        const byWorkshop = {};
         devices.forEach(d => {
-            const devRowId = nextRowId();
-            rows.push(`<tr class="lv2-row child-row ${topId}-child" id="${devRowId}" onclick="toggleRow('${devRowId}', event)">
-                <td class="indent-1"><span class="caret">▼</span><span class="link" onclick="event.stopPropagation();openReport('${escapeHtml(d.device_id)}')">${escapeHtml(d.device_id)}</span></td>
-                <td style="color:var(--text-muted)">${escapeHtml(d.device_type_cn || d.device_type || '')}</td>
-                <td style="color:var(--text-muted)">—</td>
-                <td style="color:var(--text-muted)">${d.points?.length || 0} 点位</td>
-                <td style="color:var(--text-muted)">—</td>
-            </tr>`);
-            (d.points || []).forEach(p => rows.push(pointRow(p, devRowId, 3)));
+            if (!byWorkshop[d.workshop]) byWorkshop[d.workshop] = [];
+            byWorkshop[d.workshop].push(d);
         });
+        for (const [wsId, wsDevices] of Object.entries(byWorkshop)) {
+            const wsInfo = WORKSHOP_MAP[wsId];
+            const wsName = wsInfo ? wsInfo.name : wsId;
+            const topId = nextRowId();
+            rows.push(`<tr class="lv-row collapsed" id="${topId}">
+                <td colspan="5"><span class="caret" onclick="toggleRow('${topId}', event)">▼</span><span class="link ws-link" onclick="openWorkshopSummary('${wsId}')">${escapeHtml(wsName)}</span> <span style="color:var(--text-muted);font-weight:400;margin-left:0.3rem;">${wsDevices.length} 台设备</span></td>
+            </tr>`);
+            wsDevices.forEach(d => {
+                const devRowId = nextRowId();
+                rows.push(`<tr class="lv2-row child-row ${topId}-child collapsed" id="${devRowId}">
+                    <td class="indent-1"><span class="caret" onclick="toggleRow('${devRowId}', event)">▼</span><span class="link dev-link" onclick="openReport('${escapeHtml(d.device_id)}')">${escapeHtml(d.device_id)}</span></td>
+                    <td style="color:var(--text-muted)">${escapeHtml(d.device_type_cn || d.device_type || '')}</td>
+                    <td style="color:var(--text-muted)">—</td>
+                    <td style="color:var(--text-muted)">${d.points?.length || 0} 点位</td>
+                    <td style="color:var(--text-muted)">—</td>
+                </tr>`);
+                (d.points || []).forEach(p => rows.push(pointRow(p, devRowId, 3)));
+            });
+        }
     }
 
     tbody.innerHTML = rows.join('');
 
-    // 默认全部展开 → 恢复折叠状态 → 最后恢复滚动位置
+    // 恢复之前展开的行（默认全部收起）
     requestAnimationFrame(() => {
-        $$('#devicesTable tr.child-row').forEach(r => r.classList.add('show'));
         $$('#devicesTable tr.lv-row, #devicesTable tr.lv2-row').forEach(r => {
             const key = r.textContent.trim().substring(0, 60);
-            if (collapsedKeys.has(key)) {
-                r.classList.add('collapsed');
+            if (expandedKeys.has(key)) {
+                r.classList.remove('collapsed');
                 const rowId = r.id;
                 if (rowId) {
                     $$(`#devicesTable tr.${rowId}-child`).forEach(child => {
-                        child.classList.remove('show');
+                        child.classList.add('show');
                     });
                 }
             }
         });
-        // 所有 DOM 变更完成后再恢复滚动
         if (tableWrap) tableWrap.scrollTop = savedST;
     });
 }
@@ -965,11 +1281,34 @@ function toggleRow(rowId, ev) {
     const row = document.getElementById(rowId);
     if (!row) return;
     const collapsed = row.classList.toggle('collapsed');
-    document.querySelectorAll(`#devicesTable tr.${rowId}-child`).forEach(k => {
-        if (collapsed) k.classList.remove('show');
-        else k.classList.add('show');
+    const children = document.querySelectorAll(`#devicesTable tr.${rowId}-child`);
+    children.forEach(k => {
+        if (collapsed) {
+            k.classList.remove('show', 'animating');
+        } else {
+            k.classList.add('show', 'animating');
+            // Remove animating class after animation ends so next refresh won't replay it
+            k.addEventListener('animationend', function h() {
+                k.classList.remove('animating');
+                k.removeEventListener('animationend', h);
+            }, { once: true });
+        }
     });
     if (ev) ev.stopPropagation();
+}
+
+function showMapWorkshopInfo(workshopId) {
+    const w = WORKSHOP_MAP[workshopId];
+    if (!w) return;
+    const projInfo = PROJECTS_MAP[w.project_id];
+    const overlay = $('#mapInfoOverlay');
+    if (!overlay) return;
+    const wsDevices = allDevicesData.filter(d => d.workshop === workshopId);
+    const totalPoints = wsDevices.reduce((s, d) => s + (d.points?.length || 0), 0);
+    overlay.innerHTML = `<div class="mi-name">${escapeHtml(w.name)}</div>
+        <div class="mi-detail">${escapeHtml(w.city)} &middot; ${wsDevices.length} 台设备 &middot; ${totalPoints} 个点位</div>
+        <span class="mi-pj" style="background:${projInfo?.color || '#333'}33;color:${projInfo?.color || '#fff'}">${projInfo?.name || ''}</span>`;
+    overlay.classList.add('show');
 }
 
 // ===== 中国地图 =====
@@ -978,88 +1317,172 @@ let mapChart = null;
 
 async function initChinaMap() {
     if (chinaMapReady) return;
+    const dom = document.getElementById('chinaMap');
+    if (!dom) return;
     try {
         const resp = await fetch('https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json');
         const geoJson = await resp.json();
-        if (geoJson.features) {
-            geoJson.features = geoJson.features.filter(f => f.properties.name !== '南海诸岛' && f.properties.name !== '十段线');
-        }
+        // 过滤不需要的区域
+        geoJson.features = geoJson.features.filter(f =>
+            f.properties.name !== '南海诸岛' && f.properties.name !== '十段线'
+        );
         echarts.registerMap('china', geoJson);
-        mapChart = echarts.init(document.getElementById('chinaMap'), null, { renderer: 'canvas' });
+        const chart = echarts.init(dom, null, { renderer: 'canvas' });
 
-        const scatterData = Object.entries(WORKSHOP_MAP).map(([wid, info]) => ({
-            name: info.name, value: [info.lng, info.lat, info.city]
+        // 构建区域样式 — 按项目着色
+        const regions = [];
+        Object.entries(PROJECTS_MAP).forEach(([pid, pinfo]) => {
+            pinfo.provinces.forEach(prov => {
+                regions.push({
+                    name: prov,
+                    itemStyle: { areaColor: pinfo.color + '44', borderColor: pinfo.color + 'aa', borderWidth: 1.5 },
+                    emphasis: { itemStyle: { areaColor: pinfo.color + '88' } }
+                });
+            });
+        });
+
+        // 构建城市标注 scatter
+        const scatterData = Object.entries(WORKSHOP_MAP).map(([wid, w]) => ({
+            name: w.city,
+            value: [w.lng, w.lat],
+            workshop: wid,
         }));
 
-        const option = {
-            backgroundColor: 'transparent',
-            tooltip: {
-                trigger: 'item',
-                backgroundColor: 'rgba(15,18,24,0.95)',
-                borderColor: '#232830',
-                textStyle: { color: '#e0e3e8', fontSize: 12 },
-                formatter: function(p) {
-                    if (p.seriesType === 'effectScatter') {
-                        return `<b>${p.name}</b><br/>城市：${p.value[2]}`;
-                    }
-                    return `<b>${p.name}</b>`;
+        // 图例数据
+        const legendData = Object.entries(PROJECTS_MAP).map(([pid, p]) => p.name);
+
+        chart.setOption({
+            tooltip: { trigger: 'item', backgroundColor: 'rgba(15,18,24,0.95)', borderColor: '#232830', textStyle: { color: '#e0e3e8', fontSize: 12 }, formatter: p => {
+                if (p.seriesType === 'scatter') {
+                    const w = WORKSHOP_MAP[p.data.workshop];
+                    return w ? `${w.name} (${w.city})` : p.name;
                 }
+                return p.name;
+            }},
+            legend: {
+                data: legendData,
+                bottom: 5,
+                textStyle: { color: '#d0d4db', fontSize: 11 },
+                itemWidth: 14, itemHeight: 14,
+            },
+            visualMap: {
+                show: false,
+                seriesIndex: 0,
             },
             geo: {
                 map: 'china',
-                roam: false,
-                zoom: 1.3,
-                center: [104.5, 36],
+                roam: true,
+                zoom: 1.2,
+                center: [105, 36],
+                scaleLimit: { min: 0.8, max: 6 },
                 label: { show: false },
-                itemStyle: {
-                    areaColor: '#141820',
-                    borderColor: '#2a3040',
-                    borderWidth: 1,
-                },
+                itemStyle: { areaColor: '#14181f', borderColor: '#4a515d', borderWidth: 1 },
                 emphasis: {
-                    itemStyle: { areaColor: '#1e2a3a', borderColor: '#3b82f6', borderWidth: 1.5 },
-                    label: { show: true, color: '#e0e3e8', fontSize: 10 }
+                    itemStyle: { areaColor: '#1e2430', borderColor: '#8b95a3', borderWidth: 1.5 },
+                    label: { show: false },
                 },
-                regions: [
-                    { name: '广东省', itemStyle: { areaColor: '#1a3352' } },
-                    { name: '江苏省', itemStyle: { areaColor: '#1a3352' } },
-                    { name: '山东省', itemStyle: { areaColor: '#1a3352' } },
-                    { name: '浙江省', itemStyle: { areaColor: '#1a3352' } },
-                    { name: '四川省', itemStyle: { areaColor: '#1a3352' } },
-                ]
+                regions: regions,
             },
             series: [{
-                type: 'effectScatter',
+                type: 'scatter',
                 coordinateSystem: 'geo',
-                rippleEffect: { brushType: 'stroke', scale: 4, period: 4 },
-                showEffectOn: 'render',
-                symbolSize: 12,
                 data: scatterData,
-                itemStyle: { color: '#fb923c', shadowBlur: 10, shadowColor: 'rgba(251,146,60,0.5)' },
+                symbolSize: 10,
+                symbol: 'pin',
+                itemStyle: { color: '#ffffff' },
                 label: {
-                    show: true, formatter: '{b}', position: 'right',
-                    color: '#fb923c', fontSize: 10, fontWeight: 500,
-                    textBorderColor: '#080b10', textBorderWidth: 2
+                    show: true,
+                    formatter: p => p.name,
+                    position: 'right',
+                    color: '#ffffff',
+                    fontSize: 15,
+                    fontWeight: 'bold',
+                    distance: 6,
                 },
-                zlevel: 10
-            }]
-        };
-        mapChart.setOption(option);
+                zlevel: 2,
+            }],
+        });
         chinaMapReady = true;
-        window.addEventListener('resize', () => { if (mapChart) mapChart.resize(); });
-    } catch(e) { console.error('地图加载失败:', e); }
+
+        // 点击城市标注显示车间信息
+        chart.on('click', params => {
+            if (params.seriesType === 'scatter' && params.data && params.data.workshop) {
+                showMapWorkshopInfo(params.data.workshop);
+            } else {
+                // 点击空白处关闭
+                const overlay = $('#mapInfoOverlay');
+                if (overlay) overlay.classList.remove('show');
+            }
+        });
+
+        // 限制地图拖动边界，防止拖出画面
+        const clampCenter = [105, 36];
+        const bbox = { lngMin: 70, lngMax: 140, latMin: 14, latMax: 56 };
+        chart.on('georoam', () => {
+            const opt = chart.getOption();
+            if (!opt || !opt.geo || !opt.geo[0]) return;
+            const geo = opt.geo[0];
+            const c = geo.center || clampCenter;
+            const z = geo.zoom || 1.2;
+            const clamped = [
+                Math.min(Math.max(c[0], bbox.lngMin), bbox.lngMax),
+                Math.min(Math.max(c[1], bbox.latMin), bbox.latMax),
+            ];
+            if (clamped[0] !== c[0] || clamped[1] !== c[1]) {
+                chart.setOption({ geo: { center: clamped, zoom: z } }, false);
+            }
+        });
+
+        window.addEventListener('resize', () => chart.resize());
+    } catch(e) { console.error('map init error:', e); }
 }
 
 // 颜色板，用于多线图
 const TREND_COLORS = ['#3b82f6', '#f87171', '#34d399', '#fb923c', '#a78bfa', '#22d3ee', '#fbbf24', '#f472b6', '#818cf8', '#2dd4bf'];
 
 // ===== 告警 =====
+const _knownAlertKeys = new Set();
+let _toastIdCounter = 0;
+
+function showAlertToast(alert) {
+    const container = $('#toastContainer');
+    if (!container) return;
+    const key = `${alert.device}|${alert.metric}|${alert.level}|${alert.time}`;
+    if (_knownAlertKeys.has(key)) return;
+    _knownAlertKeys.add(key);
+    // 限制已知告警集合大小，防止内存泄漏
+    if (_knownAlertKeys.size > 500) { const it = _knownAlertKeys.values(); for (let i = 0; i < 100; i++) _knownAlertKeys.delete(it.next().value); }
+
+    const id = 'toast-' + (++_toastIdCounter);
+    const isCritical = alert.level === 'critical';
+    const icon = isCritical ? '🔴' : '🟡';
+    const toast = document.createElement('div');
+    toast.className = 'toast ' + (isCritical ? 'critical' : 'warning');
+    toast.id = id;
+    toast.innerHTML = `<span class="toast-icon">${icon}</span>
+        <div class="toast-body">
+            <div class="toast-msg">${escapeHtml(alert.message || '')}</div>
+            <div class="toast-time">${alert.time ? new Date(alert.time).toLocaleTimeString('zh-CN',{hour12:false}) : ''}</div>
+        </div>
+        <button class="toast-close" onclick="dismissToast('${id}')">×</button>`;
+    container.appendChild(toast);
+    // 5秒后自动移除
+    setTimeout(() => dismissToast(id), 5000);
+}
+
+function dismissToast(id) {
+    const toast = document.getElementById(id);
+    if (toast) { toast.remove(); }
+}
+
 async function loadAlerts() {
     try {
         const r = await fetch('/api/analytics/alerts');
         const d = await r.json();
         const alerts = d.alerts || [];
         $('#heroAlerts').textContent = d.total || 0;
+        // 弹窗通知新告警
+        alerts.forEach(a => showAlertToast(a));
         if (!alerts.length) { const _s = _saveScroll($('#alertsList')); $('#alertsList').innerHTML = '<div class="no-data">暂无告警</div>'; _restoreScroll(_s); return; }
         const _s = _saveScroll($('#alertsList'));
         $('#alertsList').innerHTML = alerts.map(a => `
@@ -1075,7 +1498,7 @@ async function loadAlerts() {
 // ===== 异常检测 =====
 async function loadTotalAnomalyCount() {
     try {
-        const r = await fetch('/api/analytics/anomaly-count?minutes=60');
+        const r = await fetch('/api/analytics/anomaly-count?minutes=1440');
         const d = await r.json();
         $('#heroAnomalies').textContent = d.total_anomaly_count || 0;
     } catch(e) { console.error('anomaly count error:', e); }
@@ -1137,9 +1560,6 @@ async function clearAnomalyRecords(scope) {
         payload.metric = $('#anomalyMetric').value;
     } else if (scope === 'time') {
         payload.minutes = parseInt($('#anomalyRange').value) || 60;
-    } else if (scope === 'all_filters') {
-        payload.metric = $('#anomalyMetric').value;
-        payload.minutes = parseInt($('#anomalyRange').value) || 60;
     }
     try {
         await fetch('/api/analytics/anomaly/acknowledge', {
@@ -1185,12 +1605,11 @@ async function loadCorrelation() {
 }
 
 // ===== 数据治理 =====
-let govLoaded = false;
 let govTrendChart = null;
 let govRadarChart = null;
+let _govChartsLastUpdate = 0; // 上次图表刷新时间戳
 
 async function loadGovernance() {
-    if (govLoaded) return;
     try {
         const r = await fetch('/api/data-governance/overview');
         const d = await r.json();
@@ -1224,77 +1643,14 @@ async function loadGovernance() {
                 <td><span style="color:${w.quality_score > 90 ? 'var(--green)' : 'var(--orange)'}; font-weight:600">${w.quality_score}</span></td>
             </tr>`).join('');
 
-        // --- 新增：采集统计 ---
+        // 采集统计
         const cs = d.collection_stats;
         $('#govTotalPoints').textContent = (cs.total_points_today / 1000).toFixed(1) + 'k';
         $('#govSuccessRate').textContent = cs.success_rate + '%';
         $('#govAvgLatency').textContent = cs.avg_latency_ms + 'ms';
         $('#govActiveDevices').textContent = cs.active_devices + ' / ' + cs.total_points_configured;
 
-        // --- 新增：质量趋势图 ---
-        const trendDom = document.getElementById('govQualityTrend');
-        govTrendChart = echarts.init(trendDom, null, { renderer: 'canvas' });
-        govTrendChart.setOption({
-            grid: { top: 30, right: 20, bottom: 30, left: 50 },
-            tooltip: { trigger: 'axis', backgroundColor: 'rgba(15,18,24,0.95)', borderColor: '#232830', textStyle: { color: '#e0e3e8', fontSize: 12 } },
-            xAxis: {
-                type: 'category',
-                data: d.quality_trend.map(t => t.date),
-                axisLabel: { color: '#555b66' },
-                axisLine: { lineStyle: { color: '#232830' } },
-            },
-            yAxis: {
-                type: 'value', min: 80, max: 100,
-                axisLabel: { color: '#555b66' },
-                splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } },
-                axisLine: { lineStyle: { color: '#232830' } },
-            },
-            series: [{
-                type: 'line',
-                data: d.quality_trend.map(t => t.score),
-                smooth: true,
-                lineStyle: { color: '#3b82f6', width: 2 },
-                areaStyle: {
-                    color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                        { offset: 0, color: 'rgba(59,130,246,0.3)' },
-                        { offset: 1, color: 'rgba(59,130,246,0.02)' },
-                    ]),
-                },
-                symbol: 'circle', symbolSize: 6,
-                itemStyle: { color: '#3b82f6' },
-            }],
-        });
-
-        // --- 新增：质量维度雷达图 ---
-        const radarDom = document.getElementById('govRadar');
-        govRadarChart = echarts.init(radarDom, null, { renderer: 'canvas' });
-        govRadarChart.setOption({
-            radar: {
-                indicator: [
-                    { name: '完整性', max: 100 },
-                    { name: '一致性', max: 100 },
-                    { name: '时效性', max: 100 },
-                    { name: '准确性', max: 100 },
-                ],
-                shape: 'polygon', splitNumber: 5,
-                axisName: { color: '#8b919a', fontSize: 11 },
-                splitLine: { lineStyle: { color: 'rgba(255,255,255,0.08)' } },
-                splitArea: { areaStyle: { color: ['rgba(255,255,255,0.02)', 'rgba(255,255,255,0.04)'] } },
-                axisLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
-            },
-            series: [{
-                type: 'radar',
-                data: [{
-                    value: [d.dimensions.completeness, d.dimensions.consistency, d.dimensions.timeliness, d.dimensions.accuracy],
-                    name: '质量维度',
-                    lineStyle: { color: '#22d3ee', width: 2 },
-                    areaStyle: { color: 'rgba(34,211,238,0.2)' },
-                    itemStyle: { color: '#22d3ee' },
-                }],
-            }],
-        });
-
-        // --- 新增：异常分布表 ---
+        // 异常分布表
         $('#govAnomalyTable tbody').innerHTML = d.anomaly_distribution.map(a => `
             <tr>
                 <td class="hl">${a.workshop_name}</td>
@@ -1307,7 +1663,7 @@ async function loadGovernance() {
                 <td>${a.by_metric.humidity || 0}</td>
             </tr>`).join('');
 
-        // --- 新增：规则执行日志 ---
+        // 规则执行日志
         $('#govRuleLog tbody').innerHTML = d.rule_execution_log.map(l => {
             const prColor = l.pass_rate >= 99 ? 'var(--green)' : l.pass_rate >= 95 ? 'var(--orange)' : 'var(--red)';
             return `<tr>
@@ -1320,7 +1676,7 @@ async function loadGovernance() {
             </tr>`;
         }).join('');
 
-        // --- 新增：数据字典 ---
+        // 数据字典
         $('#govDictTable tbody').innerHTML = d.data_dictionary.map(f => `
             <tr>
                 <td class="hl">${f.field}</td>
@@ -1331,48 +1687,296 @@ async function loadGovernance() {
                 <td>${f.description}</td>
             </tr>`).join('');
 
-        govLoaded = true;
+        // 质量趋势图 & 雷达图 — 仅首次或距上次超过24h时重绘
+        const now = Date.now();
+        if (!_govChartsLastUpdate || (now - _govChartsLastUpdate) > 86400000) {
+            if (govTrendChart) { govTrendChart.dispose(); govTrendChart = null; }
+            if (govRadarChart) { govRadarChart.dispose(); govRadarChart = null; }
 
-        // 图表响应式
-        window.addEventListener('resize', () => {
-            if (govTrendChart) govTrendChart.resize();
-            if (govRadarChart) govRadarChart.resize();
-        });
+            const trendDom = document.getElementById('govQualityTrend');
+            govTrendChart = echarts.init(trendDom, null, { renderer: 'canvas' });
+            govTrendChart.setOption({
+                grid: { top: 30, right: 20, bottom: 30, left: 50 },
+                tooltip: { trigger: 'axis', backgroundColor: 'rgba(15,18,24,0.95)', borderColor: '#232830', textStyle: { color: '#e0e3e8', fontSize: 12 } },
+                xAxis: {
+                    type: 'category',
+                    data: d.quality_trend.map(t => t.date),
+                    axisLabel: { color: '#555b66' },
+                    axisLine: { lineStyle: { color: '#232830' } },
+                },
+                yAxis: {
+                    type: 'value', min: 80, max: 100,
+                    axisLabel: { color: '#555b66' },
+                    splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } },
+                    axisLine: { lineStyle: { color: '#232830' } },
+                },
+                series: [{
+                    type: 'line',
+                    data: d.quality_trend.map(t => t.score),
+                    smooth: true,
+                    lineStyle: { color: '#3b82f6', width: 2 },
+                    areaStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            { offset: 0, color: 'rgba(59,130,246,0.3)' },
+                            { offset: 1, color: 'rgba(59,130,246,0.02)' },
+                        ]),
+                    },
+                    symbol: 'circle', symbolSize: 6,
+                    itemStyle: { color: '#3b82f6' },
+                }],
+            });
+
+            const radarDom = document.getElementById('govRadar');
+            govRadarChart = echarts.init(radarDom, null, { renderer: 'canvas' });
+            govRadarChart.setOption({
+                radar: {
+                    indicator: [
+                        { name: '完整性', max: 100 },
+                        { name: '一致性', max: 100 },
+                        { name: '时效性', max: 100 },
+                        { name: '准确性', max: 100 },
+                    ],
+                    shape: 'polygon', splitNumber: 5,
+                    axisName: { color: '#8b919a', fontSize: 11 },
+                    splitLine: { lineStyle: { color: 'rgba(255,255,255,0.08)' } },
+                    splitArea: { areaStyle: { color: ['rgba(255,255,255,0.02)', 'rgba(255,255,255,0.04)'] } },
+                    axisLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
+                },
+                series: [{
+                    type: 'radar',
+                    data: [{
+                        value: [d.dimensions.completeness, d.dimensions.consistency, d.dimensions.timeliness, d.dimensions.accuracy],
+                        name: '质量维度',
+                        lineStyle: { color: '#22d3ee', width: 2 },
+                        areaStyle: { color: 'rgba(34,211,238,0.2)' },
+                        itemStyle: { color: '#22d3ee' },
+                    }],
+                }],
+            });
+
+            _govChartsLastUpdate = now;
+        }
+
+        // 图表响应式（只绑定一次）
+        if (!window._govResizeBound) {
+            window.addEventListener('resize', () => {
+                if (govTrendChart) govTrendChart.resize();
+                if (govRadarChart) govRadarChart.resize();
+            });
+            window._govResizeBound = true;
+        }
 
     } catch(e) { console.error(e); }
 }
 
 // ===== 设备报告弹窗 =====
 async function openReport(deviceId) {
-    const modal = $('#modal');
     const inner = $('#modalInner');
-    inner.innerHTML = '<div class="loading">加载报告中...</div>';
-    modal.classList.add('active');
+    $('#modal').classList.add('active');
+    inner.innerHTML = '<div class="loading">加载中...</div>';
+
     try {
-        const r = await fetch(`/api/analytics/device_report/${deviceId}`);
-        const report = await r.json();
-        const health = report.health_status || 'normal';
-        const healthText = health === 'normal' ? '正常' : health === 'warning' ? '警告' : '危险';
-        const metricsHtml = Object.entries(report.metrics || {}).map(([name, m]) => `
-            <div class="rm-card">
-                <div class="rm-name">${name}</div>
-                <div class="rm-row"><span class="rm-lbl">最新值</span><span class="rm-v">${fmt(m.latest)}</span></div>
-                <div class="rm-row"><span class="rm-lbl">均值</span><span class="rm-v">${fmt(m.mean)}</span></div>
-                <div class="rm-row"><span class="rm-lbl">最小值</span><span class="rm-v">${fmt(m.min)}</span></div>
-                <div class="rm-row"><span class="rm-lbl">最大值</span><span class="rm-v">${fmt(m.max)}</span></div>
-                <div class="rm-row"><span class="rm-lbl">标准差</span><span class="rm-v">${fmt(m.std)}</span></div>
-            </div>`).join('');
+        // Fetch all data in parallel
+        const [reportResp, alertsResp, anomaliesResp, trendResp] = await Promise.all([
+            fetch(`/api/analytics/device_report/${deviceId}`).then(r => r.json()).catch(() => null),
+            fetch(`/api/analytics/device_report/${deviceId}/alerts`).then(r => r.json()).catch(() => null),
+            fetch(`/api/analytics/device_report/${deviceId}/anomalies`).then(r => r.json()).catch(() => null),
+            fetch(`/api/analytics/device_report/${deviceId}/combined_trend`).then(r => r.json()).catch(() => null),
+        ]);
+
+        const report = reportResp || { device: deviceId, health_score: 0, health_status: 'unknown', metrics: {}, period_minutes: 60 };
+        const alertsData = alertsResp || { alerts: [] };
+        const anomaliesData = anomaliesResp || { anomalies: [], total_count: 0, recent_30min_count: 0 };
+        const trendData = trendResp || { metrics: [], times: [], series: {} };
+
+        const hs = report.health_status || 'unknown';
+        const hsText = { normal: '正常', warning: '警告', critical: '危险', unknown: '未知' }[hs] || hs;
+        const hsClass = { normal: 'normal', warning: 'warning', critical: 'critical' }.get ? hs : 'normal';
+
+        // Build metrics cards HTML for Overview tab
+        let metricsHtml = '';
+        const metrics = report.metrics || {};
+        Object.entries(metrics).forEach(([name, m]) => {
+            const label = FIELD_CN_MAP[name] || name;
+            metricsHtml += `<div class="rm-card"><div class="rm-metric">${label}</div>
+                <div class="rm-latest">${fmt(m.latest)}</div>
+                <div class="rm-stats">
+                    <span>均值 ${fmt(m.mean)}</span><span>最小 ${fmt(m.min)}</span>
+                    <span>最大 ${fmt(m.max)}</span><span>标准差 ${fmt(m.std)}</span>
+                </div></div>`;
+        });
+
+        // Build alerts HTML for Alert History tab
+        let alertsHtml = '';
+        if (alertsData.alerts && alertsData.alerts.length) {
+            alertsHtml = '<div class="table-wrap"><table class="data-table"><thead><tr><th>时间</th><th>指标</th><th>级别</th><th>值</th><th>阈值</th><th>消息</th></tr></thead><tbody>';
+            alertsData.alerts.forEach(a => {
+                const cls = a.level === 'critical' ? 'critical' : 'warning';
+                const txt = a.level === 'critical' ? '危险' : '警告';
+                alertsHtml += `<tr>
+                    <td>${a.time ? new Date(a.time).toLocaleTimeString('zh-CN',{hour12:false}) : ''}</td>
+                    <td>${a.label || a.metric}</td>
+                    <td><span class="a-badge ${cls}">${txt}</span></td>
+                    <td class="hl">${fmt(a.value)}</td>
+                    <td>${a.threshold}</td>
+                    <td>${a.message || ''}</td>
+                </tr>`;
+            });
+            alertsHtml += '</tbody></table></div>';
+        } else {
+            alertsHtml = '<div class="no-data">暂无历史告警</div>';
+        }
+
+        // Build anomalies HTML for Anomaly Detection tab
+        let anomaliesHtml = `<div class="anomaly-summary">总异常: ${anomaliesData.total_count} | 近30分钟: <span class="hl">${anomaliesData.recent_30min_count}</span></div>`;
+        if (anomaliesData.anomalies && anomaliesData.anomalies.length) {
+            anomaliesHtml += '<div class="table-wrap"><table class="data-table"><thead><tr><th>时间</th><th>指标</th><th>数值</th><th>Z-Score</th><th>严重度</th></tr></thead><tbody>';
+            anomaliesData.anomalies.forEach(a => {
+                const sev = (a.severity || 'low').toLowerCase();
+                const sevText = sev === 'high' ? '高' : sev === 'medium' ? '中' : '低';
+                const highlight = a.within_30min ? ' style="background:var(--orange-dark)"' : '';
+                anomaliesHtml += `<tr${highlight}>
+                    <td>${a.time ? new Date(a.time).toLocaleTimeString('zh-CN',{hour12:false}) : ''}</td>
+                    <td>${FIELD_CN_MAP[a.metric] || a.metric}</td>
+                    <td class="hl">${fmt(a.value)}</td>
+                    <td>${a.z_score}</td>
+                    <td><span class="badge ${sev}">${sevText}</span></td>
+                </tr>`;
+            });
+            anomaliesHtml += '</tbody></table></div>';
+        } else {
+            anomaliesHtml += '<div class="no-data">未检测到异常</div>';
+        }
+
         inner.innerHTML = `
-            <div class="modal-header">
-                <h3>${deviceId} — 设备报告</h3>
-                <span class="report-health ${health}">${healthText}</span>
-                <button class="modal-close" onclick="closeModal()">关闭</button>
+        <div class="modal-header">
+            <h3>${deviceId} — 设备报告</h3>
+            <span class="report-health ${hsClass}">${hsText} (${report.health_score}/100)</span>
+            <button type="button" class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="tabs report-tabs">
+                <button type="button" class="tab-btn active" data-tab="report-overview">概览</button>
+                <button type="button" class="tab-btn" data-tab="report-alerts">历史预警</button>
+                <button type="button" class="tab-btn" data-tab="report-anomaly">异常检测</button>
+                <button type="button" class="tab-btn" data-tab="report-trend">指标趋势</button>
             </div>
-            <div class="modal-body">
-                <div style="margin-bottom:0.5rem;font-size:0.8rem;color:var(--text-muted)">健康评分: ${report.health_score}/100 | 分析周期: ${report.period_minutes}分钟</div>
+            <div class="tab-content active" id="tab-report-overview">
                 <div class="report-metrics">${metricsHtml || '<div class="no-data">暂无指标数据</div>'}</div>
-            </div>`;
-    } catch(e) { inner.innerHTML = '<div class="no-data">报告加载失败</div>'; }
+            </div>
+            <div class="tab-content" id="tab-report-alerts">${alertsHtml}</div>
+            <div class="tab-content" id="tab-report-anomaly">${anomaliesHtml}</div>
+            <div class="tab-content" id="tab-report-trend">
+                <div id="reportTrendChart" class="chart-box" style="height:22rem;"></div>
+            </div>
+        </div>`;
+
+        // Wire up tab switching within the modal
+        inner.querySelectorAll('.report-tabs .tab-btn').forEach(tab => {
+            tab.addEventListener('click', () => {
+                inner.querySelectorAll('.report-tabs .tab-btn').forEach(t => t.classList.remove('active'));
+                inner.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                inner.querySelector(`#tab-${tab.dataset.tab}`).classList.add('active');
+                // Initialize trend chart when switching to trend tab
+                if (tab.dataset.tab === 'report-trend' && trendData.metrics && trendData.metrics.length) {
+                    initReportTrendChart(trendData);
+                }
+            });
+        });
+
+    } catch(e) {
+        inner.innerHTML = '<div class="no-data">报告加载失败</div>';
+        console.error('report error:', e);
+    }
+}
+
+let reportTrendChart = null;
+function initReportTrendChart(data) {
+    const dom = document.getElementById('reportTrendChart');
+    if (!dom) return;
+    if (reportTrendChart) { reportTrendChart.dispose(); reportTrendChart = null; }
+    reportTrendChart = echarts.init(dom, null, { renderer: 'canvas' });
+
+    // Separate metrics into two groups for dual Y-axis
+    // Left axis: small-range metrics (temperature, vibration, humidity, pressure, feed_rate, voltage, current, flow_rate, quality_rate, oee, cycle_time, defect_count)
+    // Right axis: large-range metrics (rpm, power, count)
+    const leftMetrics = ['temperature','vibration','humidity','pressure','feed_rate','voltage','current','flow_rate','quality_rate','oee','cycle_time'];
+    const rightMetrics = ['rpm','power','count'];
+
+    const series = [];
+    const yAxes = {};
+    const colors = ['#3b82f6','#f87171','#34d399','#fb923c','#a78bfa','#22d3ee','#fbbf24','#f472b6','#818cf8','#2dd4bf','#ef4444','#10b981'];
+
+    data.metrics.forEach((metric, idx) => {
+        const yAxisIndex = rightMetrics.includes(metric) ? 1 : 0;
+        series.push({
+            name: FIELD_CN_MAP[metric] || metric,
+            type: 'line',
+            yAxisIndex: yAxisIndex,
+            data: data.series[metric] || [],
+            smooth: true,
+            lineStyle: { width: 1.5 },
+            symbol: 'none',
+        });
+    });
+
+    reportTrendChart.setOption({
+        tooltip: { trigger: 'axis', appendToBody: true },
+        legend: {
+            type: 'scroll',
+            bottom: 0,
+            textStyle: { color: '#8b919a', fontSize: 10 },
+        },
+        grid: { top: 20, right: 60, bottom: 40, left: 50 },
+        xAxis: { type: 'category', data: data.times, axisLabel: { color: '#555b66', fontSize: 9 } },
+        yAxis: [
+            { type: 'value', axisLabel: { color: '#555b66', fontSize: 9 }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } } },
+            { type: 'value', axisLabel: { color: '#555b66', fontSize: 9 }, splitLine: { show: false } },
+        ],
+        color: colors,
+        series: series,
+    }, true);
+
+    window.addEventListener('resize', () => { if (reportTrendChart) reportTrendChart.resize(); });
+}
+
+function openWorkshopSummary(wsId) {
+    const w = WORKSHOP_MAP[wsId];
+    if (!w) return;
+    const projInfo = PROJECTS_MAP[w.project_id];
+    const wsDevices = allDevicesData.filter(d => d.workshop === wsId);
+    const totalPoints = wsDevices.reduce((s, d) => s + (d.points?.length || 0), 0);
+
+    const deviceRows = wsDevices.map(d => `<tr>
+        <td><span class="link" style="cursor:pointer" onclick="openReport('${escapeHtml(d.device_id)}')">${escapeHtml(d.device_id)}</span></td>
+        <td>${escapeHtml(d.device_type_cn || d.device_type || '')}</td>
+        <td>${d.points?.length || 0} 点位</td>
+        <td><span class="sc-badge online">运行中</span></td>
+    </tr>`).join('');
+
+    const inner = $('#modalInner');
+    inner.innerHTML = `
+    <div class="modal-header">
+        <h3>${escapeHtml(w.name)} <span style="color:${projInfo?.color || '#888'};font-size:0.8rem;font-weight:400;">${projInfo?.name || ''}</span></h3>
+        <button class="modal-close" onclick="closeModal()">关闭</button>
+    </div>
+    <div class="modal-body">
+        <div class="stat-grid" style="margin-bottom:0.8rem;">
+            <div class="stat-card"><div class="sc-label">城市</div><div class="sc-value" style="font-size:1.1rem;">${escapeHtml(w.city)}</div></div>
+            <div class="stat-card"><div class="sc-label">设备数</div><div class="sc-value blue">${wsDevices.length}</div></div>
+            <div class="stat-card"><div class="sc-label">点位总数</div><div class="sc-value green">${totalPoints}</div></div>
+            <div class="stat-card"><div class="sc-label">所属项目</div><div class="sc-value" style="font-size:1rem;color:${projInfo?.color || '#888'}">${projInfo?.name || ''}</div></div>
+        </div>
+        <div class="panel-title" style="margin-bottom:0.4rem;">设备列表</div>
+        <div class="table-wrap" style="max-height:16rem;">
+            <table class="data-table">
+                <thead><tr><th>设备ID</th><th>类型</th><th>点位</th><th>状态</th></tr></thead>
+                <tbody>${deviceRows || '<tr><td colspan="4"><div class="no-data">暂无设备</div></td></tr>'}</tbody>
+            </table>
+        </div>
+    </div>`;
+    $('#modal').classList.add('active');
 }
 
 function closeModal() { $('#modal').classList.remove('active'); }
@@ -1380,12 +1984,47 @@ $('#modal').addEventListener('click', e => { if (e.target === $('#modal')) close
 
 // ===== 点位筛选 & 实时图表 =====
 let pointRealtimeChart = null;
+let _trendPaused = false;
+let _trendNeedsAnimation = true; // 初次加载或切换内容时播放动画
+let _selectedPointUnit = '';     // 当前点位单位
+
+function toggleTrendPause() {
+    _trendPaused = !_trendPaused;
+    const btn = $('#trendPauseBtn');
+    if (_trendPaused) {
+        stopModuleTimer('trend');
+        btn.classList.add('paused');
+        btn.textContent = '▶';
+        btn.title = '继续';
+    } else {
+        btn.classList.remove('paused');
+        btn.textContent = '⏸';
+        btn.title = '暂停';
+        _trendNeedsAnimation = true; // 恢复时播放动画以刷新到最新
+        refreshPointRealtime();
+        startModuleTimer('trend', () => { if (_selectedPointField) refreshPointRealtime(); });
+    }
+}
 
 function onPointFilterChange() {
     const val = $('#filterPoint').value;
     _selectedPointField = val || null;
     _selectedPointLabel = val ? $('#filterPoint').selectedOptions[0].text : null;
-    // 如果还需要更新点位下拉（例如设备没变但车间变了），已在 applyDeviceFilter 中处理
+    // 查找当前点位单位
+    _selectedPointUnit = '';
+    if (val) {
+        const filtered = $('#filterDevice').value
+            ? allDevicesData.filter(d => d.device_id === $('#filterDevice').value)
+            : ($('#filterWorkshop').value ? allDevicesData.filter(d => d.workshop === $('#filterWorkshop').value) : allDevicesData);
+        for (const d of filtered) {
+            for (const p of (d.points || [])) {
+                if (p.metric === val) { _selectedPointUnit = p.unit || ''; break; }
+            }
+            if (_selectedPointUnit) break;
+        }
+    }
+    // 切换点位 → 标记需要播放动画
+    _trendNeedsAnimation = true;
     renderDeviceTable();
     refreshPointRealtime();
 }
@@ -1396,16 +2035,32 @@ async function refreshPointRealtime() {
         $('#pointRealtimePanel').style.display = 'none';
         return;
     }
+    // Require project and workshop selection
+    const proj = $('#filterProject').value;
+    const ws = $('#filterWorkshop').value;
+    if (!proj || !ws) {
+        $('#pointRealtimePanel').style.display = '';
+        $('#pointRealtimeTitle').textContent = `${_selectedPointLabel || field} — 实时趋势`;
+        const dom = document.getElementById('pointRealtimeChart');
+        if (pointRealtimeChart) { pointRealtimeChart.dispose(); pointRealtimeChart = null; }
+        if (!pointRealtimeChart) pointRealtimeChart = echarts.init(dom, null, { renderer: 'canvas' });
+        pointRealtimeChart.setOption({
+            title: { text: '请先选择项目和工作车间', left: 'center', top: 'center', textStyle: { color: '#555b66', fontSize: 14 } },
+            xAxis: { show: false }, yAxis: { show: false }, series: []
+        }, true);
+        return;
+    }
+
     $('#pointRealtimePanel').style.display = '';
     const label = _selectedPointLabel || field;
     $('#pointRealtimeTitle').textContent = `${label} — 实时趋势`;
 
     const dev = $('#filterDevice').value;
-    const ws = $('#filterWorkshop').value;
     const dt = $('#filterDeviceType').value;
     const params = new URLSearchParams();
     if (dev) params.set('device', dev);
     if (ws) params.set('workshop', ws);
+    if (proj) params.set('project_id', proj);
     if (dt) params.set('device_type', dt);
     params.set('minutes', '30');
 
@@ -1435,17 +2090,20 @@ async function refreshPointRealtime() {
             symbol: 'none',
         }));
         pointRealtimeChart.setOption({
-            grid: { top: 20, right: 20, bottom: 30, left: 50 },
-            tooltip: { trigger: 'axis', appendToBody: true, confine: false },
+            animation: _trendNeedsAnimation,
+            grid: { top: 30, right: 20, bottom: 40, left: 50 },
+            tooltip: { trigger: 'axis', appendToBody: true, confine: false, backgroundColor: 'rgba(15,18,24,0.95)', borderColor: '#232830', textStyle: { color: '#e0e3e8', fontSize: 12 } },
             legend: {
                 bottom: 0,
                 textStyle: { color: '#8b919a', fontSize: 10 },
                 data: deviceIds,
             },
             xAxis: { type: 'category', data: times, axisLabel: { color: '#555b66', fontSize: 10 } },
-            yAxis: { type: 'value', axisLabel: { color: '#555b66', fontSize: 10 }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } } },
+            yAxis: { type: 'value', name: _selectedPointUnit || '', nameTextStyle: { color: '#8b919a', fontSize: 10, padding: [0, 30, 0, 0] }, axisLabel: { color: '#555b66', fontSize: 10 }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } } },
             series: chartSeries,
         }, true);
+        // 首次加载/切换内容后关闭动画，后续定时刷新不再播放
+        _trendNeedsAnimation = false;
     } catch(e) {
         console.error('point realtime chart error:', e);
     }
@@ -1459,6 +2117,7 @@ const moduleTimers = {
     devices:  { timer: null, interval: 5000,  fixed: false, fetching: false },
     trend:    { timer: null, interval: 5000,  fixed: false, fetching: false },
     anomaly:  { timer: null, interval: 15000, fixed: false, fetching: false },
+    gov:      { timer: null, interval: 5000,  fixed: false, fetching: false },
 };
 
 function startModuleTimer(name, fn) {
@@ -1480,11 +2139,19 @@ function setModuleInterval(name, ms) {
     const m = moduleTimers[name];
     if (m.fixed) return;
     m.interval = ms;
+    // 趋势图暂停中不重启定时器
+    if (name === 'trend' && _trendPaused) return;
+    // 同步所有治理模块的下拉选项
+    if (name === 'gov') {
+        const val = (ms / 1000).toString();
+        $$('.gov-refresh-sel').forEach(sel => { sel.value = val; });
+    }
     // 用对应的回调重启定时器
     const callbacks = {
-        devices: () => { loadDevices(); loadServices(); },
+        devices: () => Promise.all([loadDevices(), loadServices()]),
         trend:   () => { if (_selectedPointField) refreshPointRealtime(); },
-        anomaly: () => { if (_activeTab === 'anomaly') loadAnomaly(); loadTotalAnomalyCount(); },
+        anomaly: () => { if (_activeTab === 'anomaly') loadAnomaly(); },
+        gov:     () => { if (_currentPage === 'governance') loadGovernance(); },
     };
     if (callbacks[name]) startModuleTimer(name, callbacks[name]);
 }
@@ -1508,6 +2175,12 @@ $$('.tab-btn').forEach(tab => {
 
 // ===== 初始化 =====
 async function init() {
+    // Wrap filter selects with animated custom dropdowns
+    ['filterProject','filterWorkshop','filterDeviceType','filterDevice','filterPoint',
+     'anomalyMetric','anomalyRange','corrDevice','corrMetricA','corrMetricB'].forEach(id => {
+        const sel = document.getElementById(id);
+        if (sel) new CustomSelect(sel);
+    });
     await loadServices();
     await loadDevices();
     await loadAlerts();
@@ -1516,12 +2189,13 @@ async function init() {
     _activeTab = 'alert';
 
     // 启动独立模块定时器
-    startModuleTimer('alerts',  loadAlerts);
-    startModuleTimer('devices', () => { loadDevices(); loadServices(); });
+    startModuleTimer('alerts',  () => Promise.all([loadAlerts(), loadTotalAnomalyCount()]));
+    startModuleTimer('devices', () => Promise.all([loadDevices(), loadServices()]));
     startModuleTimer('trend',   () => { if (_selectedPointField) refreshPointRealtime(); });
-    startModuleTimer('anomaly', () => { if (_activeTab === 'anomaly') loadAnomaly(); loadTotalAnomalyCount(); });
+    startModuleTimer('anomaly', () => { if (_activeTab === 'anomaly') loadAnomaly(); });
 }
 init();
 </script>
+<div class="toast-container" id="toastContainer"></div>
 </body>
 </html>

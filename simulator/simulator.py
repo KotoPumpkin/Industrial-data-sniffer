@@ -20,307 +20,671 @@ MQTT_HOST = os.getenv("MQTT_HOST", "localhost")
 MQTT_PORT = int(os.getenv("MQTT_PORT", 1883))
 HTTP_PORT = int(os.getenv("HTTP_PORT", 5001))
 
-# ==================== 设备定义 ====================
-# 结构: 设备 → 点位(points) → 指标数据 + 设备级聚合统计(stats)
-DEVICES = {
-    # ===== 车间1：广东深圳 =====
-    "CNC-A01": {
-        "device_type": "cnc",
-        "workshop": "workshop-1",
-        "line": "line-A",
-        "points": {
-            "CNC-A01_sp_bearing_temp_1": {"metric": "temperature", "label": "主轴前轴承温度", "base": 46, "range": 14, "noise": 1.8, "unit": "°C"},
-            "CNC-A01_sp_bearing_temp_2": {"metric": "temperature", "label": "主轴后轴承温度", "base": 43, "range": 12, "noise": 1.5, "unit": "°C"},
-            "CNC-A01_motor_winding_temp": {"metric": "temperature", "label": "电机绕组温度", "base": 48, "range": 16, "noise": 2.2, "unit": "°C"},
-            "CNC-A01_vibration": {"metric": "vibration", "label": "主轴振动", "base": 1.5, "range": 2.0, "noise": 0.3, "unit": "mm/s"},
-            "CNC-A01_rpm": {"metric": "rpm", "label": "主轴转速", "base": 3000, "range": 2000, "noise": 50, "unit": "rpm"},
-            "CNC-A01_power": {"metric": "power", "label": "功率消耗", "base": 4500, "range": 3000, "noise": 200, "unit": "W"},
-            "CNC-A01_feed_rate": {"metric": "feed_rate", "label": "进给速率", "base": 1200, "range": 800, "noise": 30, "unit": "mm/min"},
-            "CNC-A01_voltage": {"metric": "voltage", "label": "电源电压", "base": 380, "range": 10, "noise": 2, "unit": "V"},
-            "CNC-A01_current": {"metric": "current", "label": "工作电流", "base": 12, "range": 8, "noise": 0.5, "unit": "A"},
-        },
-        "stats": {
-            "avg_temperature": {"source_metric": "temperature", "agg": "mean"},
-            "max_temperature": {"source_metric": "temperature", "agg": "max"},
-            "max_vibration": {"source_metric": "vibration", "agg": "max"},
-        },
+# ==================== 项目定义 ====================
+PROJECTS = {
+    "project-huadong": {
+        "name": "华东制造基地",
+        "color": "#3b82f6",
+        "provinces": ["广东省", "江苏省", "浙江省"],
     },
-    "CNC-A02": {
-        "device_type": "cnc",
-        "workshop": "workshop-1",
-        "line": "line-A",
-        "points": {
-            "CNC-A02_sp_bearing_temp_1": {"metric": "temperature", "label": "主轴前轴承温度", "base": 42, "range": 16, "noise": 2.2, "unit": "°C"},
-            "CNC-A02_sp_bearing_temp_2": {"metric": "temperature", "label": "主轴后轴承温度", "base": 40, "range": 14, "noise": 2.0, "unit": "°C"},
-            "CNC-A02_motor_winding_temp": {"metric": "temperature", "label": "电机绕组温度", "base": 45, "range": 18, "noise": 2.8, "unit": "°C"},
-            "CNC-A02_vibration": {"metric": "vibration", "label": "主轴振动", "base": 1.2, "range": 2.5, "noise": 0.4, "unit": "mm/s"},
-            "CNC-A02_rpm": {"metric": "rpm", "label": "主轴转速", "base": 3500, "range": 2500, "noise": 80, "unit": "rpm"},
-            "CNC-A02_power": {"metric": "power", "label": "功率消耗", "base": 5200, "range": 3500, "noise": 300, "unit": "W"},
-            "CNC-A02_feed_rate": {"metric": "feed_rate", "label": "进给速率", "base": 1500, "range": 1000, "noise": 50, "unit": "mm/min"},
-            "CNC-A02_voltage": {"metric": "voltage", "label": "电源电压", "base": 380, "range": 8, "noise": 1.5, "unit": "V"},
-            "CNC-A02_current": {"metric": "current", "label": "工作电流", "base": 14, "range": 6, "noise": 0.3, "unit": "A"},
-        },
-        "stats": {
-            "avg_temperature": {"source_metric": "temperature", "agg": "mean"},
-            "max_temperature": {"source_metric": "temperature", "agg": "max"},
-            "max_vibration": {"source_metric": "vibration", "agg": "max"},
-        },
+    "project-beifang": {
+        "name": "北方工业中心",
+        "color": "#fb923c",
+        "provinces": ["山东省", "天津市", "辽宁省"],
     },
-    "CNC-B01": {
-        "device_type": "cnc",
-        "workshop": "workshop-2",
-        "line": "line-B",
-        "points": {
-            "CNC-B01_sp_bearing_temp_1": {"metric": "temperature", "label": "主轴前轴承温度", "base": 50, "range": 18, "noise": 2.5, "unit": "°C"},
-            "CNC-B01_sp_bearing_temp_2": {"metric": "temperature", "label": "主轴后轴承温度", "base": 47, "range": 16, "noise": 2.8, "unit": "°C"},
-            "CNC-B01_motor_winding_temp": {"metric": "temperature", "label": "电机绕组温度", "base": 53, "range": 22, "noise": 3.2, "unit": "°C"},
-            "CNC-B01_vibration": {"metric": "vibration", "label": "主轴振动", "base": 2.0, "range": 3.0, "noise": 0.5, "unit": "mm/s"},
-            "CNC-B01_rpm": {"metric": "rpm", "label": "主轴转速", "base": 4000, "range": 3000, "noise": 100, "unit": "rpm"},
-            "CNC-B01_power": {"metric": "power", "label": "功率消耗", "base": 6000, "range": 4000, "noise": 400, "unit": "W"},
-            "CNC-B01_feed_rate": {"metric": "feed_rate", "label": "进给速率", "base": 1800, "range": 1200, "noise": 60, "unit": "mm/min"},
-            "CNC-B01_voltage": {"metric": "voltage", "label": "电源电压", "base": 380, "range": 12, "noise": 3, "unit": "V"},
-            "CNC-B01_current": {"metric": "current", "label": "工作电流", "base": 16, "range": 10, "noise": 0.6, "unit": "A"},
-        },
-        "stats": {
-            "avg_temperature": {"source_metric": "temperature", "agg": "mean"},
-            "max_temperature": {"source_metric": "temperature", "agg": "max"},
-            "max_vibration": {"source_metric": "vibration", "agg": "max"},
-        },
-    },
-    # 环境传感器
-    "SENSOR-ENV01": {
-        "device_type": "sensor",
-        "workshop": "workshop-1",
-        "line": "line-A",
-        "points": {
-            "SENSOR-ENV01_temperature": {"metric": "temperature", "label": "环境温度", "base": 25, "range": 8, "noise": 0.5, "unit": "°C"},
-            "SENSOR-ENV01_humidity": {"metric": "humidity", "label": "相对湿度", "base": 55, "range": 20, "noise": 2, "unit": "%"},
-            "SENSOR-ENV01_pressure": {"metric": "pressure", "label": "大气压力", "base": 6.5, "range": 2, "noise": 0.2, "unit": "bar"},
-            "SENSOR-ENV01_flow_rate": {"metric": "flow_rate", "label": "冷却液流量", "base": 120, "range": 40, "noise": 5, "unit": "L/min"},
-        },
-    },
-    "SENSOR-ENV02": {
-        "device_type": "sensor",
-        "workshop": "workshop-2",
-        "line": "line-B",
-        "points": {
-            "SENSOR-ENV02_temperature": {"metric": "temperature", "label": "环境温度", "base": 28, "range": 10, "noise": 0.8, "unit": "°C"},
-            "SENSOR-ENV02_humidity": {"metric": "humidity", "label": "相对湿度", "base": 60, "range": 25, "noise": 3, "unit": "%"},
-            "SENSOR-ENV02_pressure": {"metric": "pressure", "label": "大气压力", "base": 7.0, "range": 3, "noise": 0.3, "unit": "bar"},
-            "SENSOR-ENV02_flow_rate": {"metric": "flow_rate", "label": "冷却液流量", "base": 150, "range": 50, "noise": 8, "unit": "L/min"},
-        },
-    },
-    # 产线 PLC
-    "PLC-LINE-A": {
-        "device_type": "plc",
-        "workshop": "workshop-1",
-        "line": "line-A",
-        "points": {
-            "PLC-LINE-A_count": {"metric": "count", "label": "产量计数", "base": 0, "range": 0, "noise": 0, "unit": "pcs", "accumulator": True, "rate": 2},
-            "PLC-LINE-A_defect_count": {"metric": "defect_count", "label": "不良品数", "base": 0, "range": 0, "noise": 0, "unit": "pcs", "accumulator": True, "rate": 0.08},
-            "PLC-LINE-A_quality_rate": {"metric": "quality_rate", "label": "良品率", "base": 96, "range": 4, "noise": 0.5, "unit": "%"},
-            "PLC-LINE-A_oee": {"metric": "oee", "label": "设备综合效率(OEE)", "base": 85, "range": 15, "noise": 2, "unit": "%"},
-            "PLC-LINE-A_cycle_time": {"metric": "cycle_time", "label": "节拍时间", "base": 30, "range": 10, "noise": 1, "unit": "s"},
-        },
-    },
-    "PLC-LINE-B": {
-        "device_type": "plc",
-        "workshop": "workshop-2",
-        "line": "line-B",
-        "points": {
-            "PLC-LINE-B_count": {"metric": "count", "label": "产量计数", "base": 0, "range": 0, "noise": 0, "unit": "pcs", "accumulator": True, "rate": 1.5},
-            "PLC-LINE-B_defect_count": {"metric": "defect_count", "label": "不良品数", "base": 0, "range": 0, "noise": 0, "unit": "pcs", "accumulator": True, "rate": 0.12},
-            "PLC-LINE-B_quality_rate": {"metric": "quality_rate", "label": "良品率", "base": 94, "range": 6, "noise": 0.8, "unit": "%"},
-            "PLC-LINE-B_oee": {"metric": "oee", "label": "设备综合效率(OEE)", "base": 82, "range": 18, "noise": 3, "unit": "%"},
-            "PLC-LINE-B_cycle_time": {"metric": "cycle_time", "label": "节拍时间", "base": 35, "range": 12, "noise": 2, "unit": "s"},
-        },
-    },
-    # ===== 车间3：山东青岛 =====
-    "CNC-C01": {
-        "device_type": "cnc",
-        "workshop": "workshop-3",
-        "line": "line-C",
-        "points": {
-            "CNC-C01_sp_bearing_temp_1": {"metric": "temperature", "label": "主轴前轴承温度", "base": 48, "range": 15, "noise": 2.2, "unit": "°C"},
-            "CNC-C01_sp_bearing_temp_2": {"metric": "temperature", "label": "主轴后轴承温度", "base": 46, "range": 14, "noise": 2.0, "unit": "°C"},
-            "CNC-C01_motor_winding_temp": {"metric": "temperature", "label": "电机绕组温度", "base": 50, "range": 18, "noise": 2.8, "unit": "°C"},
-            "CNC-C01_vibration": {"metric": "vibration", "label": "主轴振动", "base": 1.8, "range": 2.2, "noise": 0.4, "unit": "mm/s"},
-            "CNC-C01_rpm": {"metric": "rpm", "label": "主轴转速", "base": 3200, "range": 2200, "noise": 70, "unit": "rpm"},
-            "CNC-C01_power": {"metric": "power", "label": "功率消耗", "base": 4800, "range": 3200, "noise": 250, "unit": "W"},
-            "CNC-C01_feed_rate": {"metric": "feed_rate", "label": "进给速率", "base": 1300, "range": 900, "noise": 40, "unit": "mm/min"},
-            "CNC-C01_voltage": {"metric": "voltage", "label": "电源电压", "base": 380, "range": 10, "noise": 2, "unit": "V"},
-            "CNC-C01_current": {"metric": "current", "label": "工作电流", "base": 13, "range": 7, "noise": 0.4, "unit": "A"},
-        },
-        "stats": {
-            "avg_temperature": {"source_metric": "temperature", "agg": "mean"},
-            "max_temperature": {"source_metric": "temperature", "agg": "max"},
-            "max_vibration": {"source_metric": "vibration", "agg": "max"},
-        },
-    },
-    "CNC-C02": {
-        "device_type": "cnc",
-        "workshop": "workshop-3",
-        "line": "line-C",
-        "points": {
-            "CNC-C02_sp_bearing_temp_1": {"metric": "temperature", "label": "主轴前轴承温度", "base": 44, "range": 13, "noise": 1.8, "unit": "°C"},
-            "CNC-C02_sp_bearing_temp_2": {"metric": "temperature", "label": "主轴后轴承温度", "base": 42, "range": 12, "noise": 1.6, "unit": "°C"},
-            "CNC-C02_motor_winding_temp": {"metric": "temperature", "label": "电机绕组温度", "base": 46, "range": 16, "noise": 2.2, "unit": "°C"},
-            "CNC-C02_vibration": {"metric": "vibration", "label": "主轴振动", "base": 1.4, "range": 1.8, "noise": 0.3, "unit": "mm/s"},
-            "CNC-C02_rpm": {"metric": "rpm", "label": "主轴转速", "base": 2800, "range": 1800, "noise": 60, "unit": "rpm"},
-            "CNC-C02_power": {"metric": "power", "label": "功率消耗", "base": 4200, "range": 2800, "noise": 200, "unit": "W"},
-            "CNC-C02_feed_rate": {"metric": "feed_rate", "label": "进给速率", "base": 1100, "range": 700, "noise": 30, "unit": "mm/min"},
-            "CNC-C02_voltage": {"metric": "voltage", "label": "电源电压", "base": 380, "range": 8, "noise": 1.5, "unit": "V"},
-            "CNC-C02_current": {"metric": "current", "label": "工作电流", "base": 11, "range": 5, "noise": 0.3, "unit": "A"},
-        },
-        "stats": {
-            "avg_temperature": {"source_metric": "temperature", "agg": "mean"},
-            "max_temperature": {"source_metric": "temperature", "agg": "max"},
-            "max_vibration": {"source_metric": "vibration", "agg": "max"},
-        },
-    },
-    "SENSOR-ENV03": {
-        "device_type": "sensor",
-        "workshop": "workshop-3",
-        "line": "line-C",
-        "points": {
-            "SENSOR-ENV03_temperature": {"metric": "temperature", "label": "环境温度", "base": 22, "range": 10, "noise": 0.6, "unit": "°C"},
-            "SENSOR-ENV03_humidity": {"metric": "humidity", "label": "相对湿度", "base": 58, "range": 22, "noise": 2.5, "unit": "%"},
-            "SENSOR-ENV03_pressure": {"metric": "pressure", "label": "大气压力", "base": 6.8, "range": 2.5, "noise": 0.25, "unit": "bar"},
-            "SENSOR-ENV03_flow_rate": {"metric": "flow_rate", "label": "冷却液流量", "base": 100, "range": 35, "noise": 4, "unit": "L/min"},
-        },
-    },
-    "PLC-LINE-C": {
-        "device_type": "plc",
-        "workshop": "workshop-3",
-        "line": "line-C",
-        "points": {
-            "PLC-LINE-C_count": {"metric": "count", "label": "产量计数", "base": 0, "range": 0, "noise": 0, "unit": "pcs", "accumulator": True, "rate": 1.8},
-            "PLC-LINE-C_defect_count": {"metric": "defect_count", "label": "不良品数", "base": 0, "range": 0, "noise": 0, "unit": "pcs", "accumulator": True, "rate": 0.10},
-            "PLC-LINE-C_quality_rate": {"metric": "quality_rate", "label": "良品率", "base": 95, "range": 5, "noise": 0.6, "unit": "%"},
-            "PLC-LINE-C_oee": {"metric": "oee", "label": "设备综合效率(OEE)", "base": 87, "range": 13, "noise": 2, "unit": "%"},
-            "PLC-LINE-C_cycle_time": {"metric": "cycle_time", "label": "节拍时间", "base": 28, "range": 8, "noise": 1, "unit": "s"},
-        },
-    },
-    # ===== 车间4：浙江杭州 =====
-    "CNC-D01": {
-        "device_type": "cnc",
-        "workshop": "workshop-4",
-        "line": "line-D",
-        "points": {
-            "CNC-D01_sp_bearing_temp_1": {"metric": "temperature", "label": "主轴前轴承温度", "base": 47, "range": 16, "noise": 2.0, "unit": "°C"},
-            "CNC-D01_sp_bearing_temp_2": {"metric": "temperature", "label": "主轴后轴承温度", "base": 44, "range": 15, "noise": 1.8, "unit": "°C"},
-            "CNC-D01_motor_winding_temp": {"metric": "temperature", "label": "电机绕组温度", "base": 49, "range": 18, "noise": 2.5, "unit": "°C"},
-            "CNC-D01_vibration": {"metric": "vibration", "label": "主轴振动", "base": 1.6, "range": 2.0, "noise": 0.35, "unit": "mm/s"},
-            "CNC-D01_rpm": {"metric": "rpm", "label": "主轴转速", "base": 3600, "range": 2400, "noise": 90, "unit": "rpm"},
-            "CNC-D01_power": {"metric": "power", "label": "功率消耗", "base": 5500, "range": 3800, "noise": 350, "unit": "W"},
-            "CNC-D01_feed_rate": {"metric": "feed_rate", "label": "进给速率", "base": 1600, "range": 1100, "noise": 55, "unit": "mm/min"},
-            "CNC-D01_voltage": {"metric": "voltage", "label": "电源电压", "base": 380, "range": 9, "noise": 1.8, "unit": "V"},
-            "CNC-D01_current": {"metric": "current", "label": "工作电流", "base": 15, "range": 9, "noise": 0.5, "unit": "A"},
-        },
-        "stats": {
-            "avg_temperature": {"source_metric": "temperature", "agg": "mean"},
-            "max_temperature": {"source_metric": "temperature", "agg": "max"},
-            "max_vibration": {"source_metric": "vibration", "agg": "max"},
-        },
-    },
-    "SENSOR-ENV04": {
-        "device_type": "sensor",
-        "workshop": "workshop-4",
-        "line": "line-D",
-        "points": {
-            "SENSOR-ENV04_temperature": {"metric": "temperature", "label": "环境温度", "base": 26, "range": 9, "noise": 0.7, "unit": "°C"},
-            "SENSOR-ENV04_humidity": {"metric": "humidity", "label": "相对湿度", "base": 62, "range": 18, "noise": 2, "unit": "%"},
-            "SENSOR-ENV04_pressure": {"metric": "pressure", "label": "大气压力", "base": 7.2, "range": 2.8, "noise": 0.28, "unit": "bar"},
-            "SENSOR-ENV04_flow_rate": {"metric": "flow_rate", "label": "冷却液流量", "base": 130, "range": 45, "noise": 6, "unit": "L/min"},
-        },
-    },
-    "PLC-LINE-D": {
-        "device_type": "plc",
-        "workshop": "workshop-4",
-        "line": "line-D",
-        "points": {
-            "PLC-LINE-D_count": {"metric": "count", "label": "产量计数", "base": 0, "range": 0, "noise": 0, "unit": "pcs", "accumulator": True, "rate": 2.2},
-            "PLC-LINE-D_defect_count": {"metric": "defect_count", "label": "不良品数", "base": 0, "range": 0, "noise": 0, "unit": "pcs", "accumulator": True, "rate": 0.09},
-            "PLC-LINE-D_quality_rate": {"metric": "quality_rate", "label": "良品率", "base": 97, "range": 3, "noise": 0.4, "unit": "%"},
-            "PLC-LINE-D_oee": {"metric": "oee", "label": "设备综合效率(OEE)", "base": 88, "range": 12, "noise": 1.5, "unit": "%"},
-            "PLC-LINE-D_cycle_time": {"metric": "cycle_time", "label": "节拍时间", "base": 25, "range": 8, "noise": 1.5, "unit": "s"},
-        },
-    },
-    # ===== 车间5：四川成都 =====
-    "CNC-E01": {
-        "device_type": "cnc",
-        "workshop": "workshop-5",
-        "line": "line-E",
-        "points": {
-            "CNC-E01_sp_bearing_temp_1": {"metric": "temperature", "label": "主轴前轴承温度", "base": 52, "range": 20, "noise": 2.8, "unit": "°C"},
-            "CNC-E01_sp_bearing_temp_2": {"metric": "temperature", "label": "主轴后轴承温度", "base": 50, "range": 18, "noise": 2.6, "unit": "°C"},
-            "CNC-E01_motor_winding_temp": {"metric": "temperature", "label": "电机绕组温度", "base": 55, "range": 24, "noise": 3.2, "unit": "°C"},
-            "CNC-E01_vibration": {"metric": "vibration", "label": "主轴振动", "base": 2.2, "range": 3.2, "noise": 0.5, "unit": "mm/s"},
-            "CNC-E01_rpm": {"metric": "rpm", "label": "主轴转速", "base": 3800, "range": 2800, "noise": 120, "unit": "rpm"},
-            "CNC-E01_power": {"metric": "power", "label": "功率消耗", "base": 5800, "range": 4200, "noise": 400, "unit": "W"},
-            "CNC-E01_feed_rate": {"metric": "feed_rate", "label": "进给速率", "base": 1700, "range": 1300, "noise": 70, "unit": "mm/min"},
-            "CNC-E01_voltage": {"metric": "voltage", "label": "电源电压", "base": 380, "range": 14, "noise": 3, "unit": "V"},
-            "CNC-E01_current": {"metric": "current", "label": "工作电流", "base": 17, "range": 11, "noise": 0.7, "unit": "A"},
-        },
-        "stats": {
-            "avg_temperature": {"source_metric": "temperature", "agg": "mean"},
-            "max_temperature": {"source_metric": "temperature", "agg": "max"},
-            "max_vibration": {"source_metric": "vibration", "agg": "max"},
-        },
-    },
-    "CNC-E02": {
-        "device_type": "cnc",
-        "workshop": "workshop-5",
-        "line": "line-E",
-        "points": {
-            "CNC-E02_sp_bearing_temp_1": {"metric": "temperature", "label": "主轴前轴承温度", "base": 40, "range": 11, "noise": 1.6, "unit": "°C"},
-            "CNC-E02_sp_bearing_temp_2": {"metric": "temperature", "label": "主轴后轴承温度", "base": 38, "range": 10, "noise": 1.4, "unit": "°C"},
-            "CNC-E02_motor_winding_temp": {"metric": "temperature", "label": "电机绕组温度", "base": 42, "range": 14, "noise": 2.0, "unit": "°C"},
-            "CNC-E02_vibration": {"metric": "vibration", "label": "主轴振动", "base": 1.0, "range": 1.5, "noise": 0.25, "unit": "mm/s"},
-            "CNC-E02_rpm": {"metric": "rpm", "label": "主轴转速", "base": 2600, "range": 1600, "noise": 50, "unit": "rpm"},
-            "CNC-E02_power": {"metric": "power", "label": "功率消耗", "base": 3800, "range": 2400, "noise": 180, "unit": "W"},
-            "CNC-E02_feed_rate": {"metric": "feed_rate", "label": "进给速率", "base": 1000, "range": 600, "noise": 25, "unit": "mm/min"},
-            "CNC-E02_voltage": {"metric": "voltage", "label": "电源电压", "base": 380, "range": 7, "noise": 1.2, "unit": "V"},
-            "CNC-E02_current": {"metric": "current", "label": "工作电流", "base": 10, "range": 4, "noise": 0.2, "unit": "A"},
-        },
-        "stats": {
-            "avg_temperature": {"source_metric": "temperature", "agg": "mean"},
-            "max_temperature": {"source_metric": "temperature", "agg": "max"},
-            "max_vibration": {"source_metric": "vibration", "agg": "max"},
-        },
-    },
-    "SENSOR-ENV05": {
-        "device_type": "sensor",
-        "workshop": "workshop-5",
-        "line": "line-E",
-        "points": {
-            "SENSOR-ENV05_temperature": {"metric": "temperature", "label": "环境温度", "base": 24, "range": 12, "noise": 0.8, "unit": "°C"},
-            "SENSOR-ENV05_humidity": {"metric": "humidity", "label": "相对湿度", "base": 65, "range": 20, "noise": 3, "unit": "%"},
-            "SENSOR-ENV05_pressure": {"metric": "pressure", "label": "大气压力", "base": 6.0, "range": 2.2, "noise": 0.3, "unit": "bar"},
-            "SENSOR-ENV05_flow_rate": {"metric": "flow_rate", "label": "冷却液流量", "base": 90, "range": 30, "noise": 3, "unit": "L/min"},
-        },
-    },
-    "PLC-LINE-E": {
-        "device_type": "plc",
-        "workshop": "workshop-5",
-        "line": "line-E",
-        "points": {
-            "PLC-LINE-E_count": {"metric": "count", "label": "产量计数", "base": 0, "range": 0, "noise": 0, "unit": "pcs", "accumulator": True, "rate": 1.3},
-            "PLC-LINE-E_defect_count": {"metric": "defect_count", "label": "不良品数", "base": 0, "range": 0, "noise": 0, "unit": "pcs", "accumulator": True, "rate": 0.15},
-            "PLC-LINE-E_quality_rate": {"metric": "quality_rate", "label": "良品率", "base": 92, "range": 8, "noise": 1, "unit": "%"},
-            "PLC-LINE-E_oee": {"metric": "oee", "label": "设备综合效率(OEE)", "base": 80, "range": 20, "noise": 3.5, "unit": "%"},
-            "PLC-LINE-E_cycle_time": {"metric": "cycle_time", "label": "节拍时间", "base": 38, "range": 14, "noise": 2.5, "unit": "s"},
-        },
+    "project-xinan": {
+        "name": "西南智造园区",
+        "color": "#34d399",
+        "provinces": ["四川省", "重庆市", "云南省"],
     },
 }
 
-# 车间地理信息映射
+# ==================== 车间地理信息 ====================
 WORKSHOP_GEO = {
-    "workshop-1": {"province": "广东省", "city": "深圳", "lat": 22.5431, "lng": 114.0579, "name": "深圳数控车间"},
-    "workshop-2": {"province": "江苏省", "city": "苏州", "lat": 31.2990, "lng": 120.5853, "name": "苏州精密车间"},
-    "workshop-3": {"province": "山东省", "city": "青岛", "lat": 36.0671, "lng": 120.3826, "name": "青岛模具车间"},
-    "workshop-4": {"province": "浙江省", "city": "杭州", "lat": 30.2741, "lng": 120.1551, "name": "杭州电子车间"},
-    "workshop-5": {"province": "四川省", "city": "成都", "lat": 30.5728, "lng": 104.0668, "name": "成都重装车间"},
+    "workshop-sz":  {"project_id": "project-huadong", "province": "广东省", "city": "深圳", "name": "深圳数控车间", "lat": 22.5431, "lng": 114.0579},
+    "workshop-szh": {"project_id": "project-huadong", "province": "江苏省", "city": "苏州", "name": "苏州精密车间", "lat": 31.2990, "lng": 120.5853},
+    "workshop-hz":  {"project_id": "project-huadong", "province": "浙江省", "city": "杭州", "name": "杭州电子车间", "lat": 30.2741, "lng": 120.1551},
+    "workshop-qd":  {"project_id": "project-beifang", "province": "山东省", "city": "青岛", "name": "青岛模具车间", "lat": 36.0671, "lng": 120.3826},
+    "workshop-tj":  {"project_id": "project-beifang", "province": "天津市", "city": "天津", "name": "天津装配车间", "lat": 39.0842, "lng": 117.2009},
+    "workshop-dl":  {"project_id": "project-beifang", "province": "辽宁省", "city": "大连", "name": "大连重工车间", "lat": 38.9140, "lng": 121.6147},
+    "workshop-cd":  {"project_id": "project-xinan",   "province": "四川省", "city": "成都", "name": "成都重装车间", "lat": 30.5728, "lng": 104.0668},
+    "workshop-cq":  {"project_id": "project-xinan",   "province": "重庆市", "city": "重庆", "name": "重庆模具车间", "lat": 29.4316, "lng": 106.9123},
+    "workshop-km":  {"project_id": "project-xinan",   "province": "云南省", "city": "昆明", "name": "昆明精工车间", "lat": 25.0389, "lng": 102.7183},
+}
+
+# ==================== 设备定义 ====================
+# 结构: 设备 → 点位(points) → 指标数据 + 设备级聚合统计(stats)
+DEVICES = {
+    # ===== workshop-sz: 深圳数控车间 (project-huadong) =====
+    "CNC-SZ01": {
+        "device_type": "cnc",
+        "project_id": "project-huadong",
+        "workshop": "workshop-sz",
+        "line": "line-SZ",
+        "points": {
+            "CNC-SZ01_sp_bearing_temp_1": {"metric": "temperature", "label": "主轴温度1", "base": 45, "range": 10, "noise": 1.5, "unit": "°C"},
+            "CNC-SZ01_sp_bearing_temp_2": {"metric": "temperature", "label": "主轴温度2", "base": 42, "range": 8, "noise": 1.2, "unit": "°C"},
+            "CNC-SZ01_sp_bearing_temp_3": {"metric": "temperature", "label": "主轴温度3", "base": 40, "range": 6, "noise": 1.0, "unit": "°C"},
+            "CNC-SZ01_vibration": {"metric": "vibration", "label": "振动幅度", "base": 1.5, "range": 2.0, "noise": 0.3, "unit": "mm/s"},
+            "CNC-SZ01_rpm": {"metric": "rpm", "label": "主轴转速", "base": 3500, "range": 1500, "noise": 100, "unit": "RPM"},
+            "CNC-SZ01_power": {"metric": "power", "label": "功率消耗", "base": 4500, "range": 2000, "noise": 300, "unit": "W"},
+            "CNC-SZ01_feed_rate": {"metric": "feed_rate", "label": "进给速率", "base": 2500, "range": 800, "noise": 50, "unit": "mm/min"},
+            "CNC-SZ01_voltage": {"metric": "voltage", "label": "电压", "base": 380, "range": 10, "noise": 2, "unit": "V"},
+            "CNC-SZ01_current": {"metric": "current", "label": "电流", "base": 12, "range": 5, "noise": 0.5, "unit": "A"},
+        },
+        "stats": {
+            "avg_temperature": {"source_metric": "temperature", "agg": "mean"},
+            "max_temperature": {"source_metric": "temperature", "agg": "max"},
+            "max_vibration": {"source_metric": "vibration", "agg": "max"},
+        },
+    },
+    "CNC-SZ02": {
+        "device_type": "cnc",
+        "project_id": "project-huadong",
+        "workshop": "workshop-sz",
+        "line": "line-SZ",
+        "points": {
+            "CNC-SZ02_sp_bearing_temp_1": {"metric": "temperature", "label": "主轴温度1", "base": 45, "range": 10, "noise": 1.5, "unit": "°C"},
+            "CNC-SZ02_sp_bearing_temp_2": {"metric": "temperature", "label": "主轴温度2", "base": 42, "range": 8, "noise": 1.2, "unit": "°C"},
+            "CNC-SZ02_sp_bearing_temp_3": {"metric": "temperature", "label": "主轴温度3", "base": 40, "range": 6, "noise": 1.0, "unit": "°C"},
+            "CNC-SZ02_vibration": {"metric": "vibration", "label": "振动幅度", "base": 1.5, "range": 2.0, "noise": 0.3, "unit": "mm/s"},
+            "CNC-SZ02_rpm": {"metric": "rpm", "label": "主轴转速", "base": 3500, "range": 1500, "noise": 100, "unit": "RPM"},
+            "CNC-SZ02_power": {"metric": "power", "label": "功率消耗", "base": 4500, "range": 2000, "noise": 300, "unit": "W"},
+            "CNC-SZ02_feed_rate": {"metric": "feed_rate", "label": "进给速率", "base": 2500, "range": 800, "noise": 50, "unit": "mm/min"},
+            "CNC-SZ02_voltage": {"metric": "voltage", "label": "电压", "base": 380, "range": 10, "noise": 2, "unit": "V"},
+            "CNC-SZ02_current": {"metric": "current", "label": "电流", "base": 12, "range": 5, "noise": 0.5, "unit": "A"},
+        },
+        "stats": {
+            "avg_temperature": {"source_metric": "temperature", "agg": "mean"},
+            "max_temperature": {"source_metric": "temperature", "agg": "max"},
+            "max_vibration": {"source_metric": "vibration", "agg": "max"},
+        },
+    },
+    "SENSOR-SZ01": {
+        "device_type": "sensor",
+        "project_id": "project-huadong",
+        "workshop": "workshop-sz",
+        "line": "line-SZ",
+        "points": {
+            "SENSOR-SZ01_env_temperature": {"metric": "temperature", "label": "环境温度", "base": 25, "range": 5, "noise": 0.5, "unit": "°C"},
+            "SENSOR-SZ01_env_humidity": {"metric": "humidity", "label": "相对湿度", "base": 60, "range": 15, "noise": 3, "unit": "%"},
+            "SENSOR-SZ01_env_pressure": {"metric": "pressure", "label": "气压", "base": 1013, "range": 5, "noise": 1, "unit": "hPa"},
+            "SENSOR-SZ01_env_flow_rate": {"metric": "flow_rate", "label": "流量", "base": 120, "range": 30, "noise": 5, "unit": "L/min"},
+        },
+    },
+    "PLC-SZ01": {
+        "device_type": "plc",
+        "project_id": "project-huadong",
+        "workshop": "workshop-sz",
+        "line": "line-SZ",
+        "points": {
+            "PLC-SZ01_total_count": {"metric": "count", "label": "产量计数", "base": 0, "range": 0, "noise": 0, "unit": "件", "accumulator": True, "rate": 2},
+            "PLC-SZ01_defect_count": {"metric": "defect_count", "label": "不良品数", "base": 0, "range": 0, "noise": 0, "unit": "件", "accumulator": True, "rate": 0.1},
+            "PLC-SZ01_quality_rate": {"metric": "quality_rate", "label": "良品率", "base": 98.5, "range": 2, "noise": 0.3, "unit": "%"},
+            "PLC-SZ01_oee": {"metric": "oee", "label": "设备综合效率", "base": 85, "range": 10, "noise": 2, "unit": "%"},
+            "PLC-SZ01_cycle_time": {"metric": "cycle_time", "label": "节拍时间", "base": 45, "range": 5, "noise": 1, "unit": "s"},
+        },
+    },
+    # ===== workshop-szh: 苏州精密车间 (project-huadong) =====
+    "CNC-SZH01": {
+        "device_type": "cnc",
+        "project_id": "project-huadong",
+        "workshop": "workshop-szh",
+        "line": "line-SZH",
+        "points": {
+            "CNC-SZH01_sp_bearing_temp_1": {"metric": "temperature", "label": "主轴温度1", "base": 45, "range": 10, "noise": 1.5, "unit": "°C"},
+            "CNC-SZH01_sp_bearing_temp_2": {"metric": "temperature", "label": "主轴温度2", "base": 42, "range": 8, "noise": 1.2, "unit": "°C"},
+            "CNC-SZH01_sp_bearing_temp_3": {"metric": "temperature", "label": "主轴温度3", "base": 40, "range": 6, "noise": 1.0, "unit": "°C"},
+            "CNC-SZH01_vibration": {"metric": "vibration", "label": "振动幅度", "base": 1.5, "range": 2.0, "noise": 0.3, "unit": "mm/s"},
+            "CNC-SZH01_rpm": {"metric": "rpm", "label": "主轴转速", "base": 3500, "range": 1500, "noise": 100, "unit": "RPM"},
+            "CNC-SZH01_power": {"metric": "power", "label": "功率消耗", "base": 4500, "range": 2000, "noise": 300, "unit": "W"},
+            "CNC-SZH01_feed_rate": {"metric": "feed_rate", "label": "进给速率", "base": 2500, "range": 800, "noise": 50, "unit": "mm/min"},
+            "CNC-SZH01_voltage": {"metric": "voltage", "label": "电压", "base": 380, "range": 10, "noise": 2, "unit": "V"},
+            "CNC-SZH01_current": {"metric": "current", "label": "电流", "base": 12, "range": 5, "noise": 0.5, "unit": "A"},
+        },
+        "stats": {
+            "avg_temperature": {"source_metric": "temperature", "agg": "mean"},
+            "max_temperature": {"source_metric": "temperature", "agg": "max"},
+            "max_vibration": {"source_metric": "vibration", "agg": "max"},
+        },
+    },
+    "CNC-SZH02": {
+        "device_type": "cnc",
+        "project_id": "project-huadong",
+        "workshop": "workshop-szh",
+        "line": "line-SZH",
+        "points": {
+            "CNC-SZH02_sp_bearing_temp_1": {"metric": "temperature", "label": "主轴温度1", "base": 45, "range": 10, "noise": 1.5, "unit": "°C"},
+            "CNC-SZH02_sp_bearing_temp_2": {"metric": "temperature", "label": "主轴温度2", "base": 42, "range": 8, "noise": 1.2, "unit": "°C"},
+            "CNC-SZH02_sp_bearing_temp_3": {"metric": "temperature", "label": "主轴温度3", "base": 40, "range": 6, "noise": 1.0, "unit": "°C"},
+            "CNC-SZH02_vibration": {"metric": "vibration", "label": "振动幅度", "base": 1.5, "range": 2.0, "noise": 0.3, "unit": "mm/s"},
+            "CNC-SZH02_rpm": {"metric": "rpm", "label": "主轴转速", "base": 3500, "range": 1500, "noise": 100, "unit": "RPM"},
+            "CNC-SZH02_power": {"metric": "power", "label": "功率消耗", "base": 4500, "range": 2000, "noise": 300, "unit": "W"},
+            "CNC-SZH02_feed_rate": {"metric": "feed_rate", "label": "进给速率", "base": 2500, "range": 800, "noise": 50, "unit": "mm/min"},
+            "CNC-SZH02_voltage": {"metric": "voltage", "label": "电压", "base": 380, "range": 10, "noise": 2, "unit": "V"},
+            "CNC-SZH02_current": {"metric": "current", "label": "电流", "base": 12, "range": 5, "noise": 0.5, "unit": "A"},
+        },
+        "stats": {
+            "avg_temperature": {"source_metric": "temperature", "agg": "mean"},
+            "max_temperature": {"source_metric": "temperature", "agg": "max"},
+            "max_vibration": {"source_metric": "vibration", "agg": "max"},
+        },
+    },
+    "SENSOR-SZH01": {
+        "device_type": "sensor",
+        "project_id": "project-huadong",
+        "workshop": "workshop-szh",
+        "line": "line-SZH",
+        "points": {
+            "SENSOR-SZH01_env_temperature": {"metric": "temperature", "label": "环境温度", "base": 25, "range": 5, "noise": 0.5, "unit": "°C"},
+            "SENSOR-SZH01_env_humidity": {"metric": "humidity", "label": "相对湿度", "base": 60, "range": 15, "noise": 3, "unit": "%"},
+            "SENSOR-SZH01_env_pressure": {"metric": "pressure", "label": "气压", "base": 1013, "range": 5, "noise": 1, "unit": "hPa"},
+            "SENSOR-SZH01_env_flow_rate": {"metric": "flow_rate", "label": "流量", "base": 120, "range": 30, "noise": 5, "unit": "L/min"},
+        },
+    },
+    "PLC-SZH01": {
+        "device_type": "plc",
+        "project_id": "project-huadong",
+        "workshop": "workshop-szh",
+        "line": "line-SZH",
+        "points": {
+            "PLC-SZH01_total_count": {"metric": "count", "label": "产量计数", "base": 0, "range": 0, "noise": 0, "unit": "件", "accumulator": True, "rate": 2},
+            "PLC-SZH01_defect_count": {"metric": "defect_count", "label": "不良品数", "base": 0, "range": 0, "noise": 0, "unit": "件", "accumulator": True, "rate": 0.1},
+            "PLC-SZH01_quality_rate": {"metric": "quality_rate", "label": "良品率", "base": 98.5, "range": 2, "noise": 0.3, "unit": "%"},
+            "PLC-SZH01_oee": {"metric": "oee", "label": "设备综合效率", "base": 85, "range": 10, "noise": 2, "unit": "%"},
+            "PLC-SZH01_cycle_time": {"metric": "cycle_time", "label": "节拍时间", "base": 45, "range": 5, "noise": 1, "unit": "s"},
+        },
+    },
+    # ===== workshop-hz: 杭州电子车间 (project-huadong) =====
+    "CNC-HZ01": {
+        "device_type": "cnc",
+        "project_id": "project-huadong",
+        "workshop": "workshop-hz",
+        "line": "line-HZ",
+        "points": {
+            "CNC-HZ01_sp_bearing_temp_1": {"metric": "temperature", "label": "主轴温度1", "base": 45, "range": 10, "noise": 1.5, "unit": "°C"},
+            "CNC-HZ01_sp_bearing_temp_2": {"metric": "temperature", "label": "主轴温度2", "base": 42, "range": 8, "noise": 1.2, "unit": "°C"},
+            "CNC-HZ01_sp_bearing_temp_3": {"metric": "temperature", "label": "主轴温度3", "base": 40, "range": 6, "noise": 1.0, "unit": "°C"},
+            "CNC-HZ01_vibration": {"metric": "vibration", "label": "振动幅度", "base": 1.5, "range": 2.0, "noise": 0.3, "unit": "mm/s"},
+            "CNC-HZ01_rpm": {"metric": "rpm", "label": "主轴转速", "base": 3500, "range": 1500, "noise": 100, "unit": "RPM"},
+            "CNC-HZ01_power": {"metric": "power", "label": "功率消耗", "base": 4500, "range": 2000, "noise": 300, "unit": "W"},
+            "CNC-HZ01_feed_rate": {"metric": "feed_rate", "label": "进给速率", "base": 2500, "range": 800, "noise": 50, "unit": "mm/min"},
+            "CNC-HZ01_voltage": {"metric": "voltage", "label": "电压", "base": 380, "range": 10, "noise": 2, "unit": "V"},
+            "CNC-HZ01_current": {"metric": "current", "label": "电流", "base": 12, "range": 5, "noise": 0.5, "unit": "A"},
+        },
+        "stats": {
+            "avg_temperature": {"source_metric": "temperature", "agg": "mean"},
+            "max_temperature": {"source_metric": "temperature", "agg": "max"},
+            "max_vibration": {"source_metric": "vibration", "agg": "max"},
+        },
+    },
+    "CNC-HZ02": {
+        "device_type": "cnc",
+        "project_id": "project-huadong",
+        "workshop": "workshop-hz",
+        "line": "line-HZ",
+        "points": {
+            "CNC-HZ02_sp_bearing_temp_1": {"metric": "temperature", "label": "主轴温度1", "base": 45, "range": 10, "noise": 1.5, "unit": "°C"},
+            "CNC-HZ02_sp_bearing_temp_2": {"metric": "temperature", "label": "主轴温度2", "base": 42, "range": 8, "noise": 1.2, "unit": "°C"},
+            "CNC-HZ02_sp_bearing_temp_3": {"metric": "temperature", "label": "主轴温度3", "base": 40, "range": 6, "noise": 1.0, "unit": "°C"},
+            "CNC-HZ02_vibration": {"metric": "vibration", "label": "振动幅度", "base": 1.5, "range": 2.0, "noise": 0.3, "unit": "mm/s"},
+            "CNC-HZ02_rpm": {"metric": "rpm", "label": "主轴转速", "base": 3500, "range": 1500, "noise": 100, "unit": "RPM"},
+            "CNC-HZ02_power": {"metric": "power", "label": "功率消耗", "base": 4500, "range": 2000, "noise": 300, "unit": "W"},
+            "CNC-HZ02_feed_rate": {"metric": "feed_rate", "label": "进给速率", "base": 2500, "range": 800, "noise": 50, "unit": "mm/min"},
+            "CNC-HZ02_voltage": {"metric": "voltage", "label": "电压", "base": 380, "range": 10, "noise": 2, "unit": "V"},
+            "CNC-HZ02_current": {"metric": "current", "label": "电流", "base": 12, "range": 5, "noise": 0.5, "unit": "A"},
+        },
+        "stats": {
+            "avg_temperature": {"source_metric": "temperature", "agg": "mean"},
+            "max_temperature": {"source_metric": "temperature", "agg": "max"},
+            "max_vibration": {"source_metric": "vibration", "agg": "max"},
+        },
+    },
+    "SENSOR-HZ01": {
+        "device_type": "sensor",
+        "project_id": "project-huadong",
+        "workshop": "workshop-hz",
+        "line": "line-HZ",
+        "points": {
+            "SENSOR-HZ01_env_temperature": {"metric": "temperature", "label": "环境温度", "base": 25, "range": 5, "noise": 0.5, "unit": "°C"},
+            "SENSOR-HZ01_env_humidity": {"metric": "humidity", "label": "相对湿度", "base": 60, "range": 15, "noise": 3, "unit": "%"},
+            "SENSOR-HZ01_env_pressure": {"metric": "pressure", "label": "气压", "base": 1013, "range": 5, "noise": 1, "unit": "hPa"},
+            "SENSOR-HZ01_env_flow_rate": {"metric": "flow_rate", "label": "流量", "base": 120, "range": 30, "noise": 5, "unit": "L/min"},
+        },
+    },
+    "PLC-HZ01": {
+        "device_type": "plc",
+        "project_id": "project-huadong",
+        "workshop": "workshop-hz",
+        "line": "line-HZ",
+        "points": {
+            "PLC-HZ01_total_count": {"metric": "count", "label": "产量计数", "base": 0, "range": 0, "noise": 0, "unit": "件", "accumulator": True, "rate": 2},
+            "PLC-HZ01_defect_count": {"metric": "defect_count", "label": "不良品数", "base": 0, "range": 0, "noise": 0, "unit": "件", "accumulator": True, "rate": 0.1},
+            "PLC-HZ01_quality_rate": {"metric": "quality_rate", "label": "良品率", "base": 98.5, "range": 2, "noise": 0.3, "unit": "%"},
+            "PLC-HZ01_oee": {"metric": "oee", "label": "设备综合效率", "base": 85, "range": 10, "noise": 2, "unit": "%"},
+            "PLC-HZ01_cycle_time": {"metric": "cycle_time", "label": "节拍时间", "base": 45, "range": 5, "noise": 1, "unit": "s"},
+        },
+    },
+    # ===== workshop-qd: 青岛模具车间 (project-beifang) =====
+    "CNC-QD01": {
+        "device_type": "cnc",
+        "project_id": "project-beifang",
+        "workshop": "workshop-qd",
+        "line": "line-QD",
+        "points": {
+            "CNC-QD01_sp_bearing_temp_1": {"metric": "temperature", "label": "主轴温度1", "base": 45, "range": 10, "noise": 1.5, "unit": "°C"},
+            "CNC-QD01_sp_bearing_temp_2": {"metric": "temperature", "label": "主轴温度2", "base": 42, "range": 8, "noise": 1.2, "unit": "°C"},
+            "CNC-QD01_sp_bearing_temp_3": {"metric": "temperature", "label": "主轴温度3", "base": 40, "range": 6, "noise": 1.0, "unit": "°C"},
+            "CNC-QD01_vibration": {"metric": "vibration", "label": "振动幅度", "base": 1.5, "range": 2.0, "noise": 0.3, "unit": "mm/s"},
+            "CNC-QD01_rpm": {"metric": "rpm", "label": "主轴转速", "base": 3500, "range": 1500, "noise": 100, "unit": "RPM"},
+            "CNC-QD01_power": {"metric": "power", "label": "功率消耗", "base": 4500, "range": 2000, "noise": 300, "unit": "W"},
+            "CNC-QD01_feed_rate": {"metric": "feed_rate", "label": "进给速率", "base": 2500, "range": 800, "noise": 50, "unit": "mm/min"},
+            "CNC-QD01_voltage": {"metric": "voltage", "label": "电压", "base": 380, "range": 10, "noise": 2, "unit": "V"},
+            "CNC-QD01_current": {"metric": "current", "label": "电流", "base": 12, "range": 5, "noise": 0.5, "unit": "A"},
+        },
+        "stats": {
+            "avg_temperature": {"source_metric": "temperature", "agg": "mean"},
+            "max_temperature": {"source_metric": "temperature", "agg": "max"},
+            "max_vibration": {"source_metric": "vibration", "agg": "max"},
+        },
+    },
+    "CNC-QD02": {
+        "device_type": "cnc",
+        "project_id": "project-beifang",
+        "workshop": "workshop-qd",
+        "line": "line-QD",
+        "points": {
+            "CNC-QD02_sp_bearing_temp_1": {"metric": "temperature", "label": "主轴温度1", "base": 45, "range": 10, "noise": 1.5, "unit": "°C"},
+            "CNC-QD02_sp_bearing_temp_2": {"metric": "temperature", "label": "主轴温度2", "base": 42, "range": 8, "noise": 1.2, "unit": "°C"},
+            "CNC-QD02_sp_bearing_temp_3": {"metric": "temperature", "label": "主轴温度3", "base": 40, "range": 6, "noise": 1.0, "unit": "°C"},
+            "CNC-QD02_vibration": {"metric": "vibration", "label": "振动幅度", "base": 1.5, "range": 2.0, "noise": 0.3, "unit": "mm/s"},
+            "CNC-QD02_rpm": {"metric": "rpm", "label": "主轴转速", "base": 3500, "range": 1500, "noise": 100, "unit": "RPM"},
+            "CNC-QD02_power": {"metric": "power", "label": "功率消耗", "base": 4500, "range": 2000, "noise": 300, "unit": "W"},
+            "CNC-QD02_feed_rate": {"metric": "feed_rate", "label": "进给速率", "base": 2500, "range": 800, "noise": 50, "unit": "mm/min"},
+            "CNC-QD02_voltage": {"metric": "voltage", "label": "电压", "base": 380, "range": 10, "noise": 2, "unit": "V"},
+            "CNC-QD02_current": {"metric": "current", "label": "电流", "base": 12, "range": 5, "noise": 0.5, "unit": "A"},
+        },
+        "stats": {
+            "avg_temperature": {"source_metric": "temperature", "agg": "mean"},
+            "max_temperature": {"source_metric": "temperature", "agg": "max"},
+            "max_vibration": {"source_metric": "vibration", "agg": "max"},
+        },
+    },
+    "SENSOR-QD01": {
+        "device_type": "sensor",
+        "project_id": "project-beifang",
+        "workshop": "workshop-qd",
+        "line": "line-QD",
+        "points": {
+            "SENSOR-QD01_env_temperature": {"metric": "temperature", "label": "环境温度", "base": 25, "range": 5, "noise": 0.5, "unit": "°C"},
+            "SENSOR-QD01_env_humidity": {"metric": "humidity", "label": "相对湿度", "base": 60, "range": 15, "noise": 3, "unit": "%"},
+            "SENSOR-QD01_env_pressure": {"metric": "pressure", "label": "气压", "base": 1013, "range": 5, "noise": 1, "unit": "hPa"},
+            "SENSOR-QD01_env_flow_rate": {"metric": "flow_rate", "label": "流量", "base": 120, "range": 30, "noise": 5, "unit": "L/min"},
+        },
+    },
+    "PLC-QD01": {
+        "device_type": "plc",
+        "project_id": "project-beifang",
+        "workshop": "workshop-qd",
+        "line": "line-QD",
+        "points": {
+            "PLC-QD01_total_count": {"metric": "count", "label": "产量计数", "base": 0, "range": 0, "noise": 0, "unit": "件", "accumulator": True, "rate": 2},
+            "PLC-QD01_defect_count": {"metric": "defect_count", "label": "不良品数", "base": 0, "range": 0, "noise": 0, "unit": "件", "accumulator": True, "rate": 0.1},
+            "PLC-QD01_quality_rate": {"metric": "quality_rate", "label": "良品率", "base": 98.5, "range": 2, "noise": 0.3, "unit": "%"},
+            "PLC-QD01_oee": {"metric": "oee", "label": "设备综合效率", "base": 85, "range": 10, "noise": 2, "unit": "%"},
+            "PLC-QD01_cycle_time": {"metric": "cycle_time", "label": "节拍时间", "base": 45, "range": 5, "noise": 1, "unit": "s"},
+        },
+    },
+    # ===== workshop-tj: 天津装配车间 (project-beifang) =====
+    "CNC-TJ01": {
+        "device_type": "cnc",
+        "project_id": "project-beifang",
+        "workshop": "workshop-tj",
+        "line": "line-TJ",
+        "points": {
+            "CNC-TJ01_sp_bearing_temp_1": {"metric": "temperature", "label": "主轴温度1", "base": 45, "range": 10, "noise": 1.5, "unit": "°C"},
+            "CNC-TJ01_sp_bearing_temp_2": {"metric": "temperature", "label": "主轴温度2", "base": 42, "range": 8, "noise": 1.2, "unit": "°C"},
+            "CNC-TJ01_sp_bearing_temp_3": {"metric": "temperature", "label": "主轴温度3", "base": 40, "range": 6, "noise": 1.0, "unit": "°C"},
+            "CNC-TJ01_vibration": {"metric": "vibration", "label": "振动幅度", "base": 1.5, "range": 2.0, "noise": 0.3, "unit": "mm/s"},
+            "CNC-TJ01_rpm": {"metric": "rpm", "label": "主轴转速", "base": 3500, "range": 1500, "noise": 100, "unit": "RPM"},
+            "CNC-TJ01_power": {"metric": "power", "label": "功率消耗", "base": 4500, "range": 2000, "noise": 300, "unit": "W"},
+            "CNC-TJ01_feed_rate": {"metric": "feed_rate", "label": "进给速率", "base": 2500, "range": 800, "noise": 50, "unit": "mm/min"},
+            "CNC-TJ01_voltage": {"metric": "voltage", "label": "电压", "base": 380, "range": 10, "noise": 2, "unit": "V"},
+            "CNC-TJ01_current": {"metric": "current", "label": "电流", "base": 12, "range": 5, "noise": 0.5, "unit": "A"},
+        },
+        "stats": {
+            "avg_temperature": {"source_metric": "temperature", "agg": "mean"},
+            "max_temperature": {"source_metric": "temperature", "agg": "max"},
+            "max_vibration": {"source_metric": "vibration", "agg": "max"},
+        },
+    },
+    "CNC-TJ02": {
+        "device_type": "cnc",
+        "project_id": "project-beifang",
+        "workshop": "workshop-tj",
+        "line": "line-TJ",
+        "points": {
+            "CNC-TJ02_sp_bearing_temp_1": {"metric": "temperature", "label": "主轴温度1", "base": 45, "range": 10, "noise": 1.5, "unit": "°C"},
+            "CNC-TJ02_sp_bearing_temp_2": {"metric": "temperature", "label": "主轴温度2", "base": 42, "range": 8, "noise": 1.2, "unit": "°C"},
+            "CNC-TJ02_sp_bearing_temp_3": {"metric": "temperature", "label": "主轴温度3", "base": 40, "range": 6, "noise": 1.0, "unit": "°C"},
+            "CNC-TJ02_vibration": {"metric": "vibration", "label": "振动幅度", "base": 1.5, "range": 2.0, "noise": 0.3, "unit": "mm/s"},
+            "CNC-TJ02_rpm": {"metric": "rpm", "label": "主轴转速", "base": 3500, "range": 1500, "noise": 100, "unit": "RPM"},
+            "CNC-TJ02_power": {"metric": "power", "label": "功率消耗", "base": 4500, "range": 2000, "noise": 300, "unit": "W"},
+            "CNC-TJ02_feed_rate": {"metric": "feed_rate", "label": "进给速率", "base": 2500, "range": 800, "noise": 50, "unit": "mm/min"},
+            "CNC-TJ02_voltage": {"metric": "voltage", "label": "电压", "base": 380, "range": 10, "noise": 2, "unit": "V"},
+            "CNC-TJ02_current": {"metric": "current", "label": "电流", "base": 12, "range": 5, "noise": 0.5, "unit": "A"},
+        },
+        "stats": {
+            "avg_temperature": {"source_metric": "temperature", "agg": "mean"},
+            "max_temperature": {"source_metric": "temperature", "agg": "max"},
+            "max_vibration": {"source_metric": "vibration", "agg": "max"},
+        },
+    },
+    "SENSOR-TJ01": {
+        "device_type": "sensor",
+        "project_id": "project-beifang",
+        "workshop": "workshop-tj",
+        "line": "line-TJ",
+        "points": {
+            "SENSOR-TJ01_env_temperature": {"metric": "temperature", "label": "环境温度", "base": 25, "range": 5, "noise": 0.5, "unit": "°C"},
+            "SENSOR-TJ01_env_humidity": {"metric": "humidity", "label": "相对湿度", "base": 60, "range": 15, "noise": 3, "unit": "%"},
+            "SENSOR-TJ01_env_pressure": {"metric": "pressure", "label": "气压", "base": 1013, "range": 5, "noise": 1, "unit": "hPa"},
+            "SENSOR-TJ01_env_flow_rate": {"metric": "flow_rate", "label": "流量", "base": 120, "range": 30, "noise": 5, "unit": "L/min"},
+        },
+    },
+    "PLC-TJ01": {
+        "device_type": "plc",
+        "project_id": "project-beifang",
+        "workshop": "workshop-tj",
+        "line": "line-TJ",
+        "points": {
+            "PLC-TJ01_total_count": {"metric": "count", "label": "产量计数", "base": 0, "range": 0, "noise": 0, "unit": "件", "accumulator": True, "rate": 2},
+            "PLC-TJ01_defect_count": {"metric": "defect_count", "label": "不良品数", "base": 0, "range": 0, "noise": 0, "unit": "件", "accumulator": True, "rate": 0.1},
+            "PLC-TJ01_quality_rate": {"metric": "quality_rate", "label": "良品率", "base": 98.5, "range": 2, "noise": 0.3, "unit": "%"},
+            "PLC-TJ01_oee": {"metric": "oee", "label": "设备综合效率", "base": 85, "range": 10, "noise": 2, "unit": "%"},
+            "PLC-TJ01_cycle_time": {"metric": "cycle_time", "label": "节拍时间", "base": 45, "range": 5, "noise": 1, "unit": "s"},
+        },
+    },
+    # ===== workshop-dl: 大连重工车间 (project-beifang) =====
+    "CNC-DL01": {
+        "device_type": "cnc",
+        "project_id": "project-beifang",
+        "workshop": "workshop-dl",
+        "line": "line-DL",
+        "points": {
+            "CNC-DL01_sp_bearing_temp_1": {"metric": "temperature", "label": "主轴温度1", "base": 45, "range": 10, "noise": 1.5, "unit": "°C"},
+            "CNC-DL01_sp_bearing_temp_2": {"metric": "temperature", "label": "主轴温度2", "base": 42, "range": 8, "noise": 1.2, "unit": "°C"},
+            "CNC-DL01_sp_bearing_temp_3": {"metric": "temperature", "label": "主轴温度3", "base": 40, "range": 6, "noise": 1.0, "unit": "°C"},
+            "CNC-DL01_vibration": {"metric": "vibration", "label": "振动幅度", "base": 1.5, "range": 2.0, "noise": 0.3, "unit": "mm/s"},
+            "CNC-DL01_rpm": {"metric": "rpm", "label": "主轴转速", "base": 3500, "range": 1500, "noise": 100, "unit": "RPM"},
+            "CNC-DL01_power": {"metric": "power", "label": "功率消耗", "base": 4500, "range": 2000, "noise": 300, "unit": "W"},
+            "CNC-DL01_feed_rate": {"metric": "feed_rate", "label": "进给速率", "base": 2500, "range": 800, "noise": 50, "unit": "mm/min"},
+            "CNC-DL01_voltage": {"metric": "voltage", "label": "电压", "base": 380, "range": 10, "noise": 2, "unit": "V"},
+            "CNC-DL01_current": {"metric": "current", "label": "电流", "base": 12, "range": 5, "noise": 0.5, "unit": "A"},
+        },
+        "stats": {
+            "avg_temperature": {"source_metric": "temperature", "agg": "mean"},
+            "max_temperature": {"source_metric": "temperature", "agg": "max"},
+            "max_vibration": {"source_metric": "vibration", "agg": "max"},
+        },
+    },
+    "CNC-DL02": {
+        "device_type": "cnc",
+        "project_id": "project-beifang",
+        "workshop": "workshop-dl",
+        "line": "line-DL",
+        "points": {
+            "CNC-DL02_sp_bearing_temp_1": {"metric": "temperature", "label": "主轴温度1", "base": 45, "range": 10, "noise": 1.5, "unit": "°C"},
+            "CNC-DL02_sp_bearing_temp_2": {"metric": "temperature", "label": "主轴温度2", "base": 42, "range": 8, "noise": 1.2, "unit": "°C"},
+            "CNC-DL02_sp_bearing_temp_3": {"metric": "temperature", "label": "主轴温度3", "base": 40, "range": 6, "noise": 1.0, "unit": "°C"},
+            "CNC-DL02_vibration": {"metric": "vibration", "label": "振动幅度", "base": 1.5, "range": 2.0, "noise": 0.3, "unit": "mm/s"},
+            "CNC-DL02_rpm": {"metric": "rpm", "label": "主轴转速", "base": 3500, "range": 1500, "noise": 100, "unit": "RPM"},
+            "CNC-DL02_power": {"metric": "power", "label": "功率消耗", "base": 4500, "range": 2000, "noise": 300, "unit": "W"},
+            "CNC-DL02_feed_rate": {"metric": "feed_rate", "label": "进给速率", "base": 2500, "range": 800, "noise": 50, "unit": "mm/min"},
+            "CNC-DL02_voltage": {"metric": "voltage", "label": "电压", "base": 380, "range": 10, "noise": 2, "unit": "V"},
+            "CNC-DL02_current": {"metric": "current", "label": "电流", "base": 12, "range": 5, "noise": 0.5, "unit": "A"},
+        },
+        "stats": {
+            "avg_temperature": {"source_metric": "temperature", "agg": "mean"},
+            "max_temperature": {"source_metric": "temperature", "agg": "max"},
+            "max_vibration": {"source_metric": "vibration", "agg": "max"},
+        },
+    },
+    "SENSOR-DL01": {
+        "device_type": "sensor",
+        "project_id": "project-beifang",
+        "workshop": "workshop-dl",
+        "line": "line-DL",
+        "points": {
+            "SENSOR-DL01_env_temperature": {"metric": "temperature", "label": "环境温度", "base": 25, "range": 5, "noise": 0.5, "unit": "°C"},
+            "SENSOR-DL01_env_humidity": {"metric": "humidity", "label": "相对湿度", "base": 60, "range": 15, "noise": 3, "unit": "%"},
+            "SENSOR-DL01_env_pressure": {"metric": "pressure", "label": "气压", "base": 1013, "range": 5, "noise": 1, "unit": "hPa"},
+            "SENSOR-DL01_env_flow_rate": {"metric": "flow_rate", "label": "流量", "base": 120, "range": 30, "noise": 5, "unit": "L/min"},
+        },
+    },
+    "PLC-DL01": {
+        "device_type": "plc",
+        "project_id": "project-beifang",
+        "workshop": "workshop-dl",
+        "line": "line-DL",
+        "points": {
+            "PLC-DL01_total_count": {"metric": "count", "label": "产量计数", "base": 0, "range": 0, "noise": 0, "unit": "件", "accumulator": True, "rate": 2},
+            "PLC-DL01_defect_count": {"metric": "defect_count", "label": "不良品数", "base": 0, "range": 0, "noise": 0, "unit": "件", "accumulator": True, "rate": 0.1},
+            "PLC-DL01_quality_rate": {"metric": "quality_rate", "label": "良品率", "base": 98.5, "range": 2, "noise": 0.3, "unit": "%"},
+            "PLC-DL01_oee": {"metric": "oee", "label": "设备综合效率", "base": 85, "range": 10, "noise": 2, "unit": "%"},
+            "PLC-DL01_cycle_time": {"metric": "cycle_time", "label": "节拍时间", "base": 45, "range": 5, "noise": 1, "unit": "s"},
+        },
+    },
+    # ===== workshop-cd: 成都重装车间 (project-xinan) =====
+    "CNC-CD01": {
+        "device_type": "cnc",
+        "project_id": "project-xinan",
+        "workshop": "workshop-cd",
+        "line": "line-CD",
+        "points": {
+            "CNC-CD01_sp_bearing_temp_1": {"metric": "temperature", "label": "主轴温度1", "base": 45, "range": 10, "noise": 1.5, "unit": "°C"},
+            "CNC-CD01_sp_bearing_temp_2": {"metric": "temperature", "label": "主轴温度2", "base": 42, "range": 8, "noise": 1.2, "unit": "°C"},
+            "CNC-CD01_sp_bearing_temp_3": {"metric": "temperature", "label": "主轴温度3", "base": 40, "range": 6, "noise": 1.0, "unit": "°C"},
+            "CNC-CD01_vibration": {"metric": "vibration", "label": "振动幅度", "base": 1.5, "range": 2.0, "noise": 0.3, "unit": "mm/s"},
+            "CNC-CD01_rpm": {"metric": "rpm", "label": "主轴转速", "base": 3500, "range": 1500, "noise": 100, "unit": "RPM"},
+            "CNC-CD01_power": {"metric": "power", "label": "功率消耗", "base": 4500, "range": 2000, "noise": 300, "unit": "W"},
+            "CNC-CD01_feed_rate": {"metric": "feed_rate", "label": "进给速率", "base": 2500, "range": 800, "noise": 50, "unit": "mm/min"},
+            "CNC-CD01_voltage": {"metric": "voltage", "label": "电压", "base": 380, "range": 10, "noise": 2, "unit": "V"},
+            "CNC-CD01_current": {"metric": "current", "label": "电流", "base": 12, "range": 5, "noise": 0.5, "unit": "A"},
+        },
+        "stats": {
+            "avg_temperature": {"source_metric": "temperature", "agg": "mean"},
+            "max_temperature": {"source_metric": "temperature", "agg": "max"},
+            "max_vibration": {"source_metric": "vibration", "agg": "max"},
+        },
+    },
+    "CNC-CD02": {
+        "device_type": "cnc",
+        "project_id": "project-xinan",
+        "workshop": "workshop-cd",
+        "line": "line-CD",
+        "points": {
+            "CNC-CD02_sp_bearing_temp_1": {"metric": "temperature", "label": "主轴温度1", "base": 45, "range": 10, "noise": 1.5, "unit": "°C"},
+            "CNC-CD02_sp_bearing_temp_2": {"metric": "temperature", "label": "主轴温度2", "base": 42, "range": 8, "noise": 1.2, "unit": "°C"},
+            "CNC-CD02_sp_bearing_temp_3": {"metric": "temperature", "label": "主轴温度3", "base": 40, "range": 6, "noise": 1.0, "unit": "°C"},
+            "CNC-CD02_vibration": {"metric": "vibration", "label": "振动幅度", "base": 1.5, "range": 2.0, "noise": 0.3, "unit": "mm/s"},
+            "CNC-CD02_rpm": {"metric": "rpm", "label": "主轴转速", "base": 3500, "range": 1500, "noise": 100, "unit": "RPM"},
+            "CNC-CD02_power": {"metric": "power", "label": "功率消耗", "base": 4500, "range": 2000, "noise": 300, "unit": "W"},
+            "CNC-CD02_feed_rate": {"metric": "feed_rate", "label": "进给速率", "base": 2500, "range": 800, "noise": 50, "unit": "mm/min"},
+            "CNC-CD02_voltage": {"metric": "voltage", "label": "电压", "base": 380, "range": 10, "noise": 2, "unit": "V"},
+            "CNC-CD02_current": {"metric": "current", "label": "电流", "base": 12, "range": 5, "noise": 0.5, "unit": "A"},
+        },
+        "stats": {
+            "avg_temperature": {"source_metric": "temperature", "agg": "mean"},
+            "max_temperature": {"source_metric": "temperature", "agg": "max"},
+            "max_vibration": {"source_metric": "vibration", "agg": "max"},
+        },
+    },
+    "SENSOR-CD01": {
+        "device_type": "sensor",
+        "project_id": "project-xinan",
+        "workshop": "workshop-cd",
+        "line": "line-CD",
+        "points": {
+            "SENSOR-CD01_env_temperature": {"metric": "temperature", "label": "环境温度", "base": 25, "range": 5, "noise": 0.5, "unit": "°C"},
+            "SENSOR-CD01_env_humidity": {"metric": "humidity", "label": "相对湿度", "base": 60, "range": 15, "noise": 3, "unit": "%"},
+            "SENSOR-CD01_env_pressure": {"metric": "pressure", "label": "气压", "base": 1013, "range": 5, "noise": 1, "unit": "hPa"},
+            "SENSOR-CD01_env_flow_rate": {"metric": "flow_rate", "label": "流量", "base": 120, "range": 30, "noise": 5, "unit": "L/min"},
+        },
+    },
+    "PLC-CD01": {
+        "device_type": "plc",
+        "project_id": "project-xinan",
+        "workshop": "workshop-cd",
+        "line": "line-CD",
+        "points": {
+            "PLC-CD01_total_count": {"metric": "count", "label": "产量计数", "base": 0, "range": 0, "noise": 0, "unit": "件", "accumulator": True, "rate": 2},
+            "PLC-CD01_defect_count": {"metric": "defect_count", "label": "不良品数", "base": 0, "range": 0, "noise": 0, "unit": "件", "accumulator": True, "rate": 0.1},
+            "PLC-CD01_quality_rate": {"metric": "quality_rate", "label": "良品率", "base": 98.5, "range": 2, "noise": 0.3, "unit": "%"},
+            "PLC-CD01_oee": {"metric": "oee", "label": "设备综合效率", "base": 85, "range": 10, "noise": 2, "unit": "%"},
+            "PLC-CD01_cycle_time": {"metric": "cycle_time", "label": "节拍时间", "base": 45, "range": 5, "noise": 1, "unit": "s"},
+        },
+    },
+    # ===== workshop-cq: 重庆模具车间 (project-xinan) =====
+    "CNC-CQ01": {
+        "device_type": "cnc",
+        "project_id": "project-xinan",
+        "workshop": "workshop-cq",
+        "line": "line-CQ",
+        "points": {
+            "CNC-CQ01_sp_bearing_temp_1": {"metric": "temperature", "label": "主轴温度1", "base": 45, "range": 10, "noise": 1.5, "unit": "°C"},
+            "CNC-CQ01_sp_bearing_temp_2": {"metric": "temperature", "label": "主轴温度2", "base": 42, "range": 8, "noise": 1.2, "unit": "°C"},
+            "CNC-CQ01_sp_bearing_temp_3": {"metric": "temperature", "label": "主轴温度3", "base": 40, "range": 6, "noise": 1.0, "unit": "°C"},
+            "CNC-CQ01_vibration": {"metric": "vibration", "label": "振动幅度", "base": 1.5, "range": 2.0, "noise": 0.3, "unit": "mm/s"},
+            "CNC-CQ01_rpm": {"metric": "rpm", "label": "主轴转速", "base": 3500, "range": 1500, "noise": 100, "unit": "RPM"},
+            "CNC-CQ01_power": {"metric": "power", "label": "功率消耗", "base": 4500, "range": 2000, "noise": 300, "unit": "W"},
+            "CNC-CQ01_feed_rate": {"metric": "feed_rate", "label": "进给速率", "base": 2500, "range": 800, "noise": 50, "unit": "mm/min"},
+            "CNC-CQ01_voltage": {"metric": "voltage", "label": "电压", "base": 380, "range": 10, "noise": 2, "unit": "V"},
+            "CNC-CQ01_current": {"metric": "current", "label": "电流", "base": 12, "range": 5, "noise": 0.5, "unit": "A"},
+        },
+        "stats": {
+            "avg_temperature": {"source_metric": "temperature", "agg": "mean"},
+            "max_temperature": {"source_metric": "temperature", "agg": "max"},
+            "max_vibration": {"source_metric": "vibration", "agg": "max"},
+        },
+    },
+    "CNC-CQ02": {
+        "device_type": "cnc",
+        "project_id": "project-xinan",
+        "workshop": "workshop-cq",
+        "line": "line-CQ",
+        "points": {
+            "CNC-CQ02_sp_bearing_temp_1": {"metric": "temperature", "label": "主轴温度1", "base": 45, "range": 10, "noise": 1.5, "unit": "°C"},
+            "CNC-CQ02_sp_bearing_temp_2": {"metric": "temperature", "label": "主轴温度2", "base": 42, "range": 8, "noise": 1.2, "unit": "°C"},
+            "CNC-CQ02_sp_bearing_temp_3": {"metric": "temperature", "label": "主轴温度3", "base": 40, "range": 6, "noise": 1.0, "unit": "°C"},
+            "CNC-CQ02_vibration": {"metric": "vibration", "label": "振动幅度", "base": 1.5, "range": 2.0, "noise": 0.3, "unit": "mm/s"},
+            "CNC-CQ02_rpm": {"metric": "rpm", "label": "主轴转速", "base": 3500, "range": 1500, "noise": 100, "unit": "RPM"},
+            "CNC-CQ02_power": {"metric": "power", "label": "功率消耗", "base": 4500, "range": 2000, "noise": 300, "unit": "W"},
+            "CNC-CQ02_feed_rate": {"metric": "feed_rate", "label": "进给速率", "base": 2500, "range": 800, "noise": 50, "unit": "mm/min"},
+            "CNC-CQ02_voltage": {"metric": "voltage", "label": "电压", "base": 380, "range": 10, "noise": 2, "unit": "V"},
+            "CNC-CQ02_current": {"metric": "current", "label": "电流", "base": 12, "range": 5, "noise": 0.5, "unit": "A"},
+        },
+        "stats": {
+            "avg_temperature": {"source_metric": "temperature", "agg": "mean"},
+            "max_temperature": {"source_metric": "temperature", "agg": "max"},
+            "max_vibration": {"source_metric": "vibration", "agg": "max"},
+        },
+    },
+    "SENSOR-CQ01": {
+        "device_type": "sensor",
+        "project_id": "project-xinan",
+        "workshop": "workshop-cq",
+        "line": "line-CQ",
+        "points": {
+            "SENSOR-CQ01_env_temperature": {"metric": "temperature", "label": "环境温度", "base": 25, "range": 5, "noise": 0.5, "unit": "°C"},
+            "SENSOR-CQ01_env_humidity": {"metric": "humidity", "label": "相对湿度", "base": 60, "range": 15, "noise": 3, "unit": "%"},
+            "SENSOR-CQ01_env_pressure": {"metric": "pressure", "label": "气压", "base": 1013, "range": 5, "noise": 1, "unit": "hPa"},
+            "SENSOR-CQ01_env_flow_rate": {"metric": "flow_rate", "label": "流量", "base": 120, "range": 30, "noise": 5, "unit": "L/min"},
+        },
+    },
+    "PLC-CQ01": {
+        "device_type": "plc",
+        "project_id": "project-xinan",
+        "workshop": "workshop-cq",
+        "line": "line-CQ",
+        "points": {
+            "PLC-CQ01_total_count": {"metric": "count", "label": "产量计数", "base": 0, "range": 0, "noise": 0, "unit": "件", "accumulator": True, "rate": 2},
+            "PLC-CQ01_defect_count": {"metric": "defect_count", "label": "不良品数", "base": 0, "range": 0, "noise": 0, "unit": "件", "accumulator": True, "rate": 0.1},
+            "PLC-CQ01_quality_rate": {"metric": "quality_rate", "label": "良品率", "base": 98.5, "range": 2, "noise": 0.3, "unit": "%"},
+            "PLC-CQ01_oee": {"metric": "oee", "label": "设备综合效率", "base": 85, "range": 10, "noise": 2, "unit": "%"},
+            "PLC-CQ01_cycle_time": {"metric": "cycle_time", "label": "节拍时间", "base": 45, "range": 5, "noise": 1, "unit": "s"},
+        },
+    },
+    # ===== workshop-km: 昆明精工车间 (project-xinan) =====
+    "CNC-KM01": {
+        "device_type": "cnc",
+        "project_id": "project-xinan",
+        "workshop": "workshop-km",
+        "line": "line-KM",
+        "points": {
+            "CNC-KM01_sp_bearing_temp_1": {"metric": "temperature", "label": "主轴温度1", "base": 45, "range": 10, "noise": 1.5, "unit": "°C"},
+            "CNC-KM01_sp_bearing_temp_2": {"metric": "temperature", "label": "主轴温度2", "base": 42, "range": 8, "noise": 1.2, "unit": "°C"},
+            "CNC-KM01_sp_bearing_temp_3": {"metric": "temperature", "label": "主轴温度3", "base": 40, "range": 6, "noise": 1.0, "unit": "°C"},
+            "CNC-KM01_vibration": {"metric": "vibration", "label": "振动幅度", "base": 1.5, "range": 2.0, "noise": 0.3, "unit": "mm/s"},
+            "CNC-KM01_rpm": {"metric": "rpm", "label": "主轴转速", "base": 3500, "range": 1500, "noise": 100, "unit": "RPM"},
+            "CNC-KM01_power": {"metric": "power", "label": "功率消耗", "base": 4500, "range": 2000, "noise": 300, "unit": "W"},
+            "CNC-KM01_feed_rate": {"metric": "feed_rate", "label": "进给速率", "base": 2500, "range": 800, "noise": 50, "unit": "mm/min"},
+            "CNC-KM01_voltage": {"metric": "voltage", "label": "电压", "base": 380, "range": 10, "noise": 2, "unit": "V"},
+            "CNC-KM01_current": {"metric": "current", "label": "电流", "base": 12, "range": 5, "noise": 0.5, "unit": "A"},
+        },
+        "stats": {
+            "avg_temperature": {"source_metric": "temperature", "agg": "mean"},
+            "max_temperature": {"source_metric": "temperature", "agg": "max"},
+            "max_vibration": {"source_metric": "vibration", "agg": "max"},
+        },
+    },
+    "CNC-KM02": {
+        "device_type": "cnc",
+        "project_id": "project-xinan",
+        "workshop": "workshop-km",
+        "line": "line-KM",
+        "points": {
+            "CNC-KM02_sp_bearing_temp_1": {"metric": "temperature", "label": "主轴温度1", "base": 45, "range": 10, "noise": 1.5, "unit": "°C"},
+            "CNC-KM02_sp_bearing_temp_2": {"metric": "temperature", "label": "主轴温度2", "base": 42, "range": 8, "noise": 1.2, "unit": "°C"},
+            "CNC-KM02_sp_bearing_temp_3": {"metric": "temperature", "label": "主轴温度3", "base": 40, "range": 6, "noise": 1.0, "unit": "°C"},
+            "CNC-KM02_vibration": {"metric": "vibration", "label": "振动幅度", "base": 1.5, "range": 2.0, "noise": 0.3, "unit": "mm/s"},
+            "CNC-KM02_rpm": {"metric": "rpm", "label": "主轴转速", "base": 3500, "range": 1500, "noise": 100, "unit": "RPM"},
+            "CNC-KM02_power": {"metric": "power", "label": "功率消耗", "base": 4500, "range": 2000, "noise": 300, "unit": "W"},
+            "CNC-KM02_feed_rate": {"metric": "feed_rate", "label": "进给速率", "base": 2500, "range": 800, "noise": 50, "unit": "mm/min"},
+            "CNC-KM02_voltage": {"metric": "voltage", "label": "电压", "base": 380, "range": 10, "noise": 2, "unit": "V"},
+            "CNC-KM02_current": {"metric": "current", "label": "电流", "base": 12, "range": 5, "noise": 0.5, "unit": "A"},
+        },
+        "stats": {
+            "avg_temperature": {"source_metric": "temperature", "agg": "mean"},
+            "max_temperature": {"source_metric": "temperature", "agg": "max"},
+            "max_vibration": {"source_metric": "vibration", "agg": "max"},
+        },
+    },
+    "SENSOR-KM01": {
+        "device_type": "sensor",
+        "project_id": "project-xinan",
+        "workshop": "workshop-km",
+        "line": "line-KM",
+        "points": {
+            "SENSOR-KM01_env_temperature": {"metric": "temperature", "label": "环境温度", "base": 25, "range": 5, "noise": 0.5, "unit": "°C"},
+            "SENSOR-KM01_env_humidity": {"metric": "humidity", "label": "相对湿度", "base": 60, "range": 15, "noise": 3, "unit": "%"},
+            "SENSOR-KM01_env_pressure": {"metric": "pressure", "label": "气压", "base": 1013, "range": 5, "noise": 1, "unit": "hPa"},
+            "SENSOR-KM01_env_flow_rate": {"metric": "flow_rate", "label": "流量", "base": 120, "range": 30, "noise": 5, "unit": "L/min"},
+        },
+    },
+    "PLC-KM01": {
+        "device_type": "plc",
+        "project_id": "project-xinan",
+        "workshop": "workshop-km",
+        "line": "line-KM",
+        "points": {
+            "PLC-KM01_total_count": {"metric": "count", "label": "产量计数", "base": 0, "range": 0, "noise": 0, "unit": "件", "accumulator": True, "rate": 2},
+            "PLC-KM01_defect_count": {"metric": "defect_count", "label": "不良品数", "base": 0, "range": 0, "noise": 0, "unit": "件", "accumulator": True, "rate": 0.1},
+            "PLC-KM01_quality_rate": {"metric": "quality_rate", "label": "良品率", "base": 98.5, "range": 2, "noise": 0.3, "unit": "%"},
+            "PLC-KM01_oee": {"metric": "oee", "label": "设备综合效率", "base": 85, "range": 10, "noise": 2, "unit": "%"},
+            "PLC-KM01_cycle_time": {"metric": "cycle_time", "label": "节拍时间", "base": 45, "range": 5, "noise": 1, "unit": "s"},
+        },
+    },
 }
 
 # ==================== 数据生成引擎 ====================
@@ -432,6 +796,7 @@ def mqtt_publisher():
                     "device_type": device_type,
                     "workshop": dev["workshop"],
                     "line": dev["line"],
+                    "project_id": dev.get("project_id", ""),
                     "timestamp": ts,
                 }
 
@@ -476,6 +841,7 @@ def get_metrics():
             "device_type": dev["device_type"],
             "workshop": dev["workshop"],
             "line": dev["line"],
+            "project_id": dev.get("project_id", ""),
             "status": "running",
         }
         # 点位数据
@@ -509,10 +875,30 @@ def get_devices():
             "type": dev["device_type"],
             "workshop": dev["workshop"],
             "line": dev["line"],
+            "project_id": dev.get("project_id", ""),
             "points": points_info,
             "stats": list(dev.get("stats", {}).keys()),
         })
     return jsonify(devices)
+
+
+@app.route("/api/projects", methods=["GET"])
+def get_projects():
+    """返回项目列表"""
+    return jsonify([
+        {"id": pid, "name": pinfo["name"], "color": pinfo["color"], "provinces": pinfo["provinces"]}
+        for pid, pinfo in PROJECTS.items()
+    ])
+
+
+@app.route("/api/workshops", methods=["GET"])
+def get_workshops():
+    """返回车间地理信息列表"""
+    return jsonify([
+        {"id": wid, "project_id": winfo["project_id"], "province": winfo["province"],
+         "city": winfo["city"], "name": winfo["name"], "lat": winfo["lat"], "lng": winfo["lng"]}
+        for wid, winfo in WORKSHOP_GEO.items()
+    ])
 
 
 @app.route("/health", methods=["GET"])

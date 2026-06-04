@@ -103,6 +103,8 @@ services:
     depends_on:
       - influxdb
       - telegraf
+    volumes:
+      - ./manager/data:/app/data
     environment:
       - INFLUXDB_URL=http://influxdb:8086
       - INFLUXDB_TOKEN=my-super-secret-admin-token-2024
