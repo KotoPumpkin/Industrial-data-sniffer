@@ -2,9 +2,17 @@
 InfluxDB 查询工具
 """
 
+import os
 import requests
 
 from config import INFLUXDB_URL, INFLUXDB_TOKEN, INFLUXDB_ORG
+from logger import get_logger
+
+# TLS 证书验证：生产环境必须验证，开发环境可通过环境变量关闭
+_CA_CERT = os.getenv("INFLUXDB_CA_CERT")
+_VERIFY_TLS = os.getenv("VERIFY_TLS", "true").lower() not in ("false", "0", "no")
+
+logger = get_logger(__name__)
 
 
 def query_influxdb(flux_query: str):
@@ -17,12 +25,14 @@ def query_influxdb(flux_query: str):
     }
     params = {"org": INFLUXDB_ORG}
     try:
-        resp = requests.post(url, headers=headers, params=params, data=flux_query, timeout=10)
+        verify = _CA_CERT if _CA_CERT else _VERIFY_TLS
+        resp = requests.post(url, headers=headers, params=params, data=flux_query, timeout=10, verify=verify)
         if resp.status_code == 200:
             return parse_csv_result(resp.text)
+        logger.warning(f"InfluxDB 查询返回 {resp.status_code}: {resp.text[:200]}")
         return []
     except Exception as e:
-        print(f"InfluxDB 查询错误: {e}")
+        logger.error(f"InfluxDB 查询错误: {e}")
         return []
 
 

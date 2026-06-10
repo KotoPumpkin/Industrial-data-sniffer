@@ -4,12 +4,13 @@ datasources:
   - name: InfluxDB-Industrial
     type: influxdb
     access: proxy
-    url: http://influxdb:8086
+    url: https://influxdb:8086
     isDefault: true
     jsonData:
       version: Flux
       organization: industrial
       defaultBucket: factory
+      tlsSkipVerify: true
     secureJsonData:
       token: my-super-secret-admin-token-2024
     editable: true

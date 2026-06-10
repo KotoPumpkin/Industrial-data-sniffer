@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>设备详情 — 工业数据采集管理平台</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--canvas-deep:#06080d;--canvas:#080b10;--panel:#0f1218;--panel-raised:#161a22;--border:#232830;--ink:#e8eaef;--ink-muted:#94a3b8;--ink-dim:#64748b;--blue:#3b82f6;--green:#34d399;--orange:#fb923c;--red:#f87171}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--canvas-deep);color:var(--ink);font-family:'PingFang SC','Microsoft YaHei','Noto Sans SC',sans-serif;min-height:100vh}
+.glass{background:rgba(10,14,22,0.82);backdrop-filter:blur(16px) saturate(1.2);-webkit-backdrop-filter:blur(16px) saturate(1.2);border:1px solid rgba(255,255,255,0.06)}
+.h{font-family:Inter,sans-serif;font-weight:600}.k{font-family:Rajdhani,monospace;font-weight:600;letter-spacing:-0.02em}.m{color:var(--ink-muted)}.d{color:var(--ink-dim)}
+
+header{height:3.2rem;background:var(--panel-raised);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px}
+header .logo{font-family:Inter,sans-serif;font-weight:700;font-size:0.95rem;color:var(--ink)}
+header .logo span{color:var(--blue);margin-right:2px}
+.back{display:inline-flex;align-items:center;gap:3px;font:600 0.72rem Inter,sans-serif;color:var(--ink);text-decoration:none;padding:5px 12px;border:1px solid #3d4a5c;border-radius:6px;background:#1a2030;transition:all 0.2s}.back:hover{color:#fff;border-color:var(--blue);background:#1e2d4a}
+
+main{max-width:1200px;margin:0 auto;padding:24px 20px}
+.breadcrumb{font-size:0.75rem;color:var(--ink-dim);margin-bottom:16px}.breadcrumb a{color:var(--blue);text-decoration:none}
+.page-title{font-family:Inter,sans-serif;font-weight:700;font-size:1.5rem;color:#fff;margin-bottom:4px}
+.page-sub{font-size:0.8rem;color:var(--ink-dim);margin-bottom:24px;display:flex;align-items:center;gap:16px}
+
+.dropdown{position:relative;display:inline-block}
+.dropdown-trigger{display:flex;align-items:center;gap:6px;padding:6px 12px;background:var(--panel);border:1px solid var(--border);border-radius:8px;font-size:0.8rem;color:var(--ink);cursor:pointer;transition:all 0.2s;font-family:Inter,sans-serif;font-weight:600}
+.dropdown-trigger:hover{background:var(--panel-raised);border-color:var(--blue)}
+.dropdown-trigger svg{width:12px;height:12px;transition:transform 0.2s}
+.dropdown.open .dropdown-trigger svg{transform:rotate(180deg)}
+.dropdown-menu{position:absolute;top:100%;left:0;margin-top:4px;background:var(--panel);border:1px solid var(--border);border-radius:8px;min-width:200px;z-index:50;display:none;overflow:hidden;box-shadow:0 20px 25px -5px rgba(0,0,0,0.4)}
+.dropdown.open .dropdown-menu{display:block}
+.dropdown-menu .opt{padding:10px 14px;font-size:0.8rem;color:var(--ink-muted);cursor:pointer;transition:all 0.15s}
+.dropdown-menu .opt:hover{color:var(--ink);background:rgba(255,255,255,0.04)}
+.dropdown-menu .opt.active{color:var(--blue);background:rgba(59,130,246,0.1)}
+.dropdown-menu .opt .dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:8px;vertical-align:middle}
+
+.grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:24px}
+.stat{padding:14px 16px;border-radius:8px}.stat .lbl{font-family:Inter,sans-serif;font-weight:600;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-dim)}.stat .val{font-family:Rajdhani,monospace;font-weight:600;font-size:1.75rem;letter-spacing:-0.02em;margin-top:2px}.stat .u{font-family:Rajdhani,monospace;font-size:0.75rem;color:var(--ink-dim);margin-left:4px}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.chart-box{padding:16px}.chart-box .cht{font-family:Inter,sans-serif;font-weight:600;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-dim);margin-bottom:12px}
+
+.full-chart{padding:16px}.full-chart .cht{font-family:Inter,sans-serif;font-weight:600;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-dim);margin-bottom:12px}
+
+.status-dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:6px}
+</style>
+</head>
+<body>
+<header>
+  <div style="display:flex;align-items:center;gap:12px">
+    <a href="#" class="back" id="backLink">← 返回车间</a>
+    <div class="logo"><span>◈</span>工业数据采集管理平台</div>
+    <div class="d" style="font-size:0.75rem">设备详情</div>
+  </div>
+  <div class="d" style="font-size:0.75rem">点位趋势监控</div>
+</header>
+<main>
+  <div class="breadcrumb"><a href="01-map.html">全国项目地图</a> / <a href="#" id="crumbWs">--</a> / <span id="crumbDev">--</span></div>
+  <div id="pageTitle" class="page-title">--</div>
+  <div id="pageSub" class="page-sub">
+    <span id="devType">--</span>
+    <span style="color:var(--ink-dim)">|</span>
+    <div class="dropdown" id="pointDropdown">
+      <div class="dropdown-trigger" onclick="document.getElementById('pointDropdown').classList.toggle('open')">
+        <span id="curPoint">--</span>
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l4 4 4-4"/></svg>
+      </div>
+      <div class="dropdown-menu" id="pointMenu"></div>
+    </div>
+  </div>
+
+  <div class="grid4" id="stats"></div>
+
+  <div class="chart-box glass full-chart" style="margin-bottom:24px">
+    <div class="cht" id="trendTitle">点位趋势（24h）</div>
+    <div id="chartTrend" style="width:100%;height:300px"></div>
+  </div>
+
+  <div class="grid2">
+    <div class="glass chart-box"><div class="cht">统计摘要</div><div id="chartDist" style="width:100%;height:220px"></div></div>
+    <div class="glass chart-box"><div class="cht">关联指标散点</div><div id="chartScatter" style="width:100%;height:220px"></div></div>
+  </div>
+
+  <div class="glass full-chart"><div class="cht">全部点位对比（实时快照）</div><div id="chartRadar" style="width:100%;height:300px"></div></div>
+</main>
+
+<script>
+const WS_NAMES={'workshop-sz':'深圳数控车间','workshop-szh':'苏州精密车间','workshop-hz':'杭州电子车间','workshop-qd':'青岛模具车间','workshop-tj':'天津装配车间','workshop-dl':'大连重工车间','workshop-cd':'成都重装车间','workshop-cq':'重庆模具车间','workshop-km':'昆明精工车间'};
+const WS_PID={'workshop-sz':'project-huadong','workshop-szh':'project-huadong','workshop-hz':'project-huadong','workshop-qd':'project-beifang','workshop-tj':'project-beifang','workshop-dl':'project-beifang','workshop-cd':'project-xinan','workshop-cq':'project-xinan','workshop-km':'project-xinan'};
+const WS_COLORS={'project-huadong':'#3b82f6','project-beifang':'#fb923c','project-xinan':'#34d399'};
+const DEVICE_META={
+  cnc:{type:'数控机床',points:[
+    {id:'temperature',label:'主轴温度',unit:'°C',base:42,range:8,color:'#f87171'},
+    {id:'vibration',label:'振动幅度',unit:'mm/s',base:2.2,range:0.9,color:'#fb923c'},
+    {id:'rpm',label:'主轴转速',unit:'rpm',base:3800,range:600,color:'#3b82f6'},
+    {id:'power',label:'功率消耗',unit:'W',base:4500,range:1000,color:'#34d399'},
+    {id:'feed_rate',label:'进给速率',unit:'mm/min',base:120,range:30,color:'#a78bfa'},
+    {id:'voltage',label:'电压',unit:'V',base:380,range:20,color:'#fbbf24'},
+    {id:'current',label:'电流',unit:'A',base:12,range:3,color:'#22d3ee'},
+  ]},
+  sensor:{type:'环境传感器',points:[
+    {id:'temperature',label:'环境温度',unit:'°C',base:25,range:5,color:'#f87171'},
+    {id:'humidity',label:'相对湿度',unit:'%',base:55,range:15,color:'#3b82f6'},
+    {id:'pressure',label:'气压',unit:'bar',base:1.01,range:0.05,color:'#34d399'},
+    {id:'flow_rate',label:'流量',unit:'L/min',base:8,range:3,color:'#a78bfa'},
+  ]},
+  plc:{type:'产线PLC',points:[
+    {id:'count',label:'产量计数',unit:'pcs',base:2450,range:300,color:'#3b82f6'},
+    {id:'defect_count',label:'不良品数',unit:'pcs',base:12,range:8,color:'#f87171'},
+    {id:'quality_rate',label:'良品率',unit:'%',base:96.5,range:3,color:'#34d399'},
+    {id:'oee',label:'设备综合效率',unit:'%',base:87,range:10,color:'#fb923c'},
+    {id:'cycle_time',label:'节拍时间',unit:'s',base:3.8,range:0.8,color:'#a78bfa'},
+  ]},
+};
+
+const params=new URLSearchParams(window.location.search);
+const devId=params.get('dev')||'CNC-SZ01';
+const wsId=params.get('ws')||'workshop-sz';
+const wsName=WS_NAMES[wsId]||wsId;
+const pid=WS_PID[wsId]||'project-huadong';
+const neon=WS_COLORS[pid]||'#3b82f6';
+const devType=devId.includes('CNC')?'cnc':devId.includes('SENSOR')?'sensor':'plc';
+const meta=DEVICE_META[devType];
+const points=meta.points;
+let curPointId=points[0].id;
+
+document.getElementById('backLink').href='02-workshop.html?ws='+wsId;
+document.getElementById('crumbWs').textContent=wsName;
+document.getElementById('crumbWs').href='02-workshop.html?ws='+wsId;
+document.getElementById('crumbDev').textContent=devId;
+document.getElementById('pageTitle').textContent=devId;
+document.getElementById('devType').innerHTML='<span class="status-dot" style="background:'+neon+'"></span>'+meta.type;
+
+function r(n,base,rng){return parseFloat((base+Math.sin(n*0.18)*rng*0.5+Math.sin(n*0.07)*rng*0.3+(Math.random()-0.5)*rng*0.2).toFixed(2));}
+function genSeries(intervalSec,n,base,rng){const d=[];const now=new Date();for(let i=n-1;i>=0;i--){const t=new Date(now-i*intervalSec*1000);d.push({time:t.toISOString(),value:r(i,base,rng)});}return d;}
+
+const pointData={};
+points.forEach(p=>{pointData[p.id]=genSeries(300,288,p.base,p.range);});
+
+// Stats
+function updateStats(pid){
+  const p=points.find(x=>x.id===pid)||points[0];
+  const vals=pointData[p.id]; if(!vals)return;
+  const vs=vals.map(v=>v.value);
+  const mean=(vs.reduce((a,b)=>a+b,0)/vs.length).toFixed(1);
+  const mx=Math.max(...vs).toFixed(1);
+  const mn=Math.min(...vs).toFixed(1);
+  const last=vs[vs.length-1].toFixed(1);
+  document.getElementById('stats').innerHTML=[
+    {l:'当前值',v:last,u:p.unit,c:p.color},
+    {l:'24h均值',v:mean,u:p.unit,c:'var(--ink)'},
+    {l:'24h峰值',v:mx,u:p.unit,c:mx>p.base*1.3?'var(--red)':'var(--ink)'},
+    {l:'24h谷值',v:mn,u:p.unit,c:'var(--ink)'},
+  ].map(s=>`<div class="glass stat"><div class="lbl">${s.l}</div><div class="val" style="color:${s.c}">${s.v}<span class="u">${s.u}</span></div></div>`).join('');
+}
+
+function updateTrend(pid){
+  const p=points.find(x=>x.id===pid)||points[0];
+  document.getElementById('curPoint').textContent=p.label+' ('+p.unit+')';
+  document.getElementById('trendTitle').textContent=p.label+' 趋势（24h）';
+  const data=pointData[p.id]||[];
+  const inst=echarts.getInstanceByDom(document.getElementById('chartTrend'))||echarts.init(document.getElementById('chartTrend'),'dark');
+  inst.setOption({
+    tooltip:{trigger:'axis',backgroundColor:'#0a0e18',borderColor:'var(--border)',textStyle:{color:'#e8eaef',fontSize:12}},
+    grid:{top:8,right:12,bottom:24,left:48},
+    xAxis:{type:'time',axisLabel:{color:var(--ink-dim),fontSize:10,formatter:v=>{const d=new Date(v);return (d.getMonth()+1)+'/'+d.getDate()+' '+d.getHours()+':00'}},splitLine:{show:false}},
+    yAxis:{type:'value',axisLabel:{color:var(--ink-dim),fontSize:10},splitLine:{lineStyle:{color:'rgba(255,255,255,0.06)'}}},
+    dataZoom:[{type:'inside',start:0,end:100}],
+    series:[
+      {type:'line',data:data.map(v=>[v.time,v.value]),smooth:true,symbol:'none',lineStyle:{color:p.color,width:2},areaStyle:{color:new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:p.color+'30'},{offset:1,color:p.color+'04'}])},markLine:{silent:true,data:[{yAxis:p.base,name:'基准 '+p.base+p.unit,label:{color:var(--ink-dim),fontSize:10},lineStyle:{color:p.color,dashOffset:0,type:'dashed'}}]}}
+    ]
+  });
+}
+
+function selectPoint(pid){
+  curPointId=pid;
+  document.getElementById('pointDropdown').classList.remove('open');
+  updateStats(pid);
+  updateTrend(pid);
+  updateDist(pid);
+  updateScatter(pid);
+}
+
+// Point menu
+document.getElementById('pointMenu').innerHTML=points.map(p=>`<div class="opt${p.id===curPointId?' active':''}" onclick="selectPoint('${p.id}')"><span class="dot" style="background:${p.color}"></span>${p.label} <span class="d" style="font-size:0.7rem;margin-left:4px">${p.unit}</span></div>`).join('');
+document.getElementById('curPoint').textContent=points[0].label+' ('+points[0].unit+')';
+updateStats(curPointId);
+updateTrend(curPointId);
+
+// Distribution (boxplot-style)
+function updateDist(pid){
+  const p=points.find(x=>x.id===pid)||points[0];
+  const vals=(pointData[p.id]||[]).map(v=>v.value);
+  vals.sort((a,b)=>a-b);
+  const d=vals;
+  const q1=d[Math.floor(d.length*0.25)],q2=d[Math.floor(d.length*0.5)],q3=d[Math.floor(d.length*0.75)];
+  const inst=echarts.getInstanceByDom(document.getElementById('chartDist'))||echarts.init(document.getElementById('chartDist'),'dark');
+  const bins=20; const binW=(d[d.length-1]-d[0])/bins; const hist=Array(bins).fill(0);
+  d.forEach(v=>{const i=Math.min(bins-1,Math.floor((v-d[0])/binW));hist[i]++;});
+  inst.setOption({
+    tooltip:{trigger:'axis',backgroundColor:'#0a0e18',borderColor:'var(--border)',textStyle:{color:'#e8eaef',fontSize:12}},
+    grid:{top:8,right:10,bottom:24,left:34},
+    xAxis:{type:'category',data:hist.map((_,i)=>((d[0]+i*binW).toFixed(1))),axisLabel:{color:var(--ink-dim),fontSize:9},splitLine:{show:false}},
+    yAxis:{type:'value',axisLabel:{color:var(--ink-dim),fontSize:10},splitLine:{lineStyle:{color:'rgba(255,255,255,0.06)'}}},
+    series:[{type:'bar',data:hist,itemStyle:{color:p.color+'80',borderRadius:2},barWidth:'90%'}],
+    graphic:[
+      {type:'line',shape:{x1:'15%',y1:'10%',x2:'15%',y2:'90%'},style:{stroke:var(--green),lineWidth:1,lineDash:[4,4]},left:0,top:0},
+    ]
+  });
+}
+
+function updateScatter(pid){
+  const p=points.find(x=>x.id===pid)||points[0];
+  const vals=pointData[p.id]||[];
+  const nextId=points[(points.findIndex(x=>x.id===pid)+1)%points.length].id;
+  const nextVals=pointData[nextId]||[];
+  const n=Math.min(vals.length,nextVals.length);
+  const data=[];
+  for(let i=0;i<n;i+=5)data.push([vals[i].value,nextVals[i].value]);
+  const next=points[(points.findIndex(x=>x.id===pid)+1)%points.length];
+  const inst=echarts.getInstanceByDom(document.getElementById('chartScatter'))||echarts.init(document.getElementById('chartScatter'),'dark');
+  inst.setOption({
+    tooltip:{backgroundColor:'#0a0e18',borderColor:'var(--border)',textStyle:{color:'#e8eaef',fontSize:12}},
+    grid:{top:8,right:10,bottom:24,left:44},
+    xAxis:{name:p.label,type:'value',nameTextStyle:{color:var(--ink-dim),fontSize:10},axisLabel:{color:var(--ink-dim),fontSize:10},splitLine:{lineStyle:{color:'rgba(255,255,255,0.06)'}}},
+    yAxis:{name:next.label,type:'value',nameTextStyle:{color:var(--ink-dim),fontSize:10},axisLabel:{color:var(--ink-dim),fontSize:10},splitLine:{lineStyle:{color:'rgba(255,255,255,0.06)'}}},
+    series:[{type:'scatter',data,symbolSize:3,itemStyle:{color:p.color+'80'}}]
+  });
+}
+updateDist(curPointId);
+updateScatter(curPointId);
+
+// Radar
+(function(){
+  const inst=echarts.init(document.getElementById('chartRadar'),'dark');
+  const cncPoints=data=>[
+    (data.temperature.values[data.temperature.values.length-1].value/65*100).toFixed(0),
+    (data.vibration.values[data.vibration.values.length-1].value/4.5*100).toFixed(0),
+    (data.rpm.values[data.rpm.values.length-1].value/5000*100).toFixed(0),
+    (data.power.values[data.power.values.length-1].value/8000*100).toFixed(0),
+    (data.feed_rate.values[data.feed_rate.values.length-1].value/200*100).toFixed(0),
+  ];
+  inst.setOption({
+    tooltip:{backgroundColor:'#0a0e18',borderColor:'var(--border)'},
+    legend:{data:['当前值','基准值'],bottom:0,textStyle:{color:var(--ink-muted),fontSize:10}},
+    radar:{center:['50%','50%'],radius:'60%',indicator:points.map(p=>({name:p.label,max:100})),axisName:{color:var(--ink-muted),fontSize:10},splitArea:{areaStyle:{color:['rgba(255,255,255,0.02)','transparent','rgba(255,255,255,0.02)','transparent','rgba(255,255,255,0.02)']}}},
+    series:[
+      {type:'radar',data:[{value:points.map(p=>parseFloat((pointData[p.id][pointData[p.id].length-1].value/(p.base*1.5)*100).toFixed(0))),name:'当前值',areaStyle:{color:neon+'20'},lineStyle:{color:neon}}]},
+      {type:'radar',data:[{value:points.map(p=>parseFloat((p.base/(p.base*1.5)*100).toFixed(0))),name:'基准值',areaStyle:{color:'transparent'},lineStyle:{color:var(--ink-dim),type:'dashed'}}]},
+    ]
+  });
+})();
+
+// Close dropdown on outside click
+document.addEventListener('click',function(e){const dd=document.getElementById('pointDropdown');if(!dd.contains(e.target))dd.classList.remove('open');});
+</script>
+</body>
+</html>

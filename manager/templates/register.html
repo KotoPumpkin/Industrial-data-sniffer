@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>注册 — 工业数据采集管理平台</title>
+<link href="https://fonts.lug.ustc.edu.cn/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+    --bg-canvas: #080b10; --bg-panel: #0f1218; --bg-input: #1a1e27;
+    --border: #2a2e38; --blue: #3b82f6; --blue-hover: #2563eb;
+    --text: #e5e7eb; --text-muted: #6b7280; --red: #ef4444; --green: #34d399;
+    --font: 'Noto Sans SC', system-ui, -apple-system, sans-serif;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: var(--font); background: var(--bg-canvas); color: var(--text);
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+}
+.register-box {
+    width: 100%; max-width: 24rem; padding: 2.5rem;
+    background: var(--bg-panel); border: 1px solid var(--border); border-radius: 0.75rem;
+}
+.register-logo {
+    display: block; width: 100%; max-width: 16rem; height: auto;
+    margin: 0 auto 1.5rem auto;
+}
+.register-subtitle { font-size: 0.8rem; color: var(--text-muted); text-align: center; margin-bottom: 2rem; }
+.field { margin-bottom: 1.25rem; }
+.field label {
+    display: block; font-size: 0.75rem; font-weight: 500;
+    color: var(--text-muted); margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.05em;
+}
+.field input {
+    width: 100%; padding: 0.55rem 0.7rem; font-size: 0.875rem; font-family: var(--font);
+    background: var(--bg-input); border: 1px solid var(--border); border-radius: 0.35rem;
+    color: var(--text); outline: none; transition: border-color 0.15s;
+}
+.field input:focus { border-color: var(--blue); }
+.pwd-hint { font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem; }
+.pwd-strength { height: 3px; border-radius: 2px; margin-top: 0.35rem; background: var(--border); transition: background 0.2s; }
+.pwd-strength.weak { background: var(--red); width: 33%; }
+.pwd-strength.medium { background: #f59e0b; width: 66%; }
+.pwd-strength.strong { background: var(--green); width: 100%; }
+.btn {
+    display: block; width: 100%; padding: 0.6rem; font-size: 0.875rem;
+    font-family: var(--font); font-weight: 500; border: none; border-radius: 0.35rem;
+    cursor: pointer; transition: background 0.15s; color: #fff; background: var(--blue);
+}
+.btn:hover { background: var(--blue-hover); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.error-msg { font-size: 0.8rem; color: var(--red); text-align: center; margin-top: 0.75rem; min-height: 1.2em; }
+.footer-link {
+    display: block; text-align: center; margin-top: 1.25rem;
+    font-size: 0.8rem; color: var(--text-muted);
+}
+.footer-link a { color: var(--blue); text-decoration: none; }
+.footer-link a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="register-box">
+    <img src="/static/logo.png" alt="Logo" class="register-logo" />
+    <div class="register-subtitle">创建账户以访问平台</div>
+    <form id="registerForm" autocomplete="off">
+        <div class="field">
+            <label>用户名</label>
+            <input type="text" id="username" placeholder="2–32 个字符" required minlength="2" maxlength="32" autofocus>
+        </div>
+        <div class="field">
+            <label>密码</label>
+            <input type="password" id="password" placeholder="至少 6 个字符" required minlength="6">
+            <div class="pwd-strength" id="pwdStrength"></div>
+            <div class="pwd-hint">建议包含大小写字母、数字和特殊字符</div>
+        </div>
+        <div class="field">
+            <label>确认密码</label>
+            <input type="password" id="confirm" placeholder="再次输入密码" required minlength="6">
+        </div>
+        <button type="submit" class="btn" id="submitBtn">注 册</button>
+        <div class="error-msg" id="errorMsg"></div>
+    </form>
+    <div class="footer-link">已有账户？<a href="/login">返回登录</a></div>
+</div>
+<script>
+document.getElementById('password').addEventListener('input', function() {
+    const v = this.value; const el = document.getElementById('pwdStrength');
+    el.className = 'pwd-strength';
+    if (v.length >= 6) {
+        let score = 0;
+        if (/[a-z]/.test(v)) score++;
+        if (/[A-Z]/.test(v)) score++;
+        if (/[0-9]/.test(v)) score++;
+        if (/[^a-zA-Z0-9]/.test(v)) score++;
+        el.classList.add(score <= 1 ? 'weak' : score <= 2 ? 'medium' : 'strong');
+    }
+});
+document.getElementById('registerForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn');
+    const err = document.getElementById('errorMsg');
+    const pwd = document.getElementById('password').value;
+    const confirm = document.getElementById('confirm').value;
+    if (pwd !== confirm) { err.textContent = '两次密码输入不一致'; return; }
+    btn.disabled = true; err.textContent = '';
+    try {
+        const res = await fetch('/api/auth/register', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                username: document.getElementById('username').value,
+                password: pwd,
+                confirm_password: confirm,
+            }),
+        });
+        const data = await res.json();
+        if (!res.ok) { err.textContent = data.error || '注册失败'; return; }
+        window.location.href = data.redirect || '/';
+    } catch (ex) { err.textContent = '网络错误'; }
+    finally { btn.disabled = false; }
+});
+</script>
+</body>
+</html>

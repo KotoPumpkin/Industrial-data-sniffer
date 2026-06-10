@@ -8,3 +8,6 @@ node_modules/
 .vscode/
 *.swp
 *.swo
+secrets/
+mosquitto/passwords
+manager/data/users.json

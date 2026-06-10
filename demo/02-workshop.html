@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>车间概览 — 工业数据采集管理平台</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--canvas-deep:#06080d;--canvas:#080b10;--panel:#0f1218;--panel-raised:#161a22;--border:#232830;--ink:#e8eaef;--ink-muted:#94a3b8;--ink-dim:#64748b;--blue:#3b82f6;--green:#34d399;--orange:#fb923c;--red:#f87171}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--canvas-deep);color:var(--ink);font-family:'PingFang SC','Microsoft YaHei','Noto Sans SC',sans-serif;min-height:100vh}
+.glass{background:rgba(10,14,22,0.82);backdrop-filter:blur(16px) saturate(1.2);-webkit-backdrop-filter:blur(16px) saturate(1.2);border:1px solid rgba(255,255,255,0.06)}
+.h{font-family:Inter,sans-serif;font-weight:600}.k{font-family:Rajdhani,monospace;font-weight:600;letter-spacing:-0.02em}.m{color:var(--ink-muted)}.d{color:var(--ink-dim)}
+
+header{height:3.2rem;background:var(--panel-raised);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px}
+header .logo{font-family:Inter,sans-serif;font-weight:700;font-size:0.95rem;color:var(--ink)}
+header .logo span{color:var(--green);margin-right:2px}
+.back{display:inline-flex;align-items:center;gap:3px;font:600 0.72rem Inter,sans-serif;color:var(--ink);text-decoration:none;padding:5px 12px;border:1px solid #3d4a5c;border-radius:6px;background:#1a2030;transition:all 0.2s}.back:hover{color:#fff;border-color:var(--blue);background:#1e2d4a}
+
+main{max-width:1200px;margin:0 auto;padding:24px 20px}
+.breadcrumb{font-size:0.75rem;color:var(--ink-dim);margin-bottom:16px}.breadcrumb a{color:var(--blue);text-decoration:none}
+.page-title{font-family:Inter,sans-serif;font-weight:700;font-size:1.5rem;color:#fff;margin-bottom:4px}
+.page-sub{font-size:0.8rem;color:var(--ink-dim);margin-bottom:24px}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px}
+.stat{padding:14px 16px;border-radius:8px}.stat .lbl{font-family:Inter,sans-serif;font-weight:600;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-dim)}.stat .val{font-family:Rajdhani,monospace;font-weight:600;font-size:1.75rem;letter-spacing:-0.02em;margin-top:2px}.stat .u{font-family:Rajdhani,monospace;font-size:0.75rem;color:var(--ink-dim);margin-left:4px}
+.chart-box{padding:16px}.chart-box .cht{font-family:Inter,sans-serif;font-weight:600;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-dim);margin-bottom:12px}
+
+.dev-card{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--panel);border:1px solid var(--border);border-radius:10px;cursor:pointer;transition:all 0.2s;text-decoration:none;color:inherit}
+.dev-card:hover{background:var(--panel-raised);border-color:var(--blue);transform:translateY(-1px)}
+.dev-card .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.dev-card .info{flex:1}.dev-card .dname{font-size:0.9rem;font-weight:600;color:var(--ink)}.dev-card .dmeta{font-size:0.7rem;color:var(--ink-dim);margin-top:2px}
+.dev-card .dval{text-align:right;font-family:Rajdhani,monospace;font-weight:600;font-size:1.25rem;letter-spacing:-0.02em}
+.dev-card .arrow{color:var(--ink-dim);margin-left:4px}
+</style>
+</head>
+<body>
+<header>
+  <div style="display:flex;align-items:center;gap:12px">
+    <a href="01-map.html" class="back">← 返回地图</a>
+    <div class="logo"><span>◈</span>工业数据采集管理平台</div>
+    <div class="d" style="font-size:0.75rem">车间概览</div>
+  </div>
+  <div id="wsName" style="font-size:0.85rem;color:var(--ink-muted)">--</div>
+</header>
+<main>
+  <div class="breadcrumb"><a href="01-map.html">全国项目地图</a> / <span id="crumbWs">--</span></div>
+  <div id="pageTitle" class="page-title">--</div>
+  <div id="pageSub" class="page-sub">--</div>
+
+  <div class="grid4" id="stats" style="margin-bottom:24px"></div>
+
+  <div class="grid2" style="margin-bottom:24px">
+    <div class="glass chart-box"><div class="cht">24h 运行效率趋势</div><div id="chartOEE" style="width:100%;height:240px"></div></div>
+    <div class="glass chart-box"><div class="cht">24h 设备综合指标对比</div><div id="chartDev" style="width:100%;height:240px"></div></div>
+  </div>
+
+  <div style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
+    <div class="cht" style="margin-bottom:0">设备列表</div>
+    <div class="d" style="font-size:0.7rem">点击设备进入点位详情 →</div>
+  </div>
+  <div class="grid2" id="devices" style="margin-bottom:24px"></div>
+
+  <div class="glass chart-box"><div class="cht">车间温度 & 振动热力图（24h）</div><div id="chartHeat" style="width:100%;height:300px"></div></div>
+</main>
+
+<script>
+const WS_NAMES={'workshop-sz':'深圳数控车间','workshop-szh':'苏州精密车间','workshop-hz':'杭州电子车间','workshop-qd':'青岛模具车间','workshop-tj':'天津装配车间','workshop-dl':'大连重工车间','workshop-cd':'成都重装车间','workshop-cq':'重庆模具车间','workshop-km':'昆明精工车间'};
+const WS_PID={'workshop-sz':'project-huadong','workshop-szh':'project-huadong','workshop-hz':'project-huadong','workshop-qd':'project-beifang','workshop-tj':'project-beifang','workshop-dl':'project-beifang','workshop-cd':'project-xinan','workshop-cq':'project-xinan','workshop-km':'project-xinan'};
+const WS_COLORS={'project-huadong':'#3b82f6','project-beifang':'#fb923c','project-xinan':'#34d399'};
+const PROJECTS={'project-huadong':'华东智能制造项目','project-beifang':'北方重工项目','project-xinan':'西南精密制造项目'};
+
+const params=new URLSearchParams(window.location.search);
+const wsId=params.get('ws')||'workshop-sz';
+const pid=WS_PID[wsId]||'project-huadong';
+const wsName=WS_NAMES[wsId]||wsId;
+const neon=WS_COLORS[pid]||'#3b82f6';
+
+document.getElementById('wsName').textContent=wsName;
+document.getElementById('crumbWs').textContent=wsName;
+document.getElementById('pageTitle').textContent=wsName;
+document.getElementById('pageSub').textContent=PROJECTS[pid]+' · 设备 4 台 · 采集点位 28 个';
+
+function r(n,base,rng){return parseFloat((base+Math.sin(n*0.18)*rng*0.5+Math.sin(n*0.07)*rng*0.3+(Math.random()-0.5)*rng*0.2).toFixed(2));}
+function genSeries(h,n,base,rng){const d=[];const now=new Date();for(let i=n-1;i>=0;i--){const t=new Date(now-i*h*1000);d.push([t.toISOString(),r(i,base,rng)]);}return d;}
+
+// Stats
+const oee=r(0,87.3,12),temp=r(0,42.5,5),vib=r(0,2.1,0.8),pwr=r(0,4500,600);
+document.getElementById('stats').innerHTML=[
+  {l:'运行效率',v:oee,u:'%',c:neon},
+  {l:'平均温度',v:temp,u:'°C',c:temp>65?'var(--red)':'var(--ink)'},
+  {l:'平均振动',v:vib,u:'mm/s',c:vib>3?'var(--orange)':'var(--ink)'},
+  {l:'平均功率',v:pwr,u:'W',c:pwr>7000?'var(--red)':'var(--ink)'},
+].map(s=>`<div class="glass stat"><div class="lbl">${s.l}</div><div class="val" style="color:${s.c}">${s.v}<span class="u">${s.u}</span></div></div>`).join('');
+
+// OEE Trend
+(function(){
+  const inst=echarts.init(document.getElementById('chartOEE'),'dark');
+  const data=genSeries(3600,24,87,14);
+  inst.setOption({
+    tooltip:{trigger:'axis',backgroundColor:'#0a0e18',borderColor:'var(--border)',textStyle:{color:'#e8eaef',fontSize:12}},
+    grid:{top:8,right:10,bottom:24,left:40},
+    xAxis:{type:'time',axisLabel:{color:var(--ink-dim),fontSize:10,formatter:v=>{const d=new Date(v);return d.getHours()+':00'}},splitLine:{show:false}},
+    yAxis:{type:'value',min:60,max:100,axisLabel:{color:var(--ink-dim),fontSize:10},splitLine:{lineStyle:{color:'rgba(255,255,255,0.06)'}}},
+    series:[{type:'line',data,smooth:true,symbol:'none',lineStyle:{color:neon,width:2},areaStyle:{color:new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:neon+'40'},{offset:1,color:neon+'04'}])}}]
+  });
+})();
+
+// Device comparison
+(function(){
+  const inst=echarts.init(document.getElementById('chartDev'),'dark');
+  const devs=['CNC-01','CNC-02','SENSOR-01','PLC-01'];
+  inst.setOption({
+    tooltip:{trigger:'axis',backgroundColor:'#0a0e18',borderColor:'var(--border)',textStyle:{color:'#e8eaef',fontSize:12}},
+    legend:{data:['温度','振动','功率'],bottom:0,textStyle:{color:var(--ink-muted),fontSize:10}},
+    grid:{top:8,right:10,bottom:36,left:40},
+    xAxis:{type:'category',data:devs,axisLabel:{color:var(--ink-dim),fontSize:10}},
+    yAxis:[{type:'value',name:'°C / mm/s',nameTextStyle:{color:var(--ink-dim),fontSize:10},axisLabel:{color:var(--ink-dim),fontSize:10},splitLine:{lineStyle:{color:'rgba(255,255,255,0.06)'}}},{type:'value',name:'W',nameTextStyle:{color:var(--ink-dim),fontSize:10},axisLabel:{color:var(--ink-dim),fontSize:10},splitLine:{show:false}}],
+    series:[
+      {name:'温度',type:'bar',data:[42.1,38.5,45.2,0].map(v=>v||'-'),itemStyle:{color:'#f87171'},barWidth:'30%'},
+      {name:'振动',type:'bar',data:[2.3,2.8,1.9,0].map(v=>v||'-'),itemStyle:{color:'#fb923c'},barWidth:'30%'},
+      {name:'功率',type:'bar',yAxisIndex:1,data:[0,0,0,4200].map(v=>v||'-'),itemStyle:{color:neon},barWidth:'30%'},
+    ]
+  });
+})();
+
+// Devices
+const deviceTypes={cnc:'数控机床',sensor:'环境传感器',plc:'产线PLC'};
+const deviceData=[
+  {id:'CNC-'+wsId.split('-')[1].toUpperCase()+'01',type:'cnc',temp:42.1,vib:2.3,oee:89.2},
+  {id:'CNC-'+wsId.split('-')[1].toUpperCase()+'02',type:'cnc',temp:38.5,vib:2.8,oee:85.7},
+  {id:'SENSOR-'+wsId.split('-')[1].toUpperCase()+'01',type:'sensor',temp:25.3,vib:0,oee:0},
+  {id:'PLC-'+wsId.split('-')[1].toUpperCase()+'01',type:'plc',temp:0,vib:0,oee:91.5},
+];
+document.getElementById('devices').innerHTML=deviceData.map(d=>{
+  const status=d.temp>65||d.vib>3?'var(--red)':d.temp>45?'var(--orange)':'var(--green)';
+  return `<a class="dev-card" href="03-device.html?dev=${d.id}&ws=${wsId}">
+    <span class="dot" style="background:${status}"></span>
+    <div class="info"><div class="dname">${d.id}</div><div class="dmeta">${deviceTypes[d.type]||''} · ${d.type==='cnc'?'主轴温度 '+d.temp+'°C':d.type==='sensor'?'环境温度 '+d.temp+'°C':'OEE '+d.oee+'%'}</div></div>
+    <div class="dval" style="color:${d.oee>0?neon:var(--ink-muted)}">${d.oee>0?d.oee+'%':d.temp+'°C'}</div>
+  `;
+}).join('');
+
+// Heatmap
+(function(){
+  const inst=echarts.init(document.getElementById('chartHeat'),'dark');
+  const hours=[];for(let i=0;i<24;i++)hours.push(i+':00');
+  const devices2=['CNC-01','CNC-02','SENSOR-01'];
+  const data=[];
+  devices2.forEach((dn,di)=>{hours.forEach((h,hi)=>{data.push([hi,di,parseFloat((30+Math.sin(hi*0.5+di)*10+Math.random()*8).toFixed(1))]);});});
+  inst.setOption({
+    tooltip:{backgroundColor:'#0a0e18',borderColor:'var(--border)',textStyle:{color:'#e8eaef',fontSize:12}},
+    grid:{top:8,right:20,bottom:24,left:60},
+    xAxis:{type:'category',data:hours,axisLabel:{color:var(--ink-dim),fontSize:10},splitArea:{show:true,areaStyle:{color:['rgba(255,255,255,0.02)','transparent']}}},
+    yAxis:{type:'category',data:devices2,axisLabel:{color:var(--ink-muted),fontSize:11}},
+    visualMap:{min:20,max:55,calculable:true,orient:'vertical',right:0,top:'center',inRange:{color:['#0d3320','#1e5a3a','#34d399','#fb923c','#f87171']},textStyle:{color:var(--ink-dim)}},
+    series:[{type:'heatmap',data,label:{show:false},emphasis:{itemStyle:{shadowBlur:8,shadowColor:'rgba(0,0,0,0.5)'}}}]
+  });
+})();
+</script>
+</body>
+</html>

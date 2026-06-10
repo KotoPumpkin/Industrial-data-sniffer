@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>用户管理 — 工业数据采集管理平台</title>
+<link href="https://fonts.lug.ustc.edu.cn/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+    --bg-canvas: #080b10; --bg-panel: #0f1218; --bg-panel-header: #161a22;
+    --bg-input: #1a1e27; --border: #2a2e38; --border-light: #3a3e48;
+    --blue: #3b82f6; --blue-hover: #2563eb; --text: #e5e7eb;
+    --text-secondary: #9ca3af; --text-muted: #6b7280;
+    --red: #ef4444; --red-hover: #dc2626; --green: #34d399;
+    --font: 'Noto Sans SC', system-ui, -apple-system, sans-serif;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: var(--font); background: var(--bg-canvas); color: var(--text);
+    min-height: 100vh; display: flex; flex-direction: column;
+}
+.topbar {
+    height: 3.2rem; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 1.25rem; background: var(--bg-panel); border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 100;
+}
+.topbar-title { font-size: 0.9rem; font-weight: 600; }
+.topbar-logo-img { height: 1.8rem; width: auto; }
+.topbar-right { display: flex; align-items: center; gap: 1rem; font-size: 0.8rem; }
+.topbar-right a { color: var(--text-secondary); text-decoration: none; }
+.topbar-right a:hover { color: var(--text); }
+.main { flex: 1; padding: 2rem; max-width: 56rem; margin: 0 auto; width: 100%; }
+.section-title { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; }
+.panel {
+    background: var(--bg-panel); border: 1px solid var(--border);
+    border-radius: 0.5rem; margin-bottom: 1.5rem; overflow: hidden;
+}
+.panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.75rem 1rem; background: var(--bg-panel-header);
+    border-bottom: 1px solid var(--border);
+}
+.panel-title { font-size: 0.85rem; font-weight: 500; }
+.panel-body { padding: 1rem; }
+.data-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.data-table th {
+    text-align: left; padding: 0.5rem 0.75rem; font-weight: 500;
+    color: var(--text-muted); border-bottom: 1px solid var(--border);
+    font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;
+}
+.data-table td { padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); }
+.data-table tbody tr:hover { background: rgba(59, 130, 246, 0.04); }
+.badge {
+    display: inline-block; padding: 0.1rem 0.45rem; border-radius: 0.2rem;
+    font-size: 0.7rem; font-weight: 500;
+}
+.badge-admin { background: rgba(59, 130, 246, 0.15); color: var(--blue); }
+.badge-user { background: rgba(52, 211, 153, 0.15); color: var(--green); }
+.btn-sm {
+    padding: 0.2rem 0.5rem; font-size: 0.75rem; font-family: var(--font);
+    border: none; border-radius: 0.2rem; cursor: pointer; transition: background 0.15s;
+}
+.btn-reset { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+.btn-reset:hover { background: rgba(245, 158, 11, 0.25); }
+.btn-delete { background: rgba(239, 68, 68, 0.15); color: var(--red); }
+.btn-delete:hover { background: rgba(239, 68, 68, 0.25); }
+.form-row { display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap; }
+.form-row .field { flex: 1; min-width: 8rem; }
+.field label {
+    display: block; font-size: 0.7rem; font-weight: 500;
+    color: var(--text-muted); margin-bottom: 0.25rem;
+}
+.field input, .field select {
+    width: 100%; padding: 0.4rem 0.6rem; font-size: 0.8rem; font-family: var(--font);
+    background: var(--bg-input); border: 1px solid var(--border); border-radius: 0.3rem;
+    color: var(--text); outline: none;
+}
+.field input:focus, .field select:focus { border-color: var(--blue); }
+.btn-create {
+    padding: 0.4rem 1rem; font-size: 0.8rem; font-family: var(--font); font-weight: 500;
+    background: var(--blue); color: #fff; border: none; border-radius: 0.3rem;
+    cursor: pointer; white-space: nowrap; transition: background 0.15s;
+}
+.btn-create:hover { background: var(--blue-hover); }
+.toast {
+    position: fixed; top: 1rem; right: 1rem; padding: 0.6rem 1rem;
+    border-radius: 0.35rem; font-size: 0.8rem; z-index: 999;
+    opacity: 0; transform: translateY(-0.5rem); transition: all 0.25s;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.success { background: rgba(52, 211, 153, 0.9); color: #fff; }
+.toast.error { background: rgba(239, 68, 68, 0.9); color: #fff; }
+.empty-msg { text-align: center; color: var(--text-muted); padding: 2rem; font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+    <div style="display:flex;align-items:center;gap:0.6rem;">
+        <img src="/static/logo.png" alt="Logo" class="topbar-logo-img" />
+        <div class="topbar-title">用户管理</div>
+    </div>
+    <div class="topbar-right">
+        <a href="#" onclick="logout(); return false;">退出登录</a>
+    </div>
+</div>
+
+<div class="main">
+    <!-- 新建用户 -->
+    <div class="panel">
+        <div class="panel-header"><div class="panel-title">新建用户</div></div>
+        <div class="panel-body">
+            <div class="form-row" id="createForm">
+                <div class="field">
+                    <label>用户名</label>
+                    <input type="text" id="newUsername" placeholder="2–32 个字符" minlength="2" maxlength="32">
+                </div>
+                <div class="field">
+                    <label>密码</label>
+                    <input type="password" id="newPassword" placeholder="至少 6 个字符" minlength="6">
+                </div>
+                <div class="field" style="flex:0; min-width:6rem;">
+                    <label>角色</label>
+                    <select id="newRole">
+                        <option value="user">普通用户</option>
+                        <option value="admin">管理员</option>
+                    </select>
+                </div>
+                <button class="btn-create" onclick="createUser()">创建</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 用户列表 -->
+    <div class="panel">
+        <div class="panel-header"><div class="panel-title">用户列表</div></div>
+        <div class="panel-body" style="padding:0;">
+            <table class="data-table">
+                <thead><tr><th>用户名</th><th>角色</th><th>注册时间</th><th>操作</th></tr></thead>
+                <tbody id="userTableBody"></tbody>
+            </table>
+            <div class="empty-msg" id="emptyMsg" style="display:none;">暂无用户</div>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+function showToast(msg, type) {
+    const el = document.getElementById('toast');
+    el.textContent = msg; el.className = 'toast ' + type + ' show';
+    setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+async function loadUsers() {
+    const res = await fetch('/api/admin/users');
+    const users = await res.json();
+    const tbody = document.getElementById('userTableBody');
+    const empty = document.getElementById('emptyMsg');
+    if (!users.length) { tbody.innerHTML = ''; empty.style.display = ''; return; }
+    empty.style.display = 'none';
+    tbody.innerHTML = users.map(u => `<tr>
+        <td>${u.username}</td>
+        <td><span class="badge badge-${u.role}">${u.role === 'admin' ? '管理员' : '普通用户'}</span></td>
+        <td>${u.created_at ? u.created_at.slice(0, 19).replace('T', ' ') : '-'}</td>
+        <td>
+            <button class="btn-sm btn-reset" onclick="resetPwd('${u.id}','${u.username}')">重置密码</button>
+            <button class="btn-sm btn-delete" onclick="delUser('${u.id}','${u.username}')">删除</button>
+        </td>
+    </tr>`).join('');
+}
+
+async function createUser() {
+    const username = document.getElementById('newUsername').value.trim();
+    const password = document.getElementById('newPassword').value;
+    const role = document.getElementById('newRole').value;
+    if (!username || !password) { showToast('请填写用户名和密码', 'error'); return; }
+    const res = await fetch('/api/admin/users', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({username, password, role}),
+    });
+    const data = await res.json();
+    if (!res.ok) { showToast(data.error, 'error'); return; }
+    showToast('用户创建成功', 'success');
+    document.getElementById('newUsername').value = '';
+    document.getElementById('newPassword').value = '';
+    loadUsers();
+}
+
+async function resetPwd(id, name) {
+    const pwd = prompt(`为 ${name} 设置新密码（至少 6 个字符）：`);
+    if (!pwd || pwd.length < 6) { if (pwd) showToast('密码至少 6 个字符', 'error'); return; }
+    const res = await fetch(`/api/admin/users/${id}/reset-password`, {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({password: pwd}),
+    });
+    const data = await res.json();
+    if (!res.ok) { showToast(data.error, 'error'); return; }
+    showToast(`${name} 密码已重置`, 'success');
+}
+
+async function delUser(id, name) {
+    if (!confirm(`确认删除用户 ${name}？`)) return;
+    const res = await fetch(`/api/admin/users/${id}`, {method: 'DELETE'});
+    if (!res.ok) { const d = await res.json(); showToast(d.error, 'error'); return; }
+    showToast(`${name} 已删除`, 'success');
+    loadUsers();
+}
+
+async function logout() {
+    await fetch('/api/auth/logout', {method: 'POST'});
+    window.location.href = '/login';
+}
+
+loadUsers();
+</script>
+</body>
+</html>

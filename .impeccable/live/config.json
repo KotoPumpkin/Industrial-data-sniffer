@@ -1,0 +1,5 @@
+{
+  "files": ["demo/01-map.html", "demo/02-project.html", "demo/03-workshop.html", "demo/04-device.html"],
+  "insertBefore": "</body>",
+  "commentSyntax": "html"
+}

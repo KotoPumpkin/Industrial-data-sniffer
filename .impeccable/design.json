@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-08T14:30:00.000Z",
+  "title": "Design System: 工业数据采集管理平台",
+  "extensions": {
+    "colorMeta": {
+      "canvas-deep":     { "role": "neutral", "displayName": "Deep Canvas",    "canonical": "#06080d", "tonalRamp": ["#06080d","#090c12","#0d1118","#11151d","#161a22","#1b2029","#222730","#2b3039"] },
+      "canvas":          { "role": "neutral", "displayName": "Canvas",          "canonical": "#080b10", "tonalRamp": ["#080b10","#0c0f15","#10141a","#151820","#1a1d26","#20232c","#272a34","#2f323c"] },
+      "panel":           { "role": "neutral", "displayName": "Panel",           "canonical": "#0f1218", "tonalRamp": ["#0b0e13","#0f1218","#14171e","#191c24","#1e222b","#242832","#2a2e39","#313541"] },
+      "panel-raised":    { "role": "neutral", "displayName": "Panel Raised",    "canonical": "#161a22", "tonalRamp": ["#0c0f15","#12151c","#161a22","#1c2029","#222630","#292d38","#303440","#383c49"] },
+      "sidebar":         { "role": "neutral", "displayName": "Sidebar",         "canonical": "#0c0f14", "tonalRamp": ["#080b0f","#0c0f14","#11141a","#161920","#1b1e27","#21242d","#282b35","#2f323d"] },
+      "blue-primary":    { "role": "primary", "displayName": "Signal Blue",     "canonical": "#3b82f6", "tonalRamp": ["#0b1a33","#132b55","#1d3d78","#28509c","#3464bf","#3b82f6","#5c9af7","#80b2f9"] },
+      "green-status":    { "role": "status",  "displayName": "Status Green",    "canonical": "#34d399", "tonalRamp": ["#082a1e","#0d3d2c","#13523b","#1a694b","#22825d","#34d399","#5edcab","#80e6c0"] },
+      "orange-status":   { "role": "status",  "displayName": "Status Orange",   "canonical": "#fb923c", "tonalRamp": ["#2e1a08","#4a280c","#693812","#8b4918","#af5c20","#fb923c","#fcaa5f","#fdc280"] },
+      "red-status":      { "role": "status",  "displayName": "Status Red",      "canonical": "#f87171", "tonalRamp": ["#2b0e0e","#431414","#5e1a1a","#7c2121","#9c2929","#f87171","#fa9292","#fcb0b0"] },
+      "ink":             { "role": "neutral", "displayName": "Ink",             "canonical": "#e8eaef", "tonalRamp": ["#93969b","#a0a3a8","#b0b3b8","#c2c5c9","#d5d7db","#e8eaef","#f0f1f4","#f8f9fa"] },
+      "ink-muted":       { "role": "neutral", "displayName": "Muted Ink",       "canonical": "#94a3b8", "tonalRamp": ["#3d454f","#525a66","#6a7280","#7e8693","#94a3b8","#b0b7c4","#c8cdd5","#dee1e6"] },
+      "ink-dim":         { "role": "neutral", "displayName": "Dim Ink",         "canonical": "#64748b", "tonalRamp": ["#2c353f","#3d4754","#505b6a","#64748b","#7d8ca1","#99a5b6","#b5beca","#d0d6de"] }
+    },
+    "typographyMeta": {
+      "heading": { "displayName": "Heading / Label", "purpose": "Panel titles, table headers, button labels. Always uppercase, always Inter semibold." },
+      "body":    { "displayName": "Body",            "purpose": "Chinese body text, descriptions, cell content. 0.875rem, 1.6 line-height." },
+      "kpi":     { "displayName": "KPI / Data",      "purpose": "All numeric values: stats, Z-Scores, percentages. Rajdhani monospace, tight spacing." }
+    },
+    "shadows": [
+      { "name": "dropdown",  "value": "0 20px 25px -5px rgba(0,0,0,0.4)",                         "purpose": "Dropdown menus and popover panels." },
+      { "name": "tooltip",   "value": "0 8px 32px rgba(0,0,0,0.6)",                               "purpose": "Map hover tooltips. Large blur to separate from dark map bg." },
+      { "name": "toast",     "value": "0 4px 24px rgba(0,0,0,0.35)",                              "purpose": "Alert toast notifications." }
+    ],
+    "motion": [
+      { "name": "ease-standard",   "value": "cubic-bezier(0.4, 0, 0.2, 1)",    "purpose": "Default state transitions: hover, focus, toggle." },
+      { "name": "ease-parallax",   "value": "cubic-bezier(0.16, 1, 0.3, 1)",   "purpose": "3D parallax map transform transitions. ~600ms." },
+      { "name": "fade-in-up",      "value": "0.3s ease-out",                    "purpose": "Card and element entrance animations. opacity + translateY(12px→0)." }
+    ],
+    "breakpoints": [
+      { "name": "sidebar", "value": "832px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Glass Card",
+      "kind": "card",
+      "refersTo": "glass-card",
+      "description": "Primary container. Semi-transparent dark bg with backdrop blur. Used for dashboard panels, stat cards, analytics blocks.",
+      "html": "<div class=\"ds-glass-card\"><div class=\"ds-glass-label\">PANEL TITLE</div><div class=\"ds-glass-content\">Content here</div></div>",
+      "css": ".ds-glass-card { background: rgba(10,14,22,0.82); backdrop-filter: blur(16px) saturate(1.2); -webkit-backdrop-filter: blur(16px) saturate(1.2); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 16px; overflow: visible; }.ds-glass-label { font-family: Inter, sans-serif; font-weight: 600; font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }.ds-glass-content { font-family: 'PingFang SC','Microsoft YaHei',sans-serif; font-size: 0.875rem; color: #e8eaef; }"
+    },
+    {
+      "name": "Stat Card",
+      "kind": "card",
+      "refersTo": "stat-card",
+      "description": "KPI metric card. Glass card + large Rajdhani number with color-coded value.",
+      "html": "<div class=\"ds-stat-card\"><div class=\"ds-stat-label\">在线设备</div><div class=\"ds-stat-value ds-stat-blue\">142</div><div class=\"ds-stat-unit\">台</div></div>",
+      "css": ".ds-stat-card { background: rgba(10,14,22,0.82); backdrop-filter: blur(16px) saturate(1.2); -webkit-backdrop-filter: blur(16px) saturate(1.2); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 12px 16px; animation: ds-fade-in-up 0.3s ease-out forwards; }.ds-stat-label { font-family: Inter, sans-serif; font-weight: 600; font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }.ds-stat-value { font-family: Rajdhani, DIN, monospace; font-weight: 600; font-size: 1.5rem; line-height: 1.2; letter-spacing: -0.02em; }.ds-stat-unit { font-family: Rajdhani, DIN, monospace; font-size: 0.75rem; color: #64748b; margin-left: 4px; }.ds-stat-blue { color: #3b82f6; }.ds-stat-green { color: #34d399; }.ds-stat-orange { color: #fb923c; }.ds-stat-red { color: #f87171; } @keyframes ds-fade-in-up { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }"
+    },
+    {
+      "name": "Clear Button",
+      "kind": "button",
+      "refersTo": "button-clear",
+      "description": "Destructive clear/acknowledge action. Red tint background, subtle hover intensify.",
+      "html": "<button class=\"ds-btn-clear\">清除</button>",
+      "css": ".ds-btn-clear { background: rgba(248,113,113,0.15); color: #f87171; border: none; border-radius: 8px; padding: 4px 10px; font-family: Inter, sans-serif; font-weight: 600; font-size: 0.75rem; cursor: pointer; transition: background-color 0.2s cubic-bezier(0.4,0,0.2,1); }.ds-btn-clear:hover { background: rgba(248,113,113,0.25); }.ds-btn-clear:disabled { opacity: 0.3; cursor: not-allowed; }.ds-btn-clear:focus-visible { outline: 2px solid #f87171; outline-offset: 2px; }"
+    },
+    {
+      "name": "Dropdown",
+      "kind": "custom",
+      "refersTo": "dropdown",
+      "description": "Dark dropdown selector. Fixed-position portal with heavy shadow. Used for refresh rate and filter selects.",
+      "html": "<div class=\"ds-dropdown\"><span class=\"ds-dropdown-label\">5s</span><svg class=\"ds-dropdown-arrow\" viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"#64748b\" stroke-width=\"2\"><path d=\"M4 6l4 4 4-4\"/></svg></div>",
+      "css": ".ds-dropdown { display: flex; align-items: center; gap: 6px; padding: 6px 10px; background: #111827; border-radius: 8px; font-size: 0.75rem; color: #e8eaef; cursor: pointer; transition: background-color 0.2s cubic-bezier(0.4,0,0.2,1); }.ds-dropdown:hover { background: #1a2332; }.ds-dropdown-label { font-family: Rajdhani, DIN, monospace; font-weight: 600; letter-spacing: -0.02em; }.ds-dropdown-arrow { width: 12px; height: 12px; transition: transform 0.2s; }.ds-dropdown-panel { position: fixed; background: #111827; border-radius: 8px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.4); z-index: 99999; overflow: hidden; min-width: 5rem; }.ds-dropdown-option { padding: 8px 12px; font-size: 0.75rem; color: #94a3b8; cursor: pointer; transition: color 0.15s, background-color 0.15s; }.ds-dropdown-option:hover { color: #e8eaef; background: rgba(255,255,255,0.04); }.ds-dropdown-option.active { color: #3b82f6; background: rgba(59,130,246,0.1); }"
+    },
+    {
+      "name": "Sidebar Navigation",
+      "kind": "nav",
+      "refersTo": "sidebar",
+      "description": "Dark sidebar with icon + label items. Active state uses blue-tinted background.",
+      "html": "<nav class=\"ds-sidebar\"><div class=\"ds-sidebar-section\">项目导航</div><div class=\"ds-sidebar-item active\"><svg class=\"ds-sidebar-icon\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M3 13h8V3H3v10zm10 8h8V11h-8v10zm0-18v10h8V3h-8zM3 21h8v-6H3v6z\"/></svg>仪表盘</div><div class=\"ds-sidebar-item\"><svg class=\"ds-sidebar-icon\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93z\"/></svg>项目总览</div></nav>",
+      "css": ".ds-sidebar { width: 208px; flex-shrink: 0; background: #0c0f14; border-right: 1px solid #1a2440; display: flex; flex-direction: column; padding: 12px 0; }.ds-sidebar-section { padding: 8px 16px; font-family: Inter, sans-serif; font-weight: 600; font-size: 0.6rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.12em; }.ds-sidebar-item { display: flex; align-items: center; gap: 12px; padding: 10px 16px; margin: 0 8px; border-radius: 4px; font-family: 'PingFang SC',sans-serif; font-size: 0.875rem; color: #94a3b8; cursor: pointer; transition: all 0.2s cubic-bezier(0.4,0,0.2,1); }.ds-sidebar-item:hover { color: #e8eaef; background: #0e1628; }.ds-sidebar-item.active { background: #162240; color: #e8eaef; }.ds-sidebar-icon { width: 16px; height: 16px; flex-shrink: 0; opacity: 0.7; }"
+    },
+    {
+      "name": "Table",
+      "kind": "custom",
+      "refersTo": "table-cell",
+      "description": "Data table with sticky header, subtle row borders, right-aligned numbers.",
+      "html": "<div class=\"ds-table-wrap\"><table class=\"ds-table\"><thead><tr><th>指标</th><th>设备</th><th>Z-Score</th></tr></thead><tbody><tr><td>温度</td><td>CNC-SZ01</td><td class=\"ds-table-num ds-table-red\">3.24</td></tr><tr><td>振动</td><td>CNC-SZ02</td><td class=\"ds-table-num\">1.85</td></tr></tbody></table></div>",
+      "css": ".ds-table-wrap { max-height: 256px; overflow-y: auto; }.ds-table-wrap::-webkit-scrollbar { width: 4px; }.ds-table-wrap::-webkit-scrollbar-track { background: transparent; }.ds-table-wrap::-webkit-scrollbar-thumb { background: #2a3d55; border-radius: 2px; }.ds-table-wrap::-webkit-scrollbar-thumb:hover { background: #3d5580; }.ds-table { width: 100%; font-size: 0.875rem; border-collapse: collapse; }.ds-table thead { position: sticky; top: 0; z-index: 10; background: #0a0f18; }.ds-table th { padding: 8px 0; font-family: Inter, sans-serif; font-weight: 600; font-size: 0.7rem; color: #64748b; text-transform: uppercase; text-align: left; }.ds-table th:last-child { text-align: right; }.ds-table td { padding: 8px 0; font-size: 0.75rem; border-bottom: 1px solid rgba(128,128,128,0.12); }.ds-table td:first-child { color: #e8eaef; font-family: 'PingFang SC',sans-serif; }.ds-table tbody tr:hover { background: rgba(255,255,255,0.02); }.ds-table-num { text-align: right; font-family: Rajdhani, DIN, monospace; font-weight: 600; letter-spacing: -0.02em; color: #94a3b8; }.ds-table-red { color: #f87171; }.ds-table-green { color: #34d399; }.ds-table-orange { color: #fb923c; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "数据深度",
+    "overview": "这是一个为工业运维控制室设计的仪表盘系统。设计语言立足于数据本身的物理感——3D 视差地图提供了跨越省界的空间纵深，玻璃面板营造出控制台前的仪表分层。深色画布不是风格选择，而是功能需求：发光的数据在近乎黑色的背景下获得最大可读性。系统刻意保持设计元素的克制：没有渐变色文字、没有大面积毛玻璃堆叠、没有彩色侧边装饰条。每一种颜色承载一个编码含义，颜色只出现在需要传达状态的地方。",
+    "keyCharacteristics": [
+      "深色画布四层递进（#06080d → #080b10 → #0f1218 → #161a22），不引入第五层",
+      "玻璃面板不叠加阴影——深度来自 backdrop-filter blur + 1px 透明白边框",
+      "Inter（标签）+ Rajdhani（数字）+ 中文字体（正文），三字体上限",
+      "状态色编码：绿/橙/红/蓝，每种 ≤15% 表面占比",
+      "3D 视差地图作为签名字面，CSS perspective + transform 产生真实空间位移"
+    ],
+    "rules": [
+      { "name": "The Canvas Depth Rule", "body": "背景只用四层（canvas-deep / canvas / panel / panel-raised），禁止引入第五层或中间色调。深度通过层的堆叠关系传达，不通过单独的阴影或渐变。", "section": "colors" },
+      { "name": "The No-Warm-Neutral Rule", "body": "任何带有 40-100° 色相的非零彩度中性色都被禁止。画布是纯冷暗色的，不是暖色的。温暖感来自数据的发光，不是来自背景的染色。", "section": "colors" },
+      { "name": "The Three-Font Cap Rule", "body": "Inter + Rajdhani + 中文字体，这三个就是全部。不引入第四种字体系列。仪表盘不是字体展览，是数据呈现工具。", "section": "typography" },
+      { "name": "The Flat-by-Default Rule", "body": "除 dropdown 和 tooltip 外，所有表面在自由状态下都没有盒阴影。深度通过色调和 blur 传达。", "section": "elevation" }
+    ],
+    "dos": [
+      "用四层画布色调建立空间层次，不引入新色",
+      "用 Rajdhani 字体显示一切数值数据，Inter 显示一切标签标题",
+      "保持 glass 卡片无阴影扁平状态——深度来自 blur 和色调",
+      "用颜色编码状态：绿=正确、橙=注意、红=紧急，每种状态色 ≤15% 表面"
+    ],
+    "donts": [
+      "不使用任何暖色调中性背景色（cream / sand / beige / warm-gray）",
+      "不在 glass 卡片上叠加盒阴影——blur + 1px 白边框已经足够",
+      "不引入第四种字体系列——Inter + Rajdhani + 中文字体是上限",
+      "不在 glass 卡片上叠加 backdrop-filter 超过 2 层",
+      "不使用渐变文字或彩色左边框作为视觉强调"
+    ]
+  }
+}

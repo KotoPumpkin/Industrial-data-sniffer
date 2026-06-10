@@ -5,69 +5,31 @@
 import json
 import os
 import statistics
-import tempfile
 from datetime import datetime, timedelta, timezone
 
 from flask import Blueprint, jsonify, request
 
-from config import ALERT_THRESHOLDS, DEVICES
+from config import ALERT_THRESHOLDS
 from db import query_influxdb
+from logger import get_logger
+from validators import sanitize_project, sanitize_metric, sanitize_device, sanitize_int, sanitize_float, sanitize_choice, ValidationError
+from auth import login_required
+from anomaly_acks import is_anomaly_acknowledged, add_ack, get_cutoff_time
+
+logger = get_logger(__name__)
 
 bp = Blueprint("analytics", __name__)
 
-# ── 异常确认持久化 ──
-ACK_FILE = os.path.join(os.path.dirname(__file__), "data", "anomaly_acks.json")
-
-
-def _load_acks():
-    try:
-        with open(ACK_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return []
-
-
-def _save_acks(acks):
-    os.makedirs(os.path.dirname(ACK_FILE), exist_ok=True)
-    fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(ACK_FILE), suffix=".json")
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            json.dump(acks, f, ensure_ascii=False, indent=2)
-        os.replace(tmp_path, ACK_FILE)
-    except:
-        os.unlink(tmp_path)
-        raise
-
-
-_anomaly_acks = _load_acks()
-
-
-def _is_anomaly_acknowledged(metric, machine_id, time_str):
-    """检查异常记录是否已被确认"""
-    for ack in _anomaly_acks:
-        if ack.get("metric", "*") != "*" and ack["metric"] != metric:
-            continue
-        if ack.get("device", "*") != "*" and ack["device"] != machine_id:
-            continue
-        dev_info = DEVICES.get(machine_id, {})
-        if ack.get("project_id", "*") != "*" and ack["project_id"] != dev_info.get("project_id", ""):
-            continue
-        if ack.get("workshop", "*") != "*" and ack["workshop"] != dev_info.get("workshop", ""):
-            continue
-        if ack.get("cutoff_time") and time_str < ack["cutoff_time"]:
-            continue
-        return True
-    return False
-
 
 @bp.route("/api/analytics/anomaly")
+@login_required
 def analytics_anomaly():
     """基于 Z-Score 的异常检测"""
-    metric = request.args.get("metric", "temperature")
-    device = request.args.get("device", "")
-    minutes = int(request.args.get("minutes", 60))
-    threshold = float(request.args.get("threshold", 2.0))
-    project_id = request.args.get("project_id", "")
+    metric = sanitize_metric(request.args.get("metric", "temperature"))
+    device = sanitize_device(request.args.get("device"))
+    minutes = sanitize_int(request.args.get("minutes", "60"))
+    threshold = sanitize_float(request.args.get("threshold", "2.0"))
+    project_id = sanitize_project(request.args.get("project_id"))
 
     device_filter = f'|> filter(fn: (r) => r.machine_id == "{device}")' if device else ""
     project_filter = f'|> filter(fn: (r) => r.project_id == "{project_id}")' if project_id else ""
@@ -118,7 +80,7 @@ def analytics_anomaly():
                     "severity": "high" if z_score > 3.0 else "medium" if z_score > 2.5 else "low",
                 })
 
-    filtered_anomalies = [a for a in anomalies if not _is_anomaly_acknowledged(metric, a.get("machine_id", ""), a.get("time", ""))]
+    filtered_anomalies = [a for a in anomalies if not is_anomaly_acknowledged(metric, a.get("machine_id", ""), a.get("time", ""))]
 
     return jsonify({
         "metric": metric,
@@ -133,11 +95,12 @@ def analytics_anomaly():
 
 
 @bp.route("/api/analytics/anomaly-count")
+@login_required
 def analytics_anomaly_count():
     """所有指标异常检测数量总和（24小时窗口），排除已确认的异常"""
     minutes = 1440
-    threshold = float(request.args.get("threshold", 2.0))
-    project_id = request.args.get("project_id", "")
+    threshold = sanitize_float(request.args.get("threshold", "2.0"))
+    project_id = sanitize_project(request.args.get("project_id"))
     project_filter = f'|> filter(fn: (r) => r.project_id == "{project_id}")' if project_id else ""
     metrics = ["temperature", "vibration", "rpm", "power", "humidity", "pressure"]
     total_count = 0
@@ -180,7 +143,7 @@ def analytics_anomaly_count():
         if stdev_val > 0:
             for v in values:
                 z_score = abs(v["value"] - mean_val) / stdev_val
-                if z_score > threshold and not _is_anomaly_acknowledged(metric_name, v["machine_id"], v["time"]):
+                if z_score > threshold and not is_anomaly_acknowledged(metric_name, v["machine_id"], v["time"]):
                     count += 1
 
         detail[metric_name] = count
@@ -195,45 +158,47 @@ def analytics_anomaly_count():
 
 
 @bp.route("/api/analytics/anomaly/acknowledge", methods=["POST"])
+@login_required
 def acknowledge_anomalies():
-    """确认（清除）异常记录"""
-    global _anomaly_acks
+    """确认（清除）异常记录 — 严格按 project_id / workshop 限定范围"""
     data = request.get_json() or {}
+    project_id = data.get("project_id") or "*"
+    workshop = data.get("workshop") or "*"
     clear_all = data.get("clear_all", False)
+
     if clear_all:
-        _anomaly_acks.append({
-            "metric": "*", "device": "*", "project_id": "*", "workshop": "*",
-            "cutoff_time": "",
+        add_ack({
+            "metric": "*", "device": "*",
+            "project_id": project_id, "workshop": workshop,
+            "cutoff_time": datetime.now(timezone.utc).isoformat(),
             "acknowledged_at": datetime.now(timezone.utc).isoformat(),
         })
-        _save_acks(_anomaly_acks)
         return jsonify({"status": "ok", "cleared": True})
 
     ack_entry = {
         "metric": data.get("metric", "*"),
         "device": data.get("device", "*"),
-        "project_id": data.get("project_id", "*"),
-        "workshop": data.get("workshop", "*"),
+        "project_id": project_id,
+        "workshop": workshop,
         "cutoff_time": "",
         "acknowledged_at": datetime.now(timezone.utc).isoformat(),
     }
     minutes = data.get("minutes", 0)
     if minutes > 0:
         ack_entry["cutoff_time"] = (datetime.now(timezone.utc) - timedelta(minutes=minutes)).isoformat()
-
-    _anomaly_acks.append(ack_entry)
-    _save_acks(_anomaly_acks)
+    add_ack(ack_entry)
     return jsonify({"status": "ok", "cleared": True})
 
 
 @bp.route("/api/analytics/trend")
+@login_required
 def analytics_trend():
     """趋势分析 — 移动平均、变化率、趋势方向"""
-    metric = request.args.get("metric", "temperature")
-    device = request.args.get("device", "CNC-A01")
-    minutes = int(request.args.get("minutes", 60))
+    metric = sanitize_metric(request.args.get("metric", "temperature"))
+    device = sanitize_device(request.args.get("device", "CNC-A01"), required=True)
+    minutes = sanitize_int(request.args.get("minutes", "60"))
     window = int(request.args.get("window", 5))
-    project_id = request.args.get("project_id", "")
+    project_id = sanitize_project(request.args.get("project_id"))
     project_filter = f'|> filter(fn: (r) => r.project_id == "{project_id}")' if project_id else ""
 
     flux = f'''
@@ -304,13 +269,14 @@ def analytics_trend():
 
 
 @bp.route("/api/analytics/correlation")
+@login_required
 def analytics_correlation():
     """指标关联性分析 — 计算两组数据的相关系数"""
-    metric_a = request.args.get("metric_a", "temperature")
-    metric_b = request.args.get("metric_b", "vibration")
-    device = request.args.get("device", "CNC-A01")
-    minutes = int(request.args.get("minutes", 60))
-    project_id = request.args.get("project_id", "")
+    metric_a = sanitize_metric(request.args.get("metric_a", "temperature"))
+    metric_b = sanitize_metric(request.args.get("metric_b", "vibration"))
+    device = sanitize_device(request.args.get("device", "CNC-A01"), required=True)
+    minutes = sanitize_int(request.args.get("minutes", "60"))
+    project_id = sanitize_project(request.args.get("project_id"))
     project_filter = f'|> filter(fn: (r) => r.project_id == "{project_id}")' if project_id else ""
 
     def fetch_series(metric_name):
@@ -373,10 +339,11 @@ def analytics_correlation():
 
 
 @bp.route("/api/analytics/alerts")
+@login_required
 def analytics_alerts():
     """实时告警 — 基于阈值的异常检测"""
     alerts = []
-    project_id = request.args.get("project_id", "")
+    project_id = sanitize_project(request.args.get("project_id"))
     project_filter = f'|> filter(fn: (r) => r.project_id == "{project_id}")' if project_id else ""
 
     for metric_name, cfg in ALERT_THRESHOLDS.items():
@@ -421,4 +388,114 @@ def analytics_alerts():
         "critical": sum(1 for a in alerts if a["level"] == "critical"),
         "warning": sum(1 for a in alerts if a["level"] == "warning"),
         "alerts": alerts,
+    })
+
+
+@bp.route("/api/analytics/anomalies/batch")
+@login_required
+def analytics_anomalies_batch():
+    """批量异常检测 — 一次请求检测多个指标"""
+    metrics_str = request.args.get("metrics", "temperature,vibration")
+    metrics = [m.strip() for m in metrics_str.split(",") if m.strip()]
+    minutes = sanitize_int(request.args.get("minutes", "1440"))
+    threshold = sanitize_float(request.args.get("threshold", "2.0"))
+    project_id = sanitize_project(request.args.get("project_id"))
+    project_filter = f'|> filter(fn: (r) => r.project_id == "{project_id}")' if project_id else ""
+
+    results = {}
+    for metric in metrics:
+        flux = f'''
+        from(bucket: "factory")
+          |> range(start: -{minutes}m)
+          |> filter(fn: (r) => r._measurement == "industrial_metrics")
+          |> filter(fn: (r) => r._field == "{metric}")
+          {project_filter}
+          |> aggregateWindow(every: 30s, fn: mean, createEmpty: false)
+        '''
+        rows = query_influxdb(flux)
+
+        if len(rows) < 5:
+            results[metric] = {"metric": metric, "anomalies": [], "total_points": len(rows),
+                             "anomaly_count": 0, "message": "数据点不足"}
+            continue
+
+        values = []
+        for r in rows:
+            try:
+                val = float(r.get("_value", 0))
+                ts = r.get("_time", "")
+                machine = r.get("machine_id", "")
+                values.append({"time": ts, "value": val, "machine_id": machine})
+            except (ValueError, TypeError):
+                continue
+
+        if not values:
+            results[metric] = {"metric": metric, "anomalies": [], "total_points": 0, "anomaly_count": 0}
+            continue
+
+        raw_vals = [v["value"] for v in values]
+        mean_val = statistics.mean(raw_vals)
+        stdev_val = statistics.stdev(raw_vals) if len(raw_vals) > 1 else 0
+
+        anomalies = []
+        if stdev_val > 0:
+            for v in values:
+                z_score = abs(v["value"] - mean_val) / stdev_val
+                if z_score > threshold:
+                    anomalies.append({
+                        "time": v["time"], "value": v["value"],
+                        "machine_id": v["machine_id"],
+                        "z_score": round(z_score, 3),
+                        "deviation": round(v["value"] - mean_val, 3),
+                        "severity": "high" if z_score > 3.0 else "medium" if z_score > 2.5 else "low",
+                    })
+
+        filtered = [a for a in anomalies if not is_anomaly_acknowledged(metric, a.get("machine_id", ""), a.get("time", ""))]
+        results[metric] = {
+            "metric": metric, "total_points": len(values),
+            "anomaly_count": len(filtered),
+            "anomaly_rate": round(len(filtered) / len(values) * 100, 2) if values else 0,
+            "mean": round(mean_val, 3), "stdev": round(stdev_val, 3),
+            "anomalies": filtered[:50],
+        }
+
+    return jsonify({"results": results})
+
+
+@bp.route("/api/analytics/project_trend_24h")
+@login_required
+def analytics_project_trend_24h():
+    """项目 24h OEE 趋势 — 供首页迷你图使用"""
+    project_id = sanitize_project(request.args.get("project_id"))
+    if not project_id:
+        return jsonify({"project_id": "", "times": [], "values": [], "data_points": 0,
+                       "message": "缺少 project_id"})
+
+    flux = f'''
+    from(bucket: "factory")
+      |> range(start: -24h)
+      |> filter(fn: (r) => r._measurement == "industrial_metrics")
+      |> filter(fn: (r) => r.project_id == "{project_id}")
+      |> filter(fn: (r) => r._field == "oee")
+      |> aggregateWindow(every: 1h, fn: mean, createEmpty: false)
+    '''
+    rows = query_influxdb(flux)
+    if not rows:
+        return jsonify({"project_id": project_id, "times": [], "values": [], "data_points": 0})
+
+    values = []
+    times = []
+    for r in rows:
+        try:
+            values.append(round(float(r.get("_value", 0)), 1))
+            t = r.get("_time", "")
+            times.append(t[11:16] if len(t) > 16 else t)
+        except (ValueError, TypeError):
+            continue
+
+    return jsonify({
+        "project_id": project_id,
+        "times": times,
+        "values": values,
+        "data_points": len(values),
     })

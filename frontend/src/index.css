@@ -1,0 +1,194 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ═══════════════ Design Tokens ═══════════════ */
+:root {
+  --font-heading: 'Bahnschrift', 'DIN Alternate', 'Segoe UI', system-ui, sans-serif;
+  --font-body: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  --font-kpi: 'Bahnschrift', 'DIN Alternate', 'Consolas', monospace;
+  --font-data: 'Bahnschrift', 'DIN Alternate', 'Consolas', monospace;
+
+  /* animation durations — product register: 150–250ms */
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+  --duration-slow: 250ms;
+  --ease-product: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ═══════════════ Base ═══════════════ */
+html { font-size: 16px; }
+
+body {
+  font-family: var(--font-body);
+  background: #06080d;
+  color: #e8eaef;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+#root { min-height: 100vh; }
+
+/* ═══════════════ Custom Scrollbar ═══════════════ */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #2a3d55; border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: #3d5580; }
+::-webkit-scrollbar-corner { background: transparent; }
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2a3d55 transparent;
+}
+
+/* ═══════════════ Glass Panel ═══════════════ */
+.glass {
+  background: rgba(10, 14, 22, 0.82);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  backdrop-filter: blur(16px) saturate(1.2);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.glass-interactive {
+  transition:
+    background-color var(--duration-normal) var(--ease-product),
+    border-color var(--duration-normal) var(--ease-product),
+    transform var(--duration-normal) var(--ease-product);
+}
+.glass-interactive:hover {
+  background-color: rgba(15, 18, 24, 0.88);
+  border-color: rgba(59, 130, 246, 0.22);
+  transform: translateY(-1px);
+}
+.glass-interactive:active {
+  transform: translateY(0);
+  transition-duration: 80ms;
+}
+
+/* ═══════════════ KPI Number Typography ═══════════════ */
+.font-kpi {
+  font-feature-settings: "tnum" 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.font-data {
+  font-feature-settings: "tnum" 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* subtle instrument-panel glow for status-colored numbers */
+.kpi-glow-green {
+  text-shadow: 0 0 18px rgba(52, 211, 153, 0.35);
+}
+.kpi-glow-red {
+  text-shadow: 0 0 18px rgba(248, 113, 113, 0.35);
+}
+.kpi-glow-orange {
+  text-shadow: 0 0 18px rgba(251, 146, 60, 0.35);
+}
+.kpi-glow-blue {
+  text-shadow: 0 0 18px rgba(59, 130, 246, 0.35);
+}
+
+/* ═══════════════ Map Parallax ═══════════════ */
+.map-parallax {
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ═══════════════ Animations ═══════════════ */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up {
+  animation: fade-in-up 0.3s ease-out forwards;
+}
+
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-count {
+  animation: count-up 0.4s ease-out forwards;
+}
+
+@keyframes number-pulse {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+.animate-number-pulse {
+  animation: number-pulse 0.35s var(--ease-spring);
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* skeleton loading placeholder */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    #161a22 25%,
+    #1c2029 37%,
+    #161a22 63%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 4px;
+}
+
+/* ═══════════════ Map Zoom Badge ═══════════════ */
+.map-zoom-badge {
+  background: rgba(10, 14, 22, 0.88);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-family: var(--font-kpi);
+  font-size: 0.7rem;
+  color: #94a3b8;
+  font-feature-settings: "tnum" 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══════════════ Tooltip Hint Badge ═══════════════ */
+.hint-badge {
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.15);
+  border-radius: 6px;
+  padding: 2px 10px;
+  font-size: 0.7rem;
+  color: #64748b;
+  white-space: nowrap;
+  transition: border-color var(--duration-normal) var(--ease-product),
+              color var(--duration-normal) var(--ease-product);
+}
+.hint-badge:hover {
+  border-color: rgba(59, 130, 246, 0.3);
+  color: #94a3b8;
+}
+
+/* ═══════════════ Reduced Motion ═══════════════ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .map-parallax {
+    transition: none;
+  }
+}
+
+/* ═══════════════ Selection ═══════════════ */
+::selection {
+  background: rgba(59, 130, 246, 0.35);
+  color: #fff;
+}

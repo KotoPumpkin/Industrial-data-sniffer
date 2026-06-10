@@ -1,0 +1,8 @@
+manager/static/
+manager/data/
+**/__pycache__/
+**/*.pyc
+.git/
+.claude/
+.agents/
+frontend/node_modules/

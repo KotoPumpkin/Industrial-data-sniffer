@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目驾驶舱 — 工业数据采集管理平台</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#06080d;--panel:#0f1218;--ink:#e8eaef;--muted:#bcc5d0;--dim:#94a3b8;--blue:#3b82f6;--green:#34d399;--orange:#fb923c;--red:#f87171}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:'PingFang SC','Microsoft YaHei','Noto Sans SC',sans-serif;min-height:100vh}
+.glass{background:rgba(10,14,22,0.82);backdrop-filter:blur(16px) saturate(1.2);border:1px solid rgba(255,255,255,0.06)}
+header{height:3.2rem;background:#161a22;border-bottom:1px solid #232830;display:flex;align-items:center;justify-content:space-between;padding:0 20px}
+header .t{font:700 0.95rem Inter,sans-serif;color:var(--ink)}
+.back{display:inline-flex;align-items:center;gap:3px;font:600 0.72rem Inter,sans-serif;color:var(--ink);text-decoration:none;padding:5px 12px;border:1px solid #3d4a5c;border-radius:6px;background:#1a2030;transition:all 0.2s}.back:hover{color:#fff;border-color:var(--blue);background:#1e2d4a}
+main{max-width:1200px;margin:0 auto;padding:24px 20px}
+.bc{font-size:0.75rem;color:var(--dim);margin-bottom:16px}.bc a{color:var(--blue);text-decoration:none}
+.h1{font:700 1.5rem Inter,sans-serif;color:#fff;margin-bottom:4px}
+.sub{font-size:0.8rem;color:var(--dim);margin-bottom:24px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.stat{padding:14px 16px;border-radius:8px}.stat .l{font:600 0.7rem Inter,sans-serif;text-transform:uppercase;letter-spacing:0.05em;color:var(--dim)}.stat .v{font:600 1.75rem Rajdhani,monospace;letter-spacing:-0.02em;margin-top:2px}.stat .u{font:0.75rem Rajdhani,monospace;color:var(--dim);margin-left:4px}
+.cht{font:600 0.7rem Inter,sans-serif;text-transform:uppercase;letter-spacing:0.05em;color:var(--dim);margin-bottom:12px}
+.ws-card{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--panel);border:1px solid #232830;border-radius:8px;cursor:pointer;text-decoration:none;color:inherit;transition:all 0.2s}
+.ws-card:hover{background:#161a22;border-color:var(--blue)}
+.ws-card .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.ws-card .info{flex:1}.ws-card .n{font-size:0.9rem;font-weight:600;color:var(--ink)}.ws-card .m{font-size:0.72rem;color:var(--dim);margin-top:2px}
+.ws-card .val{text-align:right;font:600 1.25rem Rajdhani,monospace;letter-spacing:-0.02em}
+.ws-card .arr{color:var(--dim);margin-left:6px;font-size:0.75rem}
+</style>
+</head>
+<body>
+<header>
+  <div style="display:flex;align-items:center;gap:12px">
+    <a href="01-map.html" class="back">← 返回地图</a>
+    <div class="t"><img src="logo.png" height="24" style="vertical-align:middle;margin-right:6px" alt="Logo"> 工业数据采集管理平台 <span style="font-weight:400;font-size:0.75rem;color:var(--dim);margin-left:10px">项目驾驶舱</span></div>
+  </div>
+  <div style="font-size:0.85rem;color:var(--muted)">华东智能制造项目</div>
+</header>
+<main>
+  <div class="bc"><a href="01-map.html">全国项目地图</a> / 华东智能制造项目</div>
+  <div class="h1">华东智能制造项目</div>
+  <div class="sub">广东省 · 江苏省 · 浙江省 · 覆盖深圳、苏州、杭州三大制造基地，以数控机床和精密加工为主力，承担集团 40% 产能。</div>
+
+  <div class="grid3">
+    <div class="glass stat"><div class="l">车间数</div><div class="v" style="color:#3b82f6">3</div></div>
+    <div class="glass stat"><div class="l">设备数</div><div class="v" style="color:#e8eaef">12</div></div>
+    <div class="glass stat"><div class="l">采集点位</div><div class="v" style="color:#e8eaef">84</div></div>
+    <div class="glass stat"><div class="l">运行效率</div><div class="v" style="color:#3b82f6">87.3<span class="u">%</span></div></div>
+    <div class="glass stat"><div class="l">产量(24h)</div><div class="v" style="color:#e8eaef">24.6<span class="u">k</span></div></div>
+    <div class="glass stat"><div class="l">良品率</div><div class="v" style="color:#34d399">96.8<span class="u">%</span></div></div>
+  </div>
+
+  <div class="grid2">
+    <div class="glass" style="padding:16px"><div class="cht">24h 车间效率对比</div><div id="c1" style="width:100%;height:260px"></div></div>
+    <div class="glass" style="padding:16px"><div class="cht">设备状态分布</div><div id="c2" style="width:100%;height:260px"></div></div>
+  </div>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div class="cht" style="margin-bottom:0">车间列表</div>
+    <div style="font-size:0.7rem;color:var(--dim)">点击进入车间概览 →</div>
+  </div>
+  <div class="grid3" style="margin-bottom:24px">
+    <a class="ws-card" href="03-workshop.html?id=workshop-sz&pid=project-huadong"><span class="dot" style="background:#3b82f6"></span><div class="info"><div class="n">深圳数控车间</div><div class="m">设备 4 台 · 温度 42.1°C · 振动 2.3 mm/s</div></div><div class="val" style="color:#3b82f6">89.2<span style="font-size:0.7rem;color:var(--dim);margin-left:2px">%</span></div><span class="arr">▶</span></a>
+    <a class="ws-card" href="03-workshop.html?id=workshop-szh&pid=project-huadong"><span class="dot" style="background:#3b82f6"></span><div class="info"><div class="n">苏州精密车间</div><div class="m">设备 4 台 · 温度 38.5°C · 振动 2.8 mm/s</div></div><div class="val" style="color:#3b82f6">85.7<span style="font-size:0.7rem;color:var(--dim);margin-left:2px">%</span></div><span class="arr">▶</span></a>
+    <a class="ws-card" href="03-workshop.html?id=workshop-hz&pid=project-huadong"><span class="dot" style="background:#3b82f6"></span><div class="info"><div class="n">杭州电子车间</div><div class="m">设备 4 台 · 温度 40.8°C · 振动 1.9 mm/s</div></div><div class="val" style="color:#3b82f6">91.5<span style="font-size:0.7rem;color:var(--dim);margin-left:2px">%</span></div><span class="arr">▶</span></a>
+  </div>
+
+  <div class="glass" style="padding:16px"><div class="cht">车间温度 / 振动趋势（24h）</div><div id="c3" style="width:100%;height:280px"></div></div>
+</main>
+
+<script>
+(function(){
+var neon='#3b82f6';
+
+// Chart 1
+var c1=echarts.init(document.getElementById('c1'),'dark');
+c1.setOption({tooltip:{trigger:'axis',backgroundColor:'#0a0e18',borderColor:'#232830'},
+  legend:{data:['运行效率','良品率'],bottom:0,textStyle:{color:'#bcc5d0',fontSize:10}},
+  grid:{top:8,right:10,bottom:36,left:40},
+  xAxis:{type:'category',data:['深圳数控车间','苏州精密车间','杭州电子车间'],axisLabel:{color:'#94a3b8',fontSize:10}},
+  yAxis:{type:'value',min:70,max:100,axisLabel:{color:'#94a3b8',fontSize:10},splitLine:{lineStyle:{color:'rgba(255,255,255,0.06)'}}},
+  series:[{name:'运行效率',type:'line',data:[89.2,85.7,91.5],smooth:true,symbol:'circle',symbolSize:8,lineStyle:{color:neon,width:2},itemStyle:{color:neon}},
+           {name:'良品率',type:'bar',data:[97.1,95.8,96.9],barWidth:'30%',itemStyle:{color:'rgba(52,211,153,0.6)'}}]});
+
+// Chart 2
+var c2=echarts.init(document.getElementById('c2'),'dark');
+c2.setOption({tooltip:{trigger:'item',backgroundColor:'#0a0e18',borderColor:'#232830'},
+  legend:{bottom:0,textStyle:{color:'#bcc5d0',fontSize:10}},
+  series:[{type:'pie',radius:['50%','75%'],center:['50%','45%'],avoidLabelOverlap:false,label:{show:false},emphasis:{label:{show:true,fontSize:14,fontWeight:'bold'}},
+    data:[{value:11,name:'在线',itemStyle:{color:'#34d399'}},{value:1,name:'告警',itemStyle:{color:'#f87171'}},{value:0,name:'离线',itemStyle:{color:'#94a3b8'}}]}]});
+
+// Chart 3
+var c3=echarts.init(document.getElementById('c3'),'dark');
+var h=[];for(var i=0;i<24;i++)h.push(i+':00');
+var ws=[{name:'深圳数控车间',temp:42.1},{name:'苏州精密车间',temp:38.5},{name:'杭州电子车间',temp:40.8}];
+function mk(b,r){var d=[];for(var i=0;i<24;i++)d.push(parseFloat((b+Math.sin(i*0.4)*r*0.5+Math.sin(i*0.15)*r*0.3+(Math.random()-0.5)*r*0.2).toFixed(1)));return d;}
+c3.setOption({tooltip:{trigger:'axis',backgroundColor:'#0a0e18',borderColor:'#232830'},
+  legend:{data:ws.map(function(w){return w.name;}),bottom:0,textStyle:{color:'#bcc5d0',fontSize:9}},
+  grid:{top:8,right:10,bottom:36,left:40},
+  xAxis:{type:'category',data:h,axisLabel:{color:'#94a3b8',fontSize:10}},
+  yAxis:{type:'value',axisLabel:{color:'#94a3b8',fontSize:10},splitLine:{lineStyle:{color:'rgba(255,255,255,0.06)'}}},
+  series:ws.map(function(w,i){var cs=['#3b82f6','#fb923c','#34d399'];return{name:w.name,type:'line',data:mk(w.temp,6),smooth:true,symbol:'none',lineStyle:{color:cs[i],width:1.5}};})});
+})();
+</script>
+</body>
+</html>

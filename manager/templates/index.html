@@ -4,9 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>工业数据采集管理平台</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<link href="https://fonts.lug.ustc.edu.cn/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
 <style>
 :root {
@@ -57,10 +55,8 @@ body {
     padding: 0 1.2rem; z-index: 50;
 }
 .topbar-left { display: flex; align-items: center; gap: 0.6rem; }
-.topbar-logo {
-    width: 1.8rem; height: 1.8rem; border: 1px dashed var(--border-light);
-    border-radius: 0.4rem; display: flex; align-items: center; justify-content: center;
-    color: var(--text-muted); font-size: 0.55rem;
+.topbar-logo-img {
+    height: 1.8rem; width: auto;
 }
 .topbar-title { font-size: 0.95rem; font-weight: 600; }
 .topbar-right { display: flex; align-items: center; gap: 1rem; }
@@ -101,6 +97,8 @@ body {
 }
 .sb-item { position: relative; }
 .sb-item svg { width: 1.1rem; height: 1.1rem; flex-shrink: 0; }
+.sb-item-plain { cursor: default; }
+.sb-item-plain:hover { background: transparent; color: #9aa0ab; }
 .sb-sep { height: 1px; background: var(--border); margin: 0.4rem 0.8rem; }
 .sb-spacer { flex: 1; }
 
@@ -223,9 +221,10 @@ body {
     font-family: var(--font); font-size: 0.8rem; padding: 0.3rem 0.5rem;
     border: 1px solid var(--border); border-radius: 0.3rem;
     background: var(--bg-input); color: var(--text-primary); outline: none;
-    min-width: 7rem; cursor: pointer; display: flex; align-items: center;
+    min-width: 7rem; min-height: 1.6rem; cursor: pointer; display: flex; align-items: center;
     justify-content: space-between; gap: 0.4rem; user-select: none; -webkit-user-select: none;
     transition: border-color 0.15s;
+    flex-shrink: 0; line-height: 1.4;
 }
 .cs-trigger:hover { border-color: #555b66; }
 .cs-trigger.open { border-color: var(--blue); }
@@ -471,10 +470,12 @@ body {
 <!-- TOPBAR -->
 <div class="topbar">
     <div class="topbar-left">
-        <div class="topbar-logo" title="Logo 占位">SVG</div>
+        <img src="/static/logo.png" alt="Logo" class="topbar-logo-img" />
         <div class="topbar-title">工业数据采集管理平台</div>
     </div>
     <div class="topbar-right">
+        <span id="topbarUser" style="font-size:0.75rem;color:var(--text-muted);margin-right:0.5rem;"></span>
+        <a href="#" onclick="handleLogout(); return false;" style="font-size:0.75rem;color:var(--text-muted);text-decoration:none;" title="退出登录">退出</a>
         <div class="topbar-indicator"><div class="dot" id="statusDot"></div><span id="statusText">连接中</span></div>
         <div class="topbar-clock" id="clock">--:--:--</div>
     </div>
@@ -504,9 +505,9 @@ body {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
             Grafana
         </div>
-        <div class="sb-item" onclick="window.open('http://localhost:8086','_blank')">
+        <div class="sb-item sb-item-plain">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M9 9h6v6H9z"/></svg>
-            InfluxDB
+            InfluxDB（内部）
         </div>
     </div>
     <div class="sb-spacer"></div>
@@ -528,7 +529,7 @@ body {
     <!-- 地图 + 服务 -->
     <div class="row row-map">
         <div class="panel">
-            <div class="panel-header"><div class="panel-title">全国车间分布</div></div>
+            <div class="panel-header"><div class="panel-title">全国项目及车间分布</div></div>
             <div class="panel-body p0" style="position:relative;"><div id="chinaMap"></div><div class="map-info-overlay" id="mapInfoOverlay"></div></div>
         </div>
         <div class="panel">
@@ -681,7 +682,7 @@ body {
         <div class="panel">
             <div class="panel-header">
                 <div class="panel-title">数据血缘 — 流转路径</div>
-                <select class="refresh-select gov-refresh-sel" title="刷新间隔" onchange="setModuleInterval('gov', parseInt(this.value)*1000)">
+                <select class="refresh-select gov-refresh-sel" id="govRefreshLineage" title="刷新间隔" onchange="setModuleInterval('gov', parseInt(this.value)*1000)">
                     <option value="1">1秒</option>
                     <option value="5" selected>5秒</option>
                     <option value="15">15秒</option>
@@ -694,7 +695,7 @@ body {
         <div class="panel">
             <div class="panel-header">
                 <div class="panel-title">数据标准化规则</div>
-                <select class="refresh-select gov-refresh-sel" title="刷新间隔" onchange="setModuleInterval('gov', parseInt(this.value)*1000)">
+                <select class="refresh-select gov-refresh-sel" id="govRefreshRules" title="刷新间隔" onchange="setModuleInterval('gov', parseInt(this.value)*1000)">
                     <option value="1">1秒</option>
                     <option value="5" selected>5秒</option>
                     <option value="15">15秒</option>
@@ -714,7 +715,7 @@ body {
     <div class="panel">
         <div class="panel-header">
             <div class="panel-title">各车间数据质量概览</div>
-            <select class="refresh-select gov-refresh-sel" title="刷新间隔" onchange="setModuleInterval('gov', parseInt(this.value)*1000)">
+            <select class="refresh-select gov-refresh-sel" id="govRefreshQuality" title="刷新间隔" onchange="setModuleInterval('gov', parseInt(this.value)*1000)">
                 <option value="1">1秒</option>
                 <option value="5" selected>5秒</option>
                 <option value="15">15秒</option>
@@ -760,7 +761,7 @@ body {
         <div class="panel panel-scroll">
             <div class="panel-header">
                 <div class="panel-title">数据异常分布</div>
-                <select class="refresh-select gov-refresh-sel" title="刷新间隔" onchange="setModuleInterval('gov', parseInt(this.value)*1000)">
+                <select class="refresh-select gov-refresh-sel" id="govRefreshAnomaly" title="刷新间隔" onchange="setModuleInterval('gov', parseInt(this.value)*1000)">
                     <option value="1">1秒</option>
                     <option value="5" selected>5秒</option>
                     <option value="15">15秒</option>
@@ -779,7 +780,7 @@ body {
         <div class="panel panel-scroll">
             <div class="panel-header">
                 <div class="panel-title">规则执行日志</div>
-                <select class="refresh-select gov-refresh-sel" title="刷新间隔" onchange="setModuleInterval('gov', parseInt(this.value)*1000)">
+                <select class="refresh-select gov-refresh-sel" id="govRefreshLog" title="刷新间隔" onchange="setModuleInterval('gov', parseInt(this.value)*1000)">
                     <option value="1">1秒</option>
                     <option value="5" selected>5秒</option>
                     <option value="15">15秒</option>
@@ -801,7 +802,7 @@ body {
     <div class="panel">
         <div class="panel-header">
             <div class="panel-title">数据字典 — 测量字段定义</div>
-            <select class="refresh-select gov-refresh-sel" title="刷新间隔" onchange="setModuleInterval('gov', parseInt(this.value)*1000)">
+            <select class="refresh-select gov-refresh-sel" id="govRefreshDict" title="刷新间隔" onchange="setModuleInterval('gov', parseInt(this.value)*1000)">
                 <option value="1">1秒</option>
                 <option value="5" selected>5秒</option>
                 <option value="15">15秒</option>
@@ -927,9 +928,9 @@ const WORKSHOP_MAP = {
 };
 
 const PROJECTS_MAP = {
-    'project-huadong': { name: '华东制造基地', color: '#3b82f6', provinces: ['广东省','江苏省','浙江省'] },
-    'project-beifang': { name: '北方工业中心', color: '#fb923c', provinces: ['山东省','天津市','辽宁省'] },
-    'project-xinan':   { name: '西南智造园区', color: '#34d399', provinces: ['四川省','重庆市','云南省'] },
+    'project-huadong': { name: '华东制造基地', color: '#0ea5e9', provinces: ['广东省','江苏省','浙江省'] },
+    'project-beifang': { name: '北方工业中心', color: '#f97316', provinces: ['山东省','天津市','辽宁省'] },
+    'project-xinan':   { name: '西南智造园区', color: '#22c55e', provinces: ['四川省','重庆市','云南省'] },
 };
 
 // 设备类型采集点位
@@ -974,6 +975,8 @@ function switchPage(page) {
     _currentPage = page;
 
     if (page === 'governance') {
+        // 重建所有自定义下拉框选项（修复从 display:none 切回时尺寸为 0 的问题）
+        _customSelects.forEach(cs => cs.rebuildOptions());
         loadGovernance();
         startModuleTimer('gov', () => loadGovernance());
     }
@@ -1335,8 +1338,8 @@ async function initChinaMap() {
             pinfo.provinces.forEach(prov => {
                 regions.push({
                     name: prov,
-                    itemStyle: { areaColor: pinfo.color + '44', borderColor: pinfo.color + 'aa', borderWidth: 1.5 },
-                    emphasis: { itemStyle: { areaColor: pinfo.color + '88' } }
+                    itemStyle: { areaColor: pinfo.color + '55', borderColor: pinfo.color + 'cc', borderWidth: 1.5 },
+                    emphasis: { itemStyle: { areaColor: pinfo.color + 'aa' } }
                 });
             });
         });
@@ -2173,11 +2176,33 @@ $$('.tab-btn').forEach(tab => {
     });
 });
 
+// ===== 退出登录 =====
+async function handleLogout() {
+    await fetch('/api/auth/logout', {method: 'POST'});
+    window.location.href = '/login';
+}
+
 // ===== 初始化 =====
 async function init() {
+    // 检查登录状态
+    try {
+        const res = await fetch('/api/auth/current');
+        const data = await res.json();
+        if (!data.authenticated) {
+            window.location.href = '/login';
+            return;
+        }
+        const userEl = document.getElementById('topbarUser');
+        if (userEl) userEl.textContent = data.username;
+    } catch (e) {
+        window.location.href = '/login';
+        return;
+    }
+
     // Wrap filter selects with animated custom dropdowns
     ['filterProject','filterWorkshop','filterDeviceType','filterDevice','filterPoint',
-     'anomalyMetric','anomalyRange','corrDevice','corrMetricA','corrMetricB'].forEach(id => {
+     'anomalyMetric','anomalyRange','corrDevice','corrMetricA','corrMetricB',
+     'govRefreshLineage','govRefreshRules','govRefreshQuality','govRefreshAnomaly','govRefreshLog','govRefreshDict'].forEach(id => {
         const sel = document.getElementById(id);
         if (sel) new CustomSelect(sel);
     });

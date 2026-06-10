@@ -5,8 +5,8 @@
 import os
 
 # ── InfluxDB ──
-INFLUXDB_URL = os.getenv("INFLUXDB_URL", "http://localhost:8086")
-INFLUXDB_TOKEN = os.getenv("INFLUXDB_TOKEN", "my-super-secret-admin-token-2024")
+INFLUXDB_URL = os.getenv("INFLUXDB_URL", "https://influxdb:8086")
+INFLUXDB_TOKEN = os.environ["INFLUXDB_TOKEN"]  # 必须从环境变量注入
 INFLUXDB_ORG = os.getenv("INFLUXDB_ORG", "industrial")
 INFLUXDB_BUCKET = os.getenv("INFLUXDB_BUCKET", "factory")
 
@@ -20,17 +20,17 @@ DEVICE_TYPE_CN = {"cnc": "CNC机床", "sensor": "环境传感器", "plc": "产�
 PROJECTS = {
     "project-huadong": {
         "name": "华东制造基地",
-        "color": "#3b82f6",
+        "color": "#0ea5e9",
         "provinces": ["广东省", "江苏省", "浙江省"],
     },
     "project-beifang": {
         "name": "北方工业中心",
-        "color": "#fb923c",
+        "color": "#f97316",
         "provinces": ["山东省", "天津市", "辽宁省"],
     },
     "project-xinan": {
         "name": "西南智造园区",
-        "color": "#34d399",
+        "color": "#22c55e",
         "provinces": ["四川省", "重庆市", "云南省"],
     },
 }

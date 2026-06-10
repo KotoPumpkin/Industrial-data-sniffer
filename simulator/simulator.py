@@ -18,6 +18,8 @@ import paho.mqtt.client as mqtt
 # ==================== 配置 ====================
 MQTT_HOST = os.getenv("MQTT_HOST", "localhost")
 MQTT_PORT = int(os.getenv("MQTT_PORT", 1883))
+MQTT_USER = os.getenv("MQTT_USER", "")
+MQTT_PASSWORD = os.getenv("MQTT_PASSWORD", "")
 HTTP_PORT = int(os.getenv("HTTP_PORT", 5001))
 
 # ==================== 项目定义 ====================
@@ -772,6 +774,9 @@ def mqtt_publisher():
 
     client.on_connect = on_connect
     client.on_disconnect = on_disconnect
+
+    if MQTT_USER:
+        client.username_pw_set(MQTT_USER, MQTT_PASSWORD)
 
     connected = False
     while not connected:
